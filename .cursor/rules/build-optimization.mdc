@@ -1,0 +1,37 @@
+---
+description: Build optimization notes for the A11y Chrome extension
+globs: ["vite.config.ts", "package.json"]
+alwaysApply: false
+---
+
+# Build Optimization Notes
+
+## Current state (as of March 2026)
+- Total bundle: **763KB** (196KB gzipped)
+- axe-core: **~548KB** (72% of bundle)
+- Custom code (20+ engines, views, UI): **~215KB** (28%)
+
+## Three CWS-compliant optimizations identified
+
+### 1. Terser minification + drop_console (pending)
+- Switch from esbuild to Terser minifier with `drop_console: true` and `passes: 2`
+- CWS allows minification; only obfuscation is prohibited
+- Expected savings: ~15-20%
+
+### 2. Alias axe-core to axe.min.js (pending)
+- Add `resolve.alias` in vite.config.ts to point `axe-core` to `axe-core/axe.min.js`
+- Avoids re-processing already-minified code
+- One-line config change
+
+### 3. Lazy-load axe-core as separate local file (pending, biggest win)
+- Split into `content.js` (~215KB) + `axe-core.min.js` (~548KB)
+- Inject axe on demand via `chrome.scripting.executeScript({ files: ['axe-core.min.js'] })`
+- Both files ship inside the extension package (dist/ folder)
+- **MUST use local files, NOT CDN** — remote hosted code is prohibited under Manifest V3
+- Previous CDN-based lazy-load attempt failed; this local-file approach avoids that
+
+## Chrome Web Store policy summary
+- Minification: **allowed** (standard build tools)
+- Code splitting into multiple local files: **allowed**
+- Loading from remote CDN at runtime: **NOT allowed** (MV3 prohibition)
+- eval() / new Function(): **NOT allowed**

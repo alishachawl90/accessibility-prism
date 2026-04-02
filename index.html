@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>A11y Test Page</title>
+    <style>
+      body { font-family: sans-serif; padding: 2rem; }
+      .header { background: #eee; padding: 1rem; margin-bottom: 2rem; }
+      .card { border: 1px solid #ccc; padding: 1rem; margin-bottom: 1rem; border-radius: 4px; }
+      .bad-contrast { color: #ccc; background: #fff; }
+      .nav { display: flex; gap: 1rem; margin-bottom: 2rem; }
+      .nav-item { padding: 0.5rem 1rem; background: #007bff; color: white; cursor: pointer; }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <!-- Missing H1 -->
+      <h2>My Test Page</h2>
+      <!-- Image missing alt text -->
+      <img src="https://via.placeholder.com/150" />
+    </div>
+
+    <!-- Group of similar components (Cards) to test component detection -->
+    <div class="card">
+      <h3>Product 1</h3>
+      <!-- Bad contrast -->
+      <p class="bad-contrast">This text is really hard to read.</p>
+      <!-- Unfocusable keyboard element -->
+      <div class="btn" onclick="alert('clicked')" style="cursor: pointer; background: #eee; padding: 5px; display: inline-block;">Click Me (Div)</div>
+    </div>
+
+    <div class="card">
+      <h3>Product 2</h3>
+      <p class="bad-contrast">This text is really hard to read.</p>
+      <div class="btn" onclick="alert('clicked')" style="cursor: pointer; background: #eee; padding: 5px; display: inline-block;">Click Me (Div)</div>
+    </div>
+
+    <!-- Form with missing labels -->
+    <div style="margin-top: 2rem;">
+      <input type="text" placeholder="Search..." />
+      <button>Submit</button>
+    </div>
+
+    <!-- Include the built script for easy testing -->
+    <script src="/dist/content.js"></script>
+  </body>
+</html>
