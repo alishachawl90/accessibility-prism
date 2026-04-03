@@ -42,13 +42,46 @@ test.describe('Screen Reader Walkthrough', () => {
 });
 
 test.describe('Live Regions', () => {
-  test('renders live region results', async ({ panelPage }) => {
+  test('renders live region results with breakdown bar', async ({ panelPage }) => {
     await navigateToView(panelPage, SEL.btnLiveRegions);
-    // Test page has aria-live="polite" and role="alert"
-    const hasCards = await panelPage.locator(SEL.issueCard).count();
-    const hasEmpty = await panelPage.locator(SEL.emptySuccess).count();
-    const hasContent = (await panelPage.textContent(SEL.panel)).length > 50;
-    expect(hasCards + hasEmpty > 0 || hasContent).toBeTruthy();
+    const content = await panelPage.textContent(SEL.panel);
+    expect(content).toMatch(/region/i);
+    expect(content).toMatch(/assertive|polite|empty|healthy/i);
+  });
+
+  test('groups issues into collapsible accordions', async ({ panelPage }) => {
+    await navigateToView(panelPage, SEL.btnLiveRegions);
+    const accHeaders = panelPage.locator(`${SEL.panel} .lr-acc-header`);
+    const count = await accHeaders.count();
+    expect(count).toBeGreaterThan(0);
+  });
+
+  test('accordion expand/collapse works', async ({ panelPage }) => {
+    await navigateToView(panelPage, SEL.btnLiveRegions);
+    const accHeaders = panelPage.locator(`${SEL.panel} .lr-acc-header`);
+    const count = await accHeaders.count();
+    test.skip(count === 0, 'No live region sections');
+
+    // Find a collapsed accordion
+    const bodies = panelPage.locator(`${SEL.panel} .lr-acc-body`);
+    let collapsedIdx = -1;
+    for (let i = 0; i < count; i++) {
+      const display = await bodies.nth(i).evaluate(el => el.style.display);
+      if (display === 'none') { collapsedIdx = i; break; }
+    }
+    test.skip(collapsedIdx === -1, 'No collapsed accordions to test');
+
+    await accHeaders.nth(collapsedIdx).click();
+    await panelPage.waitForTimeout(200);
+    const afterDisplay = await bodies.nth(collapsedIdx).evaluate(el => el.style.display);
+    expect(afterDisplay).toBe('block');
+  });
+
+  test('severity filter chips are present', async ({ panelPage }) => {
+    await navigateToView(panelPage, SEL.btnLiveRegions);
+    // Chips rendered by renderResultsPage — use button[data-sev] as reliable selector
+    const chips = panelPage.locator(`${SEL.panel} button[data-sev]`);
+    expect(await chips.count()).toBeGreaterThanOrEqual(1);
   });
 
   test('back returns to pre-screen', async ({ panelPage }) => {

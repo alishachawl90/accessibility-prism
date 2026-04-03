@@ -117,6 +117,7 @@ export class FloatingPanel {
   private contrastIssues: ContrastIssue[] = [];
   private focusMgmtIssues: FocusManagementIssue[] = [];
   private liveRegionData: LiveRegionResult = { regions: [], issues: [] };
+  private liveRegionSeverityFilter = new Set<string>(['warning', 'info']);
   private touchTargetIssues: TouchTargetIssue[] = [];
   private altTextIssues: AltTextIssue[] = [];
   private altTextSeverityFilter = new Set<string>(['error', 'warning', 'info']);
@@ -454,7 +455,7 @@ export class FloatingPanel {
       case 'landmark-results': return renderLandmarkResults(this.landmarkData);
       case 'contrast-results': return renderContrastResults(this.contrastIssues);
       case 'focus-mgmt-results': return renderFocusMgmtResults(this.focusMgmtIssues);
-      case 'live-region-results': return renderLiveRegionResults(this.liveRegionData);
+      case 'live-region-results': return renderLiveRegionResults({ result: this.liveRegionData, severityFilter: this.liveRegionSeverityFilter });
       case 'touch-target-results': return renderTouchTargetResults(this.touchTargetIssues);
       case 'alt-text-results': return renderAltTextResults(this.altTextIssues, this.altTextSeverityFilter);
       case 'acc-name-results': return renderAccNameResults(this.getAccNameData());
@@ -607,7 +608,18 @@ export class FloatingPanel {
         break;
 
       case 'live-region-results':
-        attachLiveRegionListeners(this.container, this.liveRegionData, { onBack: backToHome, onHighlight: highlight });
+        attachLiveRegionListeners(
+          this.container,
+          { result: this.liveRegionData, severityFilter: this.liveRegionSeverityFilter },
+          {
+            onBack: backToHome,
+            onHighlight: highlight,
+            onSeverityChange: next => {
+              this.liveRegionSeverityFilter = next;
+              this.render();
+            },
+          },
+        );
         break;
 
       case 'touch-target-results':

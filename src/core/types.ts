@@ -211,6 +211,13 @@ export interface LiveRegionInfo {
 
 export type LiveRegionIssueType = 'missing-aria-live' | 'implicit-live-region' | 'live-region-hidden' | 'empty-alert';
 
+export const LR_TYPE_LABELS: Record<LiveRegionIssueType, string> = {
+  'empty-alert': 'Empty Alert Region',
+  'live-region-hidden': 'Hidden Live Region',
+  'implicit-live-region': 'Implicit Live Region',
+  'missing-aria-live': 'Missing Semantic Role',
+};
+
 export interface LiveRegionIssue {
   type: LiveRegionIssueType;
   severity: 'error' | 'warning' | 'info';

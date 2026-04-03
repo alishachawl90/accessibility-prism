@@ -196,7 +196,7 @@ Shared UI components live in `results-template.ts`:
 ```bash
 npm run build          # tsc && vite build → dist/content.js
 npm run dev:watch      # vite build --watch (auto-rebuild on save)
-npm test               # Playwright: 81 tests, 9 spec files
+npm test               # Playwright: 84 tests, 9 spec files
 npm run test:headed    # Playwright with visible browser
 npm run test:ui        # Playwright interactive UI
 npm run test:report    # Open HTML test report
@@ -304,3 +304,4 @@ test.describe('My Audit', () => {
 7. **Only `axe-issue-list.ts` and `axe-issue-details.ts` remain specialized** — they have unique rule-card grouping and occurrence-level detail that doesn't fit the generic template.
 8. **Keyboard results use collapsible accordions (Phase 3)** — sections in all three group modes (By Type, By Region, By Component) are wrapped in `.kb-acc-header` / `.kb-acc-body` accordion elements. The expand/collapse listener uses the `AbortSignal` from `attachResultsPageListeners`.
 9. **Component flow detail merges steps + issues (Phase 3)** — no separate "Issues" section. Each tab stop card shows its matching issues inline via `extraBodyHtml` using `renderInlineIssue()`.
+10. **Live Regions view redesign** — issues grouped by type in collapsible accordions (`lr-acc-header`/`lr-acc-body`), severity filter chips, breakdown bar (assertive/polite/empty/healthy counts), healthy regions in collapsed accordion. Uses `LrViewData` wrapper with `severityFilter` state managed in `panel.ts`.
