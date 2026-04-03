@@ -31,7 +31,7 @@ function renderButton(btn: PreScreenButton): string {
 export function renderPreScreen(): string {
   let html = renderNavBar('Select Analysis', false);
 
-  html += `<div style="padding: 16px; display: flex; flex-direction: column; gap: 6px; background: #F9FAFB; overflow-y: auto; flex: 1;">`;
+  html += `<div id="scroll-area" style="padding: 16px; display: flex; flex-direction: column; gap: 6px; background: #F9FAFB; overflow-y: auto; flex: 1;">`;
 
   // --- Full Scorecard ---
   html += renderButton({
