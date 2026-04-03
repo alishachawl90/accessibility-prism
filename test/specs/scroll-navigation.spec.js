@@ -1,6 +1,38 @@
 import { test, expect, SEL, navigateToView, goBack } from '../fixtures/panel.js';
 
 test.describe('Scroll Position Restore', () => {
+  test('pre-screen scroll restored after navigating to Live Regions and back', async ({ panelPage }) => {
+    // Live Regions button is near the bottom of the pre-screen — requires real scroll
+    const scrollArea = panelPage.locator(`${SEL.panel} #scroll-area`);
+    await expect(scrollArea).toBeVisible();
+
+    // Scroll to bottom of pre-screen so Live Regions button is visible
+    await panelPage.evaluate((sel) => {
+      const area = document.querySelector(`${sel} #scroll-area`);
+      if (area) area.scrollTop = area.scrollHeight;
+    }, SEL.panel);
+    await panelPage.waitForTimeout(200);
+
+    const scrollBefore = await panelPage.evaluate((sel) => {
+      return document.querySelector(`${sel} #scroll-area`)?.scrollTop ?? 0;
+    }, SEL.panel);
+    expect(scrollBefore).toBeGreaterThan(50);
+
+    // Navigate to Live Regions
+    await navigateToView(panelPage, SEL.btnLiveRegions);
+
+    // Go back to pre-screen
+    await goBack(panelPage);
+    await panelPage.waitForTimeout(400);
+
+    const scrollAfter = await panelPage.evaluate((sel) => {
+      return document.querySelector(`${sel} #scroll-area`)?.scrollTop ?? 0;
+    }, SEL.panel);
+
+    // Scroll should be restored close to where we were (not 0)
+    expect(scrollAfter).toBeGreaterThan(50);
+  });
+
   test('axe list scroll position restored after viewing details and going back', async ({ panelPage }) => {
     await navigateToView(panelPage, SEL.btnAxe);
     await panelPage.waitForSelector(SEL.ruleCard, { timeout: 10_000 });
