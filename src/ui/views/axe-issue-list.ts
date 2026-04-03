@@ -7,6 +7,14 @@ import { renderNavBar, renderAccordion, attachAccordionListeners, renderCountBad
 
 const UNCATEGORIZED_ID = 'cmp_uncategorized';
 
+const IMPACT_LEVELS = ['critical', 'serious', 'moderate', 'minor'] as const;
+export type ImpactLevel = (typeof IMPACT_LEVELS)[number];
+
+function normalizeImpactKey(impact: string | null | undefined): ImpactLevel {
+  const k = (impact || 'minor').toLowerCase();
+  return (IMPACT_LEVELS as readonly string[]).includes(k) ? (k as ImpactLevel) : 'minor';
+}
+
 export type GroupMode = 'rule' | 'region' | 'component';
 
 export interface AxeListData {
@@ -18,6 +26,8 @@ export interface AxeListData {
   filterSeverity: 'ALL' | 'AA' | 'AAA';
   groupMode: GroupMode;
   activeResultTypes: Set<AxeResultType>;
+  /** Active axe impact levels; default all four. */
+  filterImpact: Set<string>;
 }
 
 function resultTypeBadge(type: AxeResultType): string {
@@ -31,22 +41,37 @@ function resultTypeChip(type: AxeResultType, active: boolean, count: number): st
   const border = active ? t.border : '#D1D5DB';
   const color = active ? t.text : '#6B7280';
   return `
-    <button class="result-type-chip" data-type="${type}" style="padding: 5px 10px !important; border: 1.5px solid ${border} !important; border-radius: 6px !important; font-size: 11px !important; cursor: pointer !important; background: ${bg} !important; color: ${color} !important; font-weight: 600 !important; transition: all 0.15s !important; display: flex !important; align-items: center !important; gap: 4px !important; white-space: nowrap !important;">
+    <button type="button" class="result-type-chip" data-type="${type}" style="padding: 5px 10px !important; border: 1.5px solid ${border} !important; border-radius: 6px !important; font-size: 11px !important; cursor: pointer !important; background: ${bg} !important; color: ${color} !important; font-weight: 600 !important; transition: all 0.15s !important; display: flex !important; align-items: center !important; gap: 4px !important; white-space: nowrap !important;">
       <span style="font-size: 10px !important;">${t.icon}</span>
       ${t.label}
       <span style="background: ${active ? t.badge : '#D1D5DB'} !important; color: white !important; padding: 1px 6px !important; border-radius: 10px !important; font-size: 10px !important; font-weight: 700 !important; min-width: 18px !important; text-align: center !important;">${count}</span>
     </button>`;
 }
 
+function impactFilterChip(level: ImpactLevel, active: boolean, count: number): string {
+  const t = IMPACT[level];
+  const label = level.charAt(0).toUpperCase() + level.slice(1);
+  const bg = active ? t.bg : 'white';
+  const border = active ? t.border : '#D1D5DB';
+  const color = active ? t.text : '#6B7280';
+  return `
+    <button type="button" class="result-type-chip impact-filter-chip" data-impact="${level}" style="padding: 5px 10px !important; border: 1.5px solid ${border} !important; border-radius: 6px !important; font-size: 11px !important; cursor: pointer !important; background: ${bg} !important; color: ${color} !important; font-weight: 600 !important; transition: all 0.15s !important; display: flex !important; align-items: center !important; gap: 4px !important; white-space: nowrap !important;">
+      ${label}
+      <span style="background: ${active ? t.badge : '#D1D5DB'} !important; color: white !important; padding: 1px 6px !important; border-radius: 10px !important; font-size: 10px !important; font-weight: 700 !important; min-width: 18px !important; text-align: center !important;">${count}</span>
+    </button>`;
+}
+
 export function renderAxeIssueList(data: AxeListData): string {
   const active = data.activeResultTypes;
-  const visibleViolations = data.violations.filter(v => active.has(v.resultType));
+  const filterImpact = data.filterImpact;
+  const violationsByResultType = data.violations.filter(v => active.has(v.resultType));
+  const visibleViolations = violationsByResultType.filter(v => filterImpact.has(normalizeImpactKey(v.impact)));
 
-  const totalNodes = visibleViolations.reduce((sum, v) => sum + v.nodes.length, 0);
+  const totalNodes = violationsByResultType.reduce((sum, v) => sum + v.nodes.length, 0);
   const counts = { critical: 0, serious: 0, moderate: 0, minor: 0 };
-  visibleViolations.forEach(v => {
-    const key = (v.impact || 'minor') as keyof typeof counts;
-    if (counts[key] !== undefined) counts[key] += v.nodes.length;
+  violationsByResultType.forEach(v => {
+    const key = normalizeImpactKey(v.impact);
+    counts[key] += v.nodes.length;
   });
 
   const typeCounts: Record<AxeResultType, number> = { violation: 0, 'needs-review': 0, 'best-practice': 0, experimental: 0 };
@@ -72,6 +97,15 @@ export function renderAxeIssueList(data: AxeListData): string {
       ${counts.serious > 0 ? `<span style="color: ${IMPACT.serious.badge} !important;">${counts.serious} Serious</span>` : ''}
       ${counts.moderate > 0 ? `<span style="color: ${IMPACT.moderate.badge} !important;">${counts.moderate} Moderate</span>` : ''}
       ${counts.minor > 0 ? `<span style="color: ${IMPACT.minor.badge} !important;">${counts.minor} Minor</span>` : ''}
+    </div>
+  `;
+
+  html += `
+    <div style="padding: 10px 16px !important; background: white !important; border-bottom: 1px solid ${BORDER} !important; display: flex !important; gap: 6px !important; flex-wrap: wrap !important;">
+      ${impactFilterChip('critical', filterImpact.has('critical'), counts.critical)}
+      ${impactFilterChip('serious', filterImpact.has('serious'), counts.serious)}
+      ${impactFilterChip('moderate', filterImpact.has('moderate'), counts.moderate)}
+      ${impactFilterChip('minor', filterImpact.has('minor'), counts.minor)}
     </div>
   `;
 
@@ -113,8 +147,24 @@ export function renderAxeIssueList(data: AxeListData): string {
   return html;
 }
 
-function filterViolations(violations: AxeViolation[], search: string, sev: string): AxeViolation[] {
+/** Same ordering as `renderComponentGroup` for click handlers. */
+function getSortedFilteredComponentGroups(data: AxeListData): [string, ComponentIssue[]][] {
+  const impactFiltered = data.dedupedIssues.filter(i => data.filterImpact.has(normalizeImpactKey(i.severity)));
+  const byComponentFiltered = new Map<string, ComponentIssue[]>();
+  impactFiltered.forEach(issue => {
+    if (!byComponentFiltered.has(issue.componentId)) byComponentFiltered.set(issue.componentId, []);
+    byComponentFiltered.get(issue.componentId)!.push(issue);
+  });
+  return Array.from(byComponentFiltered.entries()).sort((a, b) => {
+    const ac = a[1].reduce((s, i) => s + i.count, 0);
+    const bc = b[1].reduce((s, i) => s + i.count, 0);
+    return bc - ac;
+  });
+}
+
+function filterViolations(violations: AxeViolation[], search: string, sev: string, filterImpact: Set<string>): AxeViolation[] {
   return violations.filter(v => {
+    if (!filterImpact.has(normalizeImpactKey(v.impact))) return false;
     const s = search.toLowerCase();
     if (s) {
       const wcag = parseWcagInfo(v.tags);
@@ -133,7 +183,7 @@ function filterViolations(violations: AxeViolation[], search: string, sev: strin
 }
 
 function renderRuleGroup(data: AxeListData): string {
-  const filtered = filterViolations(data.violations, data.searchQuery, data.filterSeverity);
+  const filtered = filterViolations(data.violations, data.searchQuery, data.filterSeverity, data.filterImpact);
   if (filtered.length === 0) return `<div style="text-align: center; padding: 24px; color: #15803D; font-weight: 500; font-size: 14px;">No issues found matching your filters.</div>`;
 
   let html = '';
@@ -166,6 +216,7 @@ function renderRegionGroup(data: AxeListData): string {
   let html = '';
   data.regions.forEach((region, rIdx) => {
     const filtered = region.violations.filter(v => {
+      if (!data.filterImpact.has(normalizeImpactKey(v.impact))) return false;
       const s = data.searchQuery.toLowerCase();
       if (s && !v.help.toLowerCase().includes(s) && !v.ruleId.toLowerCase().includes(s)) return false;
       const wcag = parseWcagInfo(v.tags);
@@ -202,17 +253,10 @@ function renderComponentGroup(data: AxeListData): string {
     return `<div class="a11y-empty-state">No component clusters detected on this page.</div>`;
   }
 
-  const byComponent = new Map<string, ComponentIssue[]>();
-  data.dedupedIssues.forEach(issue => {
-    if (!byComponent.has(issue.componentId)) byComponent.set(issue.componentId, []);
-    byComponent.get(issue.componentId)!.push(issue);
-  });
-
-  const sorted = Array.from(byComponent.entries()).sort((a, b) => {
-    const ac = a[1].reduce((s, i) => s + i.count, 0);
-    const bc = b[1].reduce((s, i) => s + i.count, 0);
-    return bc - ac;
-  });
+  const sorted = getSortedFilteredComponentGroups(data);
+  if (sorted.length === 0) {
+    return `<div style="text-align: center; padding: 24px; color: #15803D; font-weight: 500; font-size: 14px;">No issues found matching your filters.</div>`;
+  }
 
   let html = '';
   sorted.forEach(([compId, issues], cIdx) => {
@@ -315,24 +359,35 @@ export function attachAxeListListeners(container: HTMLElement, data: AxeListData
   onExport: () => void;
   onHighlight: (els: Element[]) => void;
   onNavigateDetails: (v: AxeViolation) => void;
-  onFilterChange: (search: string, sev: string, mode: GroupMode, activeTypes: Set<AxeResultType>) => void;
+  onFilterChange: (search: string, sev: string, mode: GroupMode, activeTypes: Set<AxeResultType>, filterImpact: Set<string>) => void;
 }): void {
   container.querySelector('#btn-back')?.addEventListener('click', () => actions.onBack());
 
   container.querySelector('#filter-search')?.addEventListener('input', (e) => {
-    actions.onFilterChange((e.target as HTMLInputElement).value, data.filterSeverity, data.groupMode, data.activeResultTypes);
+    actions.onFilterChange((e.target as HTMLInputElement).value, data.filterSeverity, data.groupMode, data.activeResultTypes, data.filterImpact);
   });
   container.querySelector('#filter-severity')?.addEventListener('change', (e) => {
-    actions.onFilterChange(data.searchQuery, (e.target as HTMLSelectElement).value, data.groupMode, data.activeResultTypes);
+    actions.onFilterChange(data.searchQuery, (e.target as HTMLSelectElement).value, data.groupMode, data.activeResultTypes, data.filterImpact);
   });
   container.querySelectorAll('.group-mode-btn').forEach(el => {
     el.addEventListener('click', () => {
-      actions.onFilterChange(data.searchQuery, data.filterSeverity, (el.getAttribute('data-mode') as GroupMode) || 'rule', data.activeResultTypes);
+      actions.onFilterChange(data.searchQuery, data.filterSeverity, (el.getAttribute('data-mode') as GroupMode) || 'rule', data.activeResultTypes, data.filterImpact);
     });
   });
 
   container.querySelectorAll('.result-type-chip').forEach(el => {
     el.addEventListener('click', () => {
+      const impactAttr = el.getAttribute('data-impact');
+      if (impactAttr) {
+        const nextImpact = new Set(data.filterImpact);
+        if (nextImpact.has(impactAttr)) {
+          if (nextImpact.size > 1) nextImpact.delete(impactAttr);
+        } else {
+          nextImpact.add(impactAttr);
+        }
+        actions.onFilterChange(data.searchQuery, data.filterSeverity, data.groupMode, data.activeResultTypes, nextImpact);
+        return;
+      }
       const type = el.getAttribute('data-type') as AxeResultType;
       const next = new Set(data.activeResultTypes);
       if (next.has(type)) {
@@ -340,7 +395,7 @@ export function attachAxeListListeners(container: HTMLElement, data: AxeListData
       } else {
         next.add(type);
       }
-      actions.onFilterChange(data.searchQuery, data.filterSeverity, data.groupMode, next);
+      actions.onFilterChange(data.searchQuery, data.filterSeverity, data.groupMode, next, data.filterImpact);
     });
   });
 
@@ -372,16 +427,7 @@ export function attachAxeListListeners(container: HTMLElement, data: AxeListData
       const iIdx = parseInt(el.getAttribute('data-iidx') || '0', 10);
       const nIdx = parseInt(el.getAttribute('data-nidx') || '0', 10);
 
-      const byComponent = new Map<string, ComponentIssue[]>();
-      data.dedupedIssues.forEach(issue => {
-        if (!byComponent.has(issue.componentId)) byComponent.set(issue.componentId, []);
-        byComponent.get(issue.componentId)!.push(issue);
-      });
-      const sorted = Array.from(byComponent.entries()).sort((a, b) => {
-        const ac = a[1].reduce((s, i) => s + i.count, 0);
-        const bc = b[1].reduce((s, i) => s + i.count, 0);
-        return bc - ac;
-      });
+      const sorted = getSortedFilteredComponentGroups(data);
       const entry = sorted[cIdx];
       if (entry) {
         const issue = entry[1][iIdx];

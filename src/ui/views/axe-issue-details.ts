@@ -4,6 +4,7 @@ import { escHtml } from '../../utils/escape';
 import { WCAG_LEVEL, HIGHLIGHT, LINK, RESULT_TYPE } from '../tokens';
 import { ICON_ALERT, ICON_HELP, ICON_EXTERNAL, ICON_CHEVRON_DOWN } from '../icons';
 import { renderNavBar } from './helpers';
+import { generateFixSuggestion } from '../../utils/fix-suggestions';
 
 export function renderAxeIssueDetails(v: AxeViolation): string {
   const wcag = parseWcagInfo(v.tags);
@@ -77,6 +78,7 @@ export function renderAxeIssueDetails(v: AxeViolation): string {
           <button class="highlight-btn" data-idx="${idx}" style="margin-top: 10px; width: 100%; padding: 8px; background: #F5F3FF; border: 1px solid #C4B5FD; border-radius: 6px; cursor: pointer; font-size: 12px; color: ${HIGHLIGHT}; font-weight: 500; transition: all 0.15s;">
             Highlight on page
           </button>
+          ${generateFixSuggestion(v, idx)}
         </div>
       </div>
     `;

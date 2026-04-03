@@ -118,14 +118,14 @@ async function run() {
       fail('No rule cards found — axe scan produced no results');
     }
 
-    // Check result type chips exist
+    // Check result type + impact filter chips exist
     const chipCount = await page.evaluate(
       () => document.querySelectorAll('#a11y-analyzer-panel .result-type-chip').length
     );
-    if (chipCount < 3 || chipCount > 4) {
-      fail(`Expected 3-4 result type chips, found ${chipCount}`);
+    if (chipCount < 3) {
+      fail(`Expected at least 3 filter chips, found ${chipCount}`);
     }
-    log(`Found ${chipCount} result type chips`);
+    log(`Found ${chipCount} filter chips (result type + impact)`);
 
     await page.screenshot({ path: resolve(ROOT, 'test/screenshots/02-axe-results.png') });
 

@@ -80,6 +80,11 @@ export class FloatingPanel {
   private callbacks: PanelCallbacks;
   private collapsed = false;
   private currentView: ViewName = 'pre-screen';
+  /** View that was last painted; used to save scroll before `currentView` updates ahead of `render()`. */
+  private lastRenderedView: ViewName = 'pre-screen';
+  private scrollPositions = new Map<ViewName, number>();
+  /** When true, the next cross-view render keeps stored scroll for `currentView` (e.g. back navigation). */
+  private preserveScrollOnNavigate = false;
 
   // Axe state
   private violations: AxeViolation[] = [];
@@ -90,6 +95,7 @@ export class FloatingPanel {
   private filterSeverity: 'ALL' | 'AA' | 'AAA' = 'ALL';
   private groupMode: GroupMode = 'rule';
   private activeResultTypes = new Set<import('../core/types').AxeResultType>(['violation', 'needs-review', 'best-practice']);
+  private filterImpact = new Set<string>(['critical', 'serious', 'moderate', 'minor']);
   private activeViolation: AxeViolation | null = null;
 
   // Keyboard state
@@ -313,6 +319,18 @@ export class FloatingPanel {
   // === Main render ===
 
   private render() {
+    const scrollAreaBefore = this.container.querySelector('#scroll-area') as HTMLElement | null;
+    if (scrollAreaBefore) {
+      this.scrollPositions.set(this.lastRenderedView, scrollAreaBefore.scrollTop);
+    }
+
+    if (this.lastRenderedView !== this.currentView) {
+      if (!this.preserveScrollOnNavigate) {
+        this.scrollPositions.delete(this.currentView);
+      }
+    }
+    this.preserveScrollOnNavigate = false;
+
     let html = this.renderHeader();
 
     if (!this.collapsed) {
@@ -325,6 +343,17 @@ export class FloatingPanel {
     this.attachHeaderListeners();
     if (!this.collapsed) {
       this.attachViewListeners();
+    }
+
+    this.lastRenderedView = this.currentView;
+
+    if (!this.collapsed) {
+      requestAnimationFrame(() => {
+        const scrollArea = this.container.querySelector('#scroll-area') as HTMLElement | null;
+        if (scrollArea && this.scrollPositions.has(this.currentView)) {
+          scrollArea.scrollTop = this.scrollPositions.get(this.currentView)!;
+        }
+      });
     }
   }
 
@@ -435,10 +464,17 @@ export class FloatingPanel {
   }
 
   private attachViewListeners() {
-    const backToHome = () => { this.currentView = 'pre-screen'; this.clearScope(); this.callbacks.onViolationClick([]); this.render(); };
+    const backToHome = () => {
+      this.preserveScrollOnNavigate = true;
+      this.currentView = 'pre-screen';
+      this.clearScope();
+      this.callbacks.onViolationClick([]);
+      this.render();
+    };
     const highlight = (els: Element[]) => this.callbacks.onViolationClick(els);
 
     this.container.querySelector('#btn-clear-scope')?.addEventListener('click', () => {
+      this.preserveScrollOnNavigate = true;
       this.clearScope();
       this.currentView = 'pre-screen';
       this.callbacks.onViolationClick([]);
@@ -473,9 +509,13 @@ export class FloatingPanel {
           onBack: backToHome,
           onExport: () => this.callbacks.onExportReport(),
           onHighlight: highlight,
-          onNavigateDetails: (v) => { this.activeViolation = v; this.currentView = 'axe-issue-details'; this.render(); },
-          onFilterChange: (search, sev, mode, activeTypes) => {
-            this.searchQuery = search; this.filterSeverity = sev as any; this.groupMode = mode; this.activeResultTypes = activeTypes;
+          onNavigateDetails: (v) => {
+            this.activeViolation = v;
+            this.currentView = 'axe-issue-details';
+            this.render();
+          },
+          onFilterChange: (search, sev, mode, activeTypes, impactSet) => {
+            this.searchQuery = search; this.filterSeverity = sev as any; this.groupMode = mode; this.activeResultTypes = activeTypes; this.filterImpact = impactSet;
             const cursorPos = (this.container.querySelector('#filter-search') as HTMLInputElement)?.selectionStart ?? search.length;
             this.render();
             const input = this.container.querySelector('#filter-search') as HTMLInputElement;
@@ -487,7 +527,11 @@ export class FloatingPanel {
       case 'axe-issue-details':
         if (this.activeViolation) {
           attachAxeDetailsListeners(this.container, this.activeViolation, {
-            onBack: () => { this.currentView = 'axe-issue-list'; this.render(); },
+            onBack: () => {
+              this.preserveScrollOnNavigate = true;
+              this.currentView = 'axe-issue-list';
+              this.render();
+            },
             onHighlight: highlight,
           });
         }
@@ -514,6 +558,7 @@ export class FloatingPanel {
       case 'component-flow-list':
         attachFlowListListeners(this.container, this.componentFlows, {
           onBack: () => {
+            this.preserveScrollOnNavigate = true;
             this.currentView = this.keyboardIssues.length > 0 ? 'keyboard-issues' : 'pre-screen';
             this.callbacks.onViolationClick([]);
             this.render();
@@ -526,7 +571,12 @@ export class FloatingPanel {
         const flow = this.componentFlows[this.activeFlowIdx];
         if (flow) {
           attachFlowDetailListeners(this.container, flow, this.activeInstanceIdx, {
-            onBack: () => { this.currentView = 'component-flow-list'; this.callbacks.onViolationClick([]); this.render(); },
+            onBack: () => {
+              this.preserveScrollOnNavigate = true;
+              this.currentView = 'component-flow-list';
+              this.callbacks.onViolationClick([]);
+              this.render();
+            },
             onHighlight: highlight,
             onPrev: () => { this.activeInstanceIdx--; this.render(); },
             onNext: () => { this.activeInstanceIdx++; this.render(); },
@@ -660,6 +710,7 @@ export class FloatingPanel {
       violations: this.violations, components: this.components, dedupedIssues: this.dedupedIssues,
       regions: this.regions, searchQuery: this.searchQuery, filterSeverity: this.filterSeverity,
       groupMode: this.groupMode, activeResultTypes: this.activeResultTypes,
+      filterImpact: this.filterImpact,
     };
   }
 
