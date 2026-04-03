@@ -62,6 +62,11 @@ export const SEL = {
   emptySuccess: `${PANEL} .a11y-empty-success`,
   searchInput: `${PANEL} .a11y-search-input`,
   resultTypeChip: `${PANEL} .result-type-chip`,
+  impactFilterChip: `${PANEL} .impact-filter-chip`,
+  groupModeBtn: `${PANEL} .group-mode-btn`,
+  accordion: `${PANEL} .acc-section`,
+  accordionHeader: `${PANEL} .acc-header`,
+  accordionBody: `${PANEL} .acc-body`,
   scrollArea: `${PANEL} #scroll-area`,
 };
 
@@ -87,6 +92,8 @@ export async function navigateToView(page, buttonSelector, opts = {}) {
         panel.querySelector('.landmark-node') ||
         panel.querySelector('.wt-item') ||
         panel.querySelector('.cat-card') ||
+        panel.querySelector('.rule-card') ||
+        panel.querySelector('.acc-header') ||
         panel.querySelector('#btn-back')
       );
     },
