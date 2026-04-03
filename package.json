@@ -5,13 +5,15 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:watch": "vite build --watch",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "icons": "node scripts/generate-icons.js",
-    "test:chrome": "npm run build && \"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome\" --user-data-dir=/tmp/accessibility-prism-chrome-profile --load-extension=\"$(pwd)/dist\" --auto-open-devtools-for-tabs --no-first-run --no-default-browser-check --window-size=1440,900"
+    "test:smoke": "node test/smoke.test.js",
+    "icons": "node scripts/generate-icons.js"
   },
   "devDependencies": {
     "@types/node": "^25.5.0",
+    "puppeteer": "^24.40.0",
     "sharp": "^0.34.5",
     "typescript": "~5.9.3",
     "vite": "^8.0.1"
