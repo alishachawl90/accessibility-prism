@@ -1,4 +1,4 @@
-import type { ComponentTabFlow } from '../../core/types';
+import type { ComponentTabFlow, KeyboardIssue } from '../../core/types';
 import { KB_TYPE_LABELS } from '../../core/types';
 import { escHtml } from '../../utils/escape';
 import { getElementContext } from '../../utils/wcag-map';
@@ -12,6 +12,19 @@ import {
   attachResultsPageListeners,
 } from './results-template';
 import { renderPriorityBadge } from './helpers';
+
+function renderInlineIssue(issue: KeyboardIssue): string {
+  const s = SEV[issue.severity];
+  return `
+    <div style="margin-top: 8px !important; padding: 10px !important; background: ${s.bg} !important; border: 1px solid ${s.border} !important; border-radius: 6px !important;">
+      <div style="display: flex !important; gap: 6px !important; align-items: center !important; margin-bottom: 4px !important; flex-wrap: wrap !important;">
+        ${renderSeverityBadge(issue.severity)}
+        ${renderPriorityBadge(issue.priority)}
+        <span style="font-size: 11px !important; font-weight: 600 !important; color: #4B5563 !important;">${escHtml(KB_TYPE_LABELS[issue.type])}</span>
+      </div>
+      <div style="font-size: 12px !important; color: #374151 !important; line-height: 1.5 !important;">${escHtml(issue.description)}</div>
+    </div>`;
+}
 
 export function renderComponentFlowDetail(flow: ComponentTabFlow, instanceIdx: number): string {
   const inst = flow.instances[instanceIdx];
@@ -50,73 +63,50 @@ export function renderComponentFlowDetail(flow: ComponentTabFlow, instanceIdx: n
       </div>
     </div>`;
 
-  const flatItems: Array<{ type: 'step' | 'issue'; element: Element }> = [];
-
   let bodyHtml = '';
 
-  // Tab flow steps section
+  // Unified tab flow — each step shows its issue inline when expanded
   bodyHtml += `
     <div style="margin-bottom: 18px !important;">
-      <div style="padding: 8px 4px 10px !important; font-weight: 600 !important; font-size: 14px !important; color: #1F2937 !important; border-bottom: 1px solid #E5E7EB !important;">Tab Flow (${inst.focusable.length} stops)</div>
+      <div style="padding: 8px 4px 10px !important; font-weight: 600 !important; font-size: 14px !important; color: #1F2937 !important; border-bottom: 1px solid #E5E7EB !important;">
+        Tab Flow (${inst.focusable.length} stops${inst.issues.length > 0 ? `, ${inst.issues.length} issue${inst.issues.length !== 1 ? 's' : ''}` : ''})
+      </div>
       <div style="display: flex !important; flex-direction: column !important; gap: 8px !important; margin-top: 10px !important;">`;
 
   inst.focusable.forEach((el, i) => {
-    const idx = flatItems.length;
-    flatItems.push({ type: 'step', element: el });
     const context = getElementContext(el);
-    const hasIssue = inst.issues.some(iss => iss.element === el);
+    const matchingIssues = inst.issues.filter(iss => iss.element === el);
+    const hasIssue = matchingIssues.length > 0;
     const borderColor = hasIssue ? '#EF4444' : '#16A34A';
     const dotBg = hasIssue ? '#EF4444' : '#16A34A';
 
+    const extraBodyHtml = matchingIssues.length > 0
+      ? matchingIssues.map(renderInlineIssue).join('')
+      : '';
+
     bodyHtml += renderIssueCard({
-      idx,
+      idx: i,
       borderColor,
       badgeHtml: `<span style="background: ${dotBg} !important; color: white !important; width: 22px !important; height: 22px !important; border-radius: 50% !important; display: flex !important; align-items: center !important; justify-content: center !important; font-weight: 700 !important; font-size: 11px !important; flex-shrink: 0 !important;">${i + 1}</span>`,
       titleHtml: escHtml(context),
-      descriptionHtml: hasIssue ? `<span style="color: #DC2626 !important; font-size: 11px !important;">&#9888; Has keyboard issue</span>` : undefined,
+      descriptionHtml: hasIssue
+        ? `<span style="color: #DC2626 !important; font-size: 11px !important;">&#9888; ${matchingIssues.length} issue${matchingIssues.length !== 1 ? 's' : ''} — ${escHtml(matchingIssues.map(iss => KB_TYPE_LABELS[iss.type]).join(', '))}</span>`
+        : undefined,
       selector: getCssSelector(el),
       snippet: getSnippet(el),
+      extraBodyHtml,
     });
   });
 
   bodyHtml += `</div></div>`;
 
-  // Issues section
-  if (inst.issues.length > 0) {
-    bodyHtml += `
-      <div style="margin-bottom: 18px !important;">
-        <div style="padding: 8px 4px 10px !important; font-weight: 600 !important; font-size: 14px !important; color: #1F2937 !important; border-bottom: 1px solid #E5E7EB !important;">Issues (${inst.issues.length})</div>
-        <div style="display: flex !important; flex-direction: column !important; gap: 8px !important; margin-top: 10px !important;">`;
-
-    inst.issues.forEach(issue => {
-      const idx = flatItems.length;
-      flatItems.push({ type: 'issue', element: issue.element });
-      const s = SEV[issue.severity];
-
-      bodyHtml += renderIssueCard({
-        idx,
-        borderColor: s.badge,
-        badgeHtml: `
-          <div style="display: flex !important; flex-direction: column !important; align-items: flex-start !important; gap: 4px !important; flex-shrink: 0 !important;">
-            ${renderSeverityBadge(issue.severity)}
-            ${renderPriorityBadge(issue.priority)}
-          </div>`,
-        titleHtml: escHtml(KB_TYPE_LABELS[issue.type]),
-        descriptionHtml: escHtml(issue.description.substring(0, 220)) + (issue.description.length > 220 ? '…' : ''),
-        selector: getCssSelector(issue.element),
-        snippet: getSnippet(issue.element),
-      });
-    });
-
-    bodyHtml += `</div></div>`;
-  } else {
+  if (inst.issues.length === 0) {
     bodyHtml += `
       <div style="padding: 12px !important; background: #F0FDF4 !important; border: 1px solid #BBF7D0 !important; border-radius: 8px !important; text-align: center !important; margin-bottom: 16px !important;">
         <span style="color: #16A34A !important; font-weight: 500 !important; font-size: 13px !important;">&#10003; No keyboard issues in this instance</span>
       </div>`;
   }
 
-  // Consistency section
   if (flow.instances.length > 1) {
     bodyHtml += renderConsistencySection(flow);
   }
@@ -175,17 +165,11 @@ export function attachFlowDetailListeners(
   },
 ): void {
   const inst = flow.instances[instanceIdx];
-  const flatItems: Array<{ type: 'step' | 'issue'; element: Element }> = [];
-  if (inst) {
-    inst.focusable.forEach(el => flatItems.push({ type: 'step', element: el }));
-    inst.issues.forEach(issue => flatItems.push({ type: 'issue', element: issue.element }));
-  }
 
   attachResultsPageListeners(container, {
     onBack: actions.onBack,
     onHighlight: (idx) => {
-      const item = flatItems[idx];
-      if (item) actions.onHighlight([item.element]);
+      if (inst && inst.focusable[idx]) actions.onHighlight([inst.focusable[idx]]);
     },
     onToolbarAction: (action) => {
       if (action === 'prev-inst' && instanceIdx > 0) actions.onPrev();

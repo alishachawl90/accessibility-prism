@@ -4,6 +4,7 @@ import { findRegionForElement } from '../../core/region-detection';
 import { escHtml } from '../../utils/escape';
 import { getElementContext } from '../../utils/wcag-map';
 import { SEV, PRIO } from '../tokens';
+import { ICON_CHEVRON_RIGHT } from '../icons';
 import {
   renderResultsPage,
   renderIssueCard,
@@ -12,6 +13,7 @@ import {
   getSnippet,
   attachResultsPageListeners,
 } from './results-template';
+import { renderCountBadge } from './helpers';
 
 export type KbGroupMode = 'type' | 'region' | 'component';
 
@@ -44,7 +46,7 @@ function getKeyboardSections(data: KbData, filtered: KeyboardIssue[]): KbSection
     });
     const sorted = Array.from(groups.entries()).sort((a, b) => KB_TYPE_PRIORITY[a[0]] - KB_TYPE_PRIORITY[b[0]]);
     return sorted.map(([type, typeIssues]) => ({
-      title: `${KB_TYPE_LABELS[type]} (${typeIssues.length})`,
+      title: KB_TYPE_LABELS[type],
       issues: typeIssues,
     }));
   }
@@ -58,7 +60,7 @@ function getKeyboardSections(data: KbData, filtered: KeyboardIssue[]): KbSection
     });
     const sorted = Array.from(regionGroups.values()).sort((a, b) => b.issues.length - a.issues.length);
     return sorted.map(group => ({
-      title: `${group.name} (${group.issues.length})`,
+      title: group.name,
       issues: group.issues,
     }));
   }
@@ -83,7 +85,7 @@ function getKeyboardSections(data: KbData, filtered: KeyboardIssue[]): KbSection
   });
   const sorted = Array.from(compGroups.values()).sort((a, b) => b.issues.length - a.issues.length);
   return sorted.map(group => ({
-    title: `${group.name} (${group.issues.length})`,
+    title: group.name,
     issues: group.issues,
   }));
 }
@@ -119,12 +121,23 @@ function renderIssueCardsForIssues(issues: KeyboardIssue[], flatIssues: Keyboard
     .join('');
 }
 
-function sectionWrap(title: string, innerCards: string): string {
+function renderSectionAccordion(key: string, title: string, count: number, innerCards: string): string {
+  const headerHtml = `<span style="font-weight: 600 !important; font-size: 14px !important; color: #1F2937 !important;">${escHtml(title)}</span>`;
+  const badgeHtml = renderCountBadge(count);
+
   return `
-    <div style="margin-bottom: 18px !important;">
-      <div style="padding: 8px 4px 10px !important; font-weight: 600 !important; font-size: 14px !important; color: #1F2937 !important; border-bottom: 1px solid #E5E7EB !important;">${escHtml(title)}</div>
-      <div style="display: flex !important; flex-direction: column !important; gap: 8px !important; margin-top: 10px !important;">
-        ${innerCards}
+    <div style="background: white !important; border: 1px solid #E5E7EB !important; border-left: 3px solid #E5E7EB !important; border-radius: 8px !important; margin-bottom: 10px !important; overflow: hidden !important; box-shadow: 0 1px 2px rgba(0,0,0,0.04) !important;">
+      <div class="kb-acc-header" data-key="${escHtml(key)}" style="padding: 14px 16px !important; cursor: pointer !important; display: flex !important; justify-content: space-between !important; align-items: center !important; transition: background 0.1s !important;">
+        <div style="display: flex !important; align-items: center !important; gap: 10px !important; flex: 1 !important; min-width: 0 !important;">
+          <span class="kb-acc-chevron" data-key="${escHtml(key)}" style="transition: transform 0.2s !important; flex-shrink: 0 !important; color: #6B7280 !important;">${ICON_CHEVRON_RIGHT}</span>
+          ${headerHtml}
+        </div>
+        ${badgeHtml}
+      </div>
+      <div class="kb-acc-body" data-key="${escHtml(key)}" style="display: none !important; padding: 8px 16px 14px 16px !important; border-top: 1px solid #F3F4F6 !important;">
+        <div style="display: flex !important; flex-direction: column !important; gap: 8px !important;">
+          ${innerCards}
+        </div>
       </div>
     </div>`;
 }
@@ -163,7 +176,12 @@ export function renderKeyboardResults(data: KbData): string {
   const sections = getKeyboardSections(data, filtered);
   const flatIssues: KeyboardIssue[] = [];
   const bodyHtml = sections
-    .map(sec => sectionWrap(sec.title, renderIssueCardsForIssues(sec.issues, flatIssues)))
+    .map((sec, i) => renderSectionAccordion(
+      `kb-sec-${i}`,
+      sec.title,
+      sec.issues.length,
+      renderIssueCardsForIssues(sec.issues, flatIssues),
+    ))
     .join('');
 
   const toolbarHtml =
@@ -211,7 +229,7 @@ export function attachKeyboardListeners(
   const filtered = data.issues.filter(i => data.severityFilter.has(i.severity));
   const flatIssues = getKeyboardSections(data, filtered).flatMap(s => s.issues);
 
-  attachResultsPageListeners(
+  const signal = attachResultsPageListeners(
     container,
     {
       onBack: actions.onBack,
@@ -231,4 +249,20 @@ export function attachKeyboardListeners(
     },
     { active: data.severityFilter }
   );
+
+  // Accordion expand/collapse using delegated listener with AbortSignal
+  container.addEventListener('click', (e) => {
+    const target = e.target as HTMLElement;
+    const header = target.closest('.kb-acc-header') as HTMLElement;
+    if (!header) return;
+    const key = header.getAttribute('data-key');
+    if (!key) return;
+    const body = container.querySelector(`.kb-acc-body[data-key="${key}"]`) as HTMLElement;
+    const chevron = container.querySelector(`.kb-acc-chevron[data-key="${key}"]`) as HTMLElement;
+    if (body) {
+      const isOpen = body.style.display !== 'none' && body.style.display !== '';
+      body.style.setProperty('display', isOpen ? 'none' : 'block', 'important');
+      if (chevron) chevron.style.transform = isOpen ? '' : 'rotate(90deg)';
+    }
+  }, { signal });
 }

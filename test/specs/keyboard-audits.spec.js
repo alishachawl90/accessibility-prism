@@ -16,10 +16,32 @@ test.describe('Auto Keyboard Analysis', () => {
     expect(await cards.count()).toBeGreaterThan(0);
   });
 
-  test('cards expand to show details', async ({ panelPage }) => {
+  test('sections are collapsible accordions', async ({ panelPage }) => {
     await navigateToView(panelPage, SEL.btnAutoKey);
-    const count = await panelPage.locator(SEL.issueCard).count();
-    test.skip(count === 0, 'No keyboard issues');
+    const headers = panelPage.locator('.kb-acc-header');
+    const count = await headers.count();
+    test.skip(count === 0, 'No keyboard sections');
+
+    // Body should be hidden initially
+    const bodyBefore = await panelPage.locator('.kb-acc-body').first().evaluate(el => el.style.display);
+    expect(bodyBefore).toBe('none');
+
+    // Click accordion header to expand
+    await headers.first().click();
+    await panelPage.waitForTimeout(200);
+    const bodyAfter = await panelPage.locator('.kb-acc-body').first().evaluate(el => el.style.display);
+    expect(bodyAfter).toBe('block');
+  });
+
+  test('cards inside accordion expand to show details', async ({ panelPage }) => {
+    await navigateToView(panelPage, SEL.btnAutoKey);
+    const accHeaders = panelPage.locator('.kb-acc-header');
+    const accCount = await accHeaders.count();
+    test.skip(accCount === 0, 'No keyboard sections');
+
+    // Expand the first accordion to reveal cards
+    await accHeaders.first().click();
+    await panelPage.waitForTimeout(200);
 
     const { after } = await expandFirstCard(panelPage);
     expect(after).toBe('block');
