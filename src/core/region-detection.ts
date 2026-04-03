@@ -22,6 +22,7 @@ export interface RegionViolation {
   html: string;
   failureSummary: string;
   helpUrl: string;
+  resultType: string;
 }
 
 // Landmark selectors in priority order
@@ -153,7 +154,7 @@ function humanize(str: string): string {
  * Given axe violations, maps each violation node to its semantic page region
  * and returns a list of PageRegions with their violations grouped inside.
  */
-export function mapViolationsToRegions(violations: { id: string; help: string; helpUrl: string; impact: string | null | undefined; tags: string[]; nodes: { element: Element | null; html: string; failureSummary: string }[] }[]): PageRegion[] {
+export function mapViolationsToRegions(violations: { id: string; help: string; helpUrl: string; impact: string | null | undefined; tags: string[]; resultType?: string; nodes: { element: Element | null; html: string; failureSummary: string }[] }[]): PageRegion[] {
   const regionMap = new Map<string, PageRegion>();
   
   // We use a WeakMap to cache element -> region lookups for performance
@@ -191,6 +192,7 @@ export function mapViolationsToRegions(violations: { id: string; help: string; h
         html: node.html,
         failureSummary: node.failureSummary || '',
         helpUrl: violation.helpUrl || '',
+        resultType: violation.resultType || 'violation',
       });
     });
   });

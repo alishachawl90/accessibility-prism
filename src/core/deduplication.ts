@@ -35,6 +35,7 @@ export function deduplicateViolations(
           help: violation.help,
           helpUrl: violation.helpUrl,
           tags: violation.tags,
+          resultType: violation.resultType,
           count: 0,
           instanceCount,
           nodes: []

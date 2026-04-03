@@ -138,9 +138,22 @@ export function renderAxeIssueList(data: AxeListData): string {
 
 /** Same ordering as `renderComponentGroup` for click handlers. */
 function getSortedFilteredComponentGroups(data: AxeListData): [string, ComponentIssue[]][] {
-  const impactFiltered = data.dedupedIssues.filter(i => data.filterImpact.has(normalizeImpactKey(i.severity)));
+  const filtered = data.dedupedIssues.filter(i => {
+    if (!data.activeResultTypes.has(i.resultType)) return false;
+    if (!data.filterImpact.has(normalizeImpactKey(i.severity))) return false;
+    const s = data.searchQuery.toLowerCase();
+    if (s) {
+      const wcag = parseWcagInfo(i.tags || []);
+      const searchableText = [i.help, i.ruleId, i.componentName, wcag.fullLabel, wcag.level, ...(i.tags || [])].join(' ').toLowerCase();
+      if (!searchableText.includes(s)) return false;
+    }
+    const wcag = parseWcagInfo(i.tags || []);
+    if (data.filterSeverity === 'AA' && wcag.level === 'AAA') return false;
+    if (data.filterSeverity === 'AAA' && wcag.level !== 'AAA') return false;
+    return true;
+  });
   const byComponentFiltered = new Map<string, ComponentIssue[]>();
-  impactFiltered.forEach(issue => {
+  filtered.forEach(issue => {
     if (!byComponentFiltered.has(issue.componentId)) byComponentFiltered.set(issue.componentId, []);
     byComponentFiltered.get(issue.componentId)!.push(issue);
   });
@@ -201,18 +214,27 @@ function renderRuleGroup(data: AxeListData): string {
   return html;
 }
 
+function filterRegionViolations(violations: import('../../core/region-detection').RegionViolation[], data: AxeListData): import('../../core/region-detection').RegionViolation[] {
+  return violations.filter(v => {
+    if (!data.activeResultTypes.has(v.resultType as AxeResultType)) return false;
+    if (!data.filterImpact.has(normalizeImpactKey(v.impact))) return false;
+    const s = data.searchQuery.toLowerCase();
+    if (s) {
+      const wcag = parseWcagInfo(v.tags);
+      const searchableText = [v.help, v.ruleId, wcag.fullLabel, wcag.level, ...v.tags].join(' ').toLowerCase();
+      if (!searchableText.includes(s)) return false;
+    }
+    const wcag = parseWcagInfo(v.tags);
+    if (data.filterSeverity === 'AA' && wcag.level === 'AAA') return false;
+    if (data.filterSeverity === 'AAA' && wcag.level !== 'AAA') return false;
+    return true;
+  });
+}
+
 function renderRegionGroup(data: AxeListData): string {
   let html = '';
   data.regions.forEach((region, rIdx) => {
-    const filtered = region.violations.filter(v => {
-      if (!data.filterImpact.has(normalizeImpactKey(v.impact))) return false;
-      const s = data.searchQuery.toLowerCase();
-      if (s && !v.help.toLowerCase().includes(s) && !v.ruleId.toLowerCase().includes(s)) return false;
-      const wcag = parseWcagInfo(v.tags);
-      if (data.filterSeverity === 'AA' && wcag.level === 'AAA') return false;
-      if (data.filterSeverity === 'AAA' && wcag.level !== 'AAA') return false;
-      return true;
-    });
+    const filtered = filterRegionViolations(region.violations, data);
     if (filtered.length === 0) return;
 
     const ruleGroups = new Map<string, { help: string; tags: string[]; nodes: { node: Element; html: string }[] }>();

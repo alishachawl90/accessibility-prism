@@ -44,6 +44,7 @@ export interface ComponentIssue {
   help: string;
   helpUrl: string;
   tags?: string[];
+  resultType: AxeResultType;
   count: number;
   instanceCount: number;
   nodes: Element[];
