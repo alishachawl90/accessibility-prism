@@ -24,6 +24,17 @@ test.describe('Contrast Audit', () => {
     expect(content).toMatch(/ratio|contrast/i);
   });
 
+  test('expanded card shows WCAG knowledge block', async ({ panelPage }) => {
+    await navigateToView(panelPage, SEL.btnContrast);
+    await panelPage.click(SEL.cardHeader);
+    await panelPage.waitForTimeout(200);
+    const body = panelPage.locator(SEL.cardBody).first();
+    const text = await body.textContent();
+    expect(text).toContain('WCAG 1.4.3');
+    expect(text).toContain('User Impact');
+    expect(text).toContain('How to Fix');
+  });
+
   test('stats strip shows issue count', async ({ panelPage }) => {
     await navigateToView(panelPage, SEL.btnContrast);
     const stats = panelPage.locator(SEL.statsStrip);

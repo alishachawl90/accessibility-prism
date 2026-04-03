@@ -1,5 +1,6 @@
 import type { AriaValidationResult, AriaIssue } from '../../core/types';
 import { escHtml } from '../../utils/escape';
+import { ARIA_KNOWLEDGE, renderKnowledgeBlock } from '../../utils/issue-knowledge';
 import { SEV, type SeverityKey } from '../tokens';
 import {
   renderResultsPage,
@@ -75,6 +76,7 @@ export function renderAriaResults(result: AriaValidationResult, activeSevs: Set<
     : filtered
         .map((issue, idx) => {
           const title = TYPE_LABELS[issue.type] || issue.type;
+          const k = ARIA_KNOWLEDGE[issue.type];
           return renderIssueCard({
             idx,
             borderColor: sevBorder(issue.severity),
@@ -83,6 +85,7 @@ export function renderAriaResults(result: AriaValidationResult, activeSevs: Set<
             descriptionHtml: escHtml(issue.description),
             selector: getCssSelector(issue.element),
             snippet: getSnippet(issue.element),
+            extraBodyHtml: k ? renderKnowledgeBlock(k) : '',
           });
         })
         .join('');

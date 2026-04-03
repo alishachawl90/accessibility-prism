@@ -32,6 +32,19 @@ test.describe('Form Labels Audit', () => {
     expect(await codeBlocks.count()).toBeGreaterThanOrEqual(1);
   });
 
+  test('expanded card shows WCAG knowledge block', async ({ panelPage }) => {
+    await navigateToView(panelPage, SEL.btnFormLabels);
+    const cards = panelPage.locator(SEL.issueCard);
+    test.skip(await cards.count() === 0, 'No form label issues');
+    await panelPage.click(SEL.cardHeader);
+    await panelPage.waitForTimeout(200);
+    const body = panelPage.locator(SEL.cardBody).first();
+    const text = await body.textContent();
+    expect(text).toContain('WCAG');
+    expect(text).toContain('User Impact');
+    expect(text).toContain('How to Fix');
+  });
+
   test('back returns to pre-screen', async ({ panelPage }) => {
     await navigateToView(panelPage, SEL.btnFormLabels);
     await goBack(panelPage);
@@ -60,6 +73,18 @@ test.describe('ARIA Validation', () => {
 
     const { after } = await expandFirstCard(panelPage);
     expect(after).toBe('block');
+  });
+
+  test('expanded card shows WCAG knowledge block', async ({ panelPage }) => {
+    await navigateToView(panelPage, SEL.btnAriaValidation);
+    const cards = panelPage.locator(SEL.issueCard);
+    test.skip(await cards.count() === 0, 'No ARIA issues');
+    await panelPage.click(SEL.cardHeader);
+    await panelPage.waitForTimeout(200);
+    const body = panelPage.locator(SEL.cardBody).first();
+    const text = await body.textContent();
+    expect(text).toContain('WCAG');
+    expect(text).toContain('User Impact');
   });
 
   test('back returns to pre-screen', async ({ panelPage }) => {

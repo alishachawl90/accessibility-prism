@@ -1,5 +1,6 @@
 import type { ContrastIssue } from '../../core/types';
 import { escHtml } from '../../utils/escape';
+import { CONTRAST_KNOWLEDGE, renderKnowledgeBlock } from '../../utils/issue-knowledge';
 import {
   renderResultsPage,
   renderIssueCard,
@@ -77,7 +78,7 @@ export function renderContrastResults(issues: ContrastIssue[]): string {
           titleHtml: `"${escHtml(issue.text)}"`,
           selector: getCssSelector(issue.element),
           snippet: getSnippet(issue.element),
-          extraBodyHtml: renderContrastExtraBody(issue),
+          extraBodyHtml: renderContrastExtraBody(issue) + renderKnowledgeBlock(CONTRAST_KNOWLEDGE),
         })
       )
       .join('');

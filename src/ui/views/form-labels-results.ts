@@ -1,5 +1,6 @@
 import type { FormLabelsResult } from '../../core/types';
 import { escHtml } from '../../utils/escape';
+import { FORM_LABEL_KNOWLEDGE, renderKnowledgeBlock } from '../../utils/issue-knowledge';
 import { SEV } from '../tokens';
 import {
   renderResultsPage,
@@ -47,6 +48,7 @@ export function renderFormLabelsResults(result: FormLabelsResult, activeSevs: Se
         const tl = TYPE_LABELS[issue.type] || issue.type;
         const d = issue.description;
         const short = d.length > 180 ? `${d.slice(0, 180)}...` : d;
+        const k = FORM_LABEL_KNOWLEDGE[issue.type];
         return renderIssueCard({
           idx,
           borderColor: s.border,
@@ -55,6 +57,7 @@ export function renderFormLabelsResults(result: FormLabelsResult, activeSevs: Se
           descriptionHtml: escHtml(short),
           selector: getCssSelector(issue.element),
           snippet: getSnippet(issue.element),
+          extraBodyHtml: k ? renderKnowledgeBlock(k) : '',
         });
       }).join('');
   return renderResultsPage({ title: 'Form Labels Audit', stats, chips: levels.length ? { levels, active: activeSevs } : undefined, bodyHtml });

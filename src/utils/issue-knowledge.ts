@@ -1,4 +1,5 @@
 import type { KeyboardIssueType } from '../core/types';
+import { escHtml } from './escape';
 
 export interface IssueKnowledge {
   wcag: string;
@@ -112,8 +113,6 @@ export const KB_KNOWLEDGE: Record<KeyboardIssueType, IssueKnowledge> = {
   },
 };
 
-export type FormLabelIssueType = 'missing-label' | 'missing-for' | 'empty-label' | 'duplicate-label' | 'implicit-label-only';
-
 export const FORM_LABEL_KNOWLEDGE: Record<string, IssueKnowledge> = {
   'missing-label': {
     wcag: '1.3.1',
@@ -123,36 +122,36 @@ export const FORM_LABEL_KNOWLEDGE: Record<string, IssueKnowledge> = {
     fix: 'Add a visible <label> element with a for attribute matching the input\'s id, or use aria-label / aria-labelledby.',
     learnMoreUrl: 'https://www.w3.org/WAI/WCAG22/Understanding/info-and-relationships.html',
   },
-  'missing-for': {
+  'placeholder-only': {
     wcag: '1.3.1',
     wcagName: 'Info and Relationships',
     wcagLevel: 'A',
-    userImpact: 'The label text exists visually near the input, but there is no programmatic association. Screen readers cannot announce the label when the input is focused.',
-    fix: 'Add a for attribute to the <label> matching the input\'s id, or wrap the input inside the <label> element.',
+    userImpact: 'The placeholder text disappears when the user starts typing, leaving them with no label to remember what the field requires. Some screen readers do not announce placeholders.',
+    fix: 'Add a persistent visible <label> element. Placeholders are hints, not labels.',
     learnMoreUrl: 'https://www.w3.org/WAI/WCAG22/Understanding/info-and-relationships.html',
   },
-  'empty-label': {
+  'title-only': {
     wcag: '1.3.1',
     wcagName: 'Info and Relationships',
     wcagLevel: 'A',
-    userImpact: 'A <label> element is associated with this input but contains no text. Screen readers announce the field without a description.',
-    fix: 'Add descriptive text inside the <label>, or use aria-label if a visible label is not desired.',
+    userImpact: 'The field relies on the title attribute for its label. The title is not visible by default and requires hovering, which keyboard-only and touch users cannot do.',
+    fix: 'Use a visible <label> element with a for attribute instead of relying on the title attribute.',
     learnMoreUrl: 'https://www.w3.org/WAI/WCAG22/Understanding/info-and-relationships.html',
   },
-  'duplicate-label': {
+  'missing-fieldset-legend': {
     wcag: '1.3.1',
     wcagName: 'Info and Relationships',
     wcagLevel: 'A',
-    userImpact: 'Multiple labels are associated with this input, which can cause inconsistent announcements across different screen readers.',
-    fix: 'Ensure each input has exactly one associated label. Remove duplicate for attributes or consolidate labels.',
+    userImpact: 'A group of related controls (like radio buttons) lacks a <fieldset> and <legend>. Screen readers cannot convey the grouping context.',
+    fix: 'Wrap related controls in a <fieldset> with a <legend> that describes the group purpose.',
     learnMoreUrl: 'https://www.w3.org/WAI/WCAG22/Understanding/info-and-relationships.html',
   },
-  'implicit-label-only': {
+  'ungrouped-radio': {
     wcag: '1.3.1',
     wcagName: 'Info and Relationships',
     wcagLevel: 'A',
-    userImpact: 'The input relies on an implicit label (wrapping <label> without for attribute). Some older assistive technologies may not associate these correctly.',
-    fix: 'Add an explicit for attribute to the <label> matching the input\'s id for maximum compatibility.',
+    userImpact: 'Radio buttons or checkboxes that belong together are not grouped. Screen readers announce each one independently, making the relationship unclear.',
+    fix: 'Wrap related radio buttons or checkboxes in a <fieldset> with a <legend>.',
     learnMoreUrl: 'https://www.w3.org/WAI/WCAG22/Understanding/info-and-relationships.html',
   },
 };
@@ -166,7 +165,15 @@ export const ARIA_KNOWLEDGE: Record<string, IssueKnowledge> = {
     fix: 'Use a valid WAI-ARIA role from the specification, or remove the role attribute if a native HTML element provides the correct semantics.',
     learnMoreUrl: 'https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html',
   },
-  'required-attr': {
+  'redundant-role': {
+    wcag: '4.1.2',
+    wcagName: 'Name, Role, Value',
+    wcagLevel: 'A',
+    userImpact: 'This element has an ARIA role that duplicates the semantics already provided by the native HTML element. While not harmful, it adds unnecessary code.',
+    fix: 'Remove the redundant role attribute. Native HTML elements like <nav>, <button>, and <main> already convey the correct role.',
+    learnMoreUrl: 'https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html',
+  },
+  'missing-required-prop': {
     wcag: '4.1.2',
     wcagName: 'Name, Role, Value',
     wcagLevel: 'A',
@@ -174,29 +181,45 @@ export const ARIA_KNOWLEDGE: Record<string, IssueKnowledge> = {
     fix: 'Add the required ARIA attributes for this role. For example, role="checkbox" requires aria-checked.',
     learnMoreUrl: 'https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html',
   },
-  'invalid-attr-value': {
+  'broken-reference': {
     wcag: '4.1.2',
     wcagName: 'Name, Role, Value',
     wcagLevel: 'A',
-    userImpact: 'An ARIA attribute on this element has an invalid value. Screen readers may misinterpret the element\'s state or properties.',
-    fix: 'Ensure ARIA attribute values match the specification. For example, aria-expanded must be "true" or "false", not "yes".',
+    userImpact: 'An aria-labelledby, aria-describedby, or aria-controls attribute references an ID that does not exist in the DOM. Screen readers will silently ignore the broken reference.',
+    fix: 'Ensure the referenced ID exists in the document and matches exactly (case-sensitive).',
     learnMoreUrl: 'https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html',
   },
-  'orphaned-attr': {
+  'hidden-focusable': {
     wcag: '4.1.2',
     wcagName: 'Name, Role, Value',
     wcagLevel: 'A',
-    userImpact: 'This element has ARIA attributes that are not supported by its role. Screen readers may ignore or misinterpret these attributes.',
-    fix: 'Remove ARIA attributes that are not supported by the element\'s role, or change the role to one that supports them.',
+    userImpact: 'This element is hidden from assistive technology via aria-hidden but remains keyboard focusable. Users encounter a "ghost" stop that announces nothing.',
+    fix: 'Either remove aria-hidden from the container, or add tabindex="-1" to prevent keyboard focus.',
     learnMoreUrl: 'https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html',
   },
-  'missing-name': {
+  'presentation-conflict': {
     wcag: '4.1.2',
     wcagName: 'Name, Role, Value',
     wcagLevel: 'A',
-    userImpact: 'This ARIA widget has no accessible name. Screen readers announce the role but not what it represents, leaving users guessing.',
-    fix: 'Add aria-label, aria-labelledby, or visible text content to give the element an accessible name.',
+    userImpact: 'This element has role="presentation" or role="none" which removes its semantic meaning, but it also has ARIA attributes or is focusable, creating a conflict.',
+    fix: 'Remove role="presentation" if the element needs to be interactive, or remove the conflicting ARIA attributes and tabindex.',
     learnMoreUrl: 'https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html',
+  },
+  'invalid-value': {
+    wcag: '4.1.2',
+    wcagName: 'Name, Role, Value',
+    wcagLevel: 'A',
+    userImpact: 'An ARIA attribute has an invalid value. Screen readers may misinterpret the element\'s state or properties.',
+    fix: 'Ensure ARIA attribute values match the specification. For example, aria-expanded must be "true" or "false".',
+    learnMoreUrl: 'https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html',
+  },
+  'positive-tabindex': {
+    wcag: '2.4.3',
+    wcagName: 'Focus Order',
+    wcagLevel: 'A',
+    userImpact: 'A positive tabindex forces this element to receive focus out of the natural DOM order, creating an unpredictable tab sequence for keyboard users.',
+    fix: 'Remove the positive tabindex. Rely on DOM order for logical tab sequence.',
+    learnMoreUrl: 'https://www.w3.org/WAI/WCAG22/Understanding/focus-order.html',
   },
 };
 
@@ -208,3 +231,34 @@ export const CONTRAST_KNOWLEDGE: IssueKnowledge = {
   fix: 'Increase the contrast ratio to at least 4.5:1 for normal text or 3:1 for large text (18pt+). Adjust the text or background color.',
   learnMoreUrl: 'https://www.w3.org/WAI/WCAG22/Understanding/contrast-minimum.html',
 };
+
+const WCAG_LEVEL_COLOR: Record<string, string> = { A: '#DC2626', AA: '#EA580C', AAA: '#CA8A04' };
+const LINK_COLOR = '#1D4ED8';
+const ICON_EXT = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>`;
+
+/**
+ * Render a standardised knowledge block showing WCAG context, user impact,
+ * fix suggestion, and learn-more link for any issue type.
+ */
+export function renderKnowledgeBlock(k: IssueKnowledge): string {
+  const levelColor = WCAG_LEVEL_COLOR[k.wcagLevel] || WCAG_LEVEL_COLOR.A;
+  return `
+    <div style="margin-top: 10px !important; border-top: 1px solid #F3F4F6 !important; padding-top: 10px !important;">
+      <div style="display: flex !important; align-items: center !important; gap: 6px !important; margin-bottom: 8px !important; flex-wrap: wrap !important;">
+        <span style="background: ${levelColor} !important; color: white !important; padding: 2px 8px !important; border-radius: 4px !important; font-weight: 700 !important; font-size: 11px !important;">${k.wcagLevel}</span>
+        <span style="font-size: 12px !important; color: #4B5563 !important; font-weight: 500 !important;">WCAG ${k.wcag} — ${escHtml(k.wcagName)}</span>
+      </div>
+      <div style="background: #FEF2F2 !important; border: 1px solid #FECACA !important; border-radius: 6px !important; padding: 10px 12px !important; margin-bottom: 8px !important;">
+        <div style="font-size: 11px !important; font-weight: 600 !important; color: #991B1B !important; margin-bottom: 4px !important; text-transform: uppercase !important; letter-spacing: 0.3px !important;">User Impact</div>
+        <div style="font-size: 12px !important; color: #7F1D1D !important; line-height: 1.5 !important;">${escHtml(k.userImpact)}</div>
+      </div>
+      <div style="background: #F0FDF4 !important; border: 1px solid #BBF7D0 !important; border-radius: 6px !important; padding: 10px 12px !important; margin-bottom: 8px !important;">
+        <div style="font-size: 11px !important; font-weight: 600 !important; color: #166534 !important; margin-bottom: 4px !important; text-transform: uppercase !important; letter-spacing: 0.3px !important;">How to Fix</div>
+        <div style="font-size: 12px !important; color: #14532D !important; line-height: 1.5 !important;">${escHtml(k.fix)}</div>
+      </div>
+      <a href="${k.learnMoreUrl}" target="_blank" rel="noopener noreferrer" style="display: flex !important; align-items: center !important; gap: 6px !important; font-size: 12px !important; color: ${LINK_COLOR} !important; text-decoration: none !important; font-weight: 500 !important;">
+        ${ICON_EXT}
+        Learn more — WCAG ${k.wcag}
+      </a>
+    </div>`;
+}
