@@ -155,6 +155,9 @@ Shared UI components live in `results-template.ts`:
 - `renderSeverityBadge()` — colored severity label
 - `attachResultsPageListeners()` — event delegation for all interactive elements (uses AbortController)
 
+**All views now use the shared template (Phase 2 complete).** Views that needed custom interactions
+(component-flow prev/next, sr-walkthrough nav) use `toolbarHtml` + `onToolbarAction` callbacks.
+
 ---
 
 ## How To: Common Tasks
@@ -189,7 +192,7 @@ Shared UI components live in `results-template.ts`:
 ```bash
 npm run build          # tsc && vite build → dist/content.js
 npm run dev:watch      # vite build --watch (auto-rebuild on save)
-npm test               # Playwright: 74 tests, 9 spec files
+npm test               # Playwright: 80 tests, 9 spec files
 npm run test:headed    # Playwright with visible browser
 npm run test:ui        # Playwright interactive UI
 npm run test:report    # Open HTML test report
@@ -293,3 +296,5 @@ test.describe('My Audit', () => {
 3. **Custom rules are experimental** — Prism rules are classified as `resultType: 'experimental'` (not violations). They appear under a separate chip in the axe results list.
 4. **Scroll position restore** uses double `requestAnimationFrame` in `panel.ts` to wait for DOM layout before setting `scrollTop`.
 5. **`index.html` is a deliberate "bad a11y" fixture page** — it has missing alt text, bad contrast, unlabeled forms, ARIA misuse, small touch targets, etc. for comprehensive test coverage.
+6. **All views unified (Phase 2)** — every view now uses `renderResultsPage` + `renderIssueCard` + `attachResultsPageListeners`. Views with custom navigation (component-flow prev/next, sr-walkthrough) use `toolbarHtml` + `onToolbarAction`. No more hand-built HTML or per-element listeners in any view file.
+7. **Only `axe-issue-list.ts` and `axe-issue-details.ts` remain specialized** — they have unique rule-card grouping and occurrence-level detail that doesn't fit the generic template.
