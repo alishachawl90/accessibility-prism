@@ -15,7 +15,7 @@ export interface AxeViolationNode {
   none: AxeCheckResult[];
 }
 
-export type AxeResultType = 'violation' | 'needs-review' | 'best-practice';
+export type AxeResultType = 'violation' | 'needs-review' | 'best-practice' | 'experimental';
 
 export interface AxeViolation {
   id: string;

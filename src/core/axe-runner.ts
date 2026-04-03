@@ -1,5 +1,6 @@
 import axe from 'axe-core';
 import type { AxeViolation, AxeCheckResult, AxeResultType } from './types';
+import { registerPrismRules, isPrismRule } from './custom-rules/index';
 
 function mapChecks(checks: any[]): AxeCheckResult[] {
   if (!checks || !Array.isArray(checks)) return [];
@@ -68,6 +69,8 @@ function mapResult(item: any, resultType: AxeResultType): AxeViolation | null {
 
 export async function runAxe(root?: Element): Promise<AxeViolation[]> {
   try {
+    registerPrismRules();
+
     const context: any = root
       ? { include: [root], exclude: ['#a11y-analyzer-panel', '#a11y-analyzer-overlay'] }
       : { exclude: ['#a11y-analyzer-panel', '#a11y-analyzer-overlay', '#a11y-panel-reset'] };
@@ -81,6 +84,7 @@ export async function runAxe(root?: Element): Promise<AxeViolation[]> {
           'wcag21a', 'wcag21aa',
           'wcag22aa',
           'best-practice',
+          'prism-custom',
         ],
       },
     });
@@ -89,12 +93,18 @@ export async function runAxe(root?: Element): Promise<AxeViolation[]> {
 
     for (const v of results.violations) {
       const mapped = mapResult(v, 'violation');
-      if (mapped) out.push(mapped);
+      if (mapped) {
+        if (isPrismRule(mapped.id)) mapped.resultType = 'experimental';
+        out.push(mapped);
+      }
     }
 
     for (const inc of (results.incomplete || [])) {
       const mapped = mapResult(inc, 'needs-review');
-      if (mapped) out.push(mapped);
+      if (mapped) {
+        if (isPrismRule(mapped.id)) mapped.resultType = 'experimental';
+        out.push(mapped);
+      }
     }
 
     return out;

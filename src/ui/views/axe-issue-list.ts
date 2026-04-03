@@ -49,8 +49,8 @@ export function renderAxeIssueList(data: AxeListData): string {
     if (counts[key] !== undefined) counts[key] += v.nodes.length;
   });
 
-  const typeCounts = { violation: 0, 'needs-review': 0, 'best-practice': 0 };
-  data.violations.forEach(v => { typeCounts[v.resultType] += v.nodes.length; });
+  const typeCounts: Record<AxeResultType, number> = { violation: 0, 'needs-review': 0, 'best-practice': 0, experimental: 0 };
+  data.violations.forEach(v => { typeCounts[v.resultType] = (typeCounts[v.resultType] || 0) + v.nodes.length; });
 
   let html = renderNavBar('Issues', true, 'Back');
 
@@ -60,6 +60,7 @@ export function renderAxeIssueList(data: AxeListData): string {
       ${resultTypeChip('violation', active.has('violation'), typeCounts.violation)}
       ${resultTypeChip('needs-review', active.has('needs-review'), typeCounts['needs-review'])}
       ${resultTypeChip('best-practice', active.has('best-practice'), typeCounts['best-practice'])}
+      ${typeCounts.experimental > 0 ? resultTypeChip('experimental', active.has('experimental'), typeCounts.experimental) : ''}
     </div>
   `;
 

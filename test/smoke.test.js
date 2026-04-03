@@ -122,8 +122,8 @@ async function run() {
     const chipCount = await page.evaluate(
       () => document.querySelectorAll('#a11y-analyzer-panel .result-type-chip').length
     );
-    if (chipCount < 3) {
-      fail(`Expected at least 3 result type chips, found ${chipCount}`);
+    if (chipCount < 3 || chipCount > 4) {
+      fail(`Expected 3-4 result type chips, found ${chipCount}`);
     }
     log(`Found ${chipCount} result type chips`);
 

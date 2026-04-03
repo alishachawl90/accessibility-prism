@@ -74,6 +74,7 @@ export const RESULT_TYPE = {
   violation:       { bg: '#FEF2F2', border: '#FCA5A5', text: '#991B1B', badge: '#DC2626', label: 'Violation', icon: '✕' },
   'needs-review':  { bg: '#FFFBEB', border: '#FDE68A', text: '#92400E', badge: '#B45309', label: 'Needs Review', icon: '?' },
   'best-practice': { bg: '#EFF6FF', border: '#BFDBFE', text: '#1E40AF', badge: '#1D4ED8', label: 'Best Practice', icon: '★' },
+  experimental:    { bg: '#F5F3FF', border: '#C4B5FD', text: '#6D28D9', badge: '#7C3AED', label: 'Experimental', icon: '⚗' },
 } as const;
 
 export function severityColor(sev: 'error' | 'warning' | 'info' | 'pass') {
