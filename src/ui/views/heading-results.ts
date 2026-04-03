@@ -104,7 +104,7 @@ export function attachHeadingListeners(
     onHighlight: (els: Element[]) => void;
   }
 ): void {
-  attachResultsPageListeners(container, {
+  const signal = attachResultsPageListeners(container, {
     onBack: actions.onBack,
     onHighlight: idx => {
       const issue = data.issues[idx];
@@ -118,5 +118,5 @@ export function attachHeadingListeners(
     const idx = parseInt(row.getAttribute('data-idx') || '0', 10);
     const heading = data.headings[idx];
     if (heading) actions.onHighlight([heading.element]);
-  });
+  }, { signal });
 }

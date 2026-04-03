@@ -9,6 +9,8 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "test:smoke": "node test/smoke.test.js",
+    "test:cards": "node test/card-expand.test.js",
+    "test": "node test/smoke.test.js && node test/card-expand.test.js",
     "icons": "node scripts/generate-icons.js"
   },
   "devDependencies": {

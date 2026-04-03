@@ -2,6 +2,8 @@ import { escHtml } from '../../utils/escape';
 import { SEV, BORDER, type SeverityKey } from '../tokens';
 import { ICON_CHEVRON_LEFT, ICON_CHEVRON_DOWN } from '../icons';
 
+let activeAbortController: AbortController | null = null;
+
 // ---------------------------------------------------------------------------
 // Config interfaces
 // ---------------------------------------------------------------------------
@@ -206,7 +208,11 @@ export function attachResultsPageListeners(
   container: HTMLElement,
   actions: ResultsPageActions,
   chipState?: { active: Set<string> }
-): void {
+): AbortSignal {
+  if (activeAbortController) activeAbortController.abort();
+  activeAbortController = new AbortController();
+  const { signal } = activeAbortController;
+
   container.addEventListener('click', (e) => {
     const target = e.target as HTMLElement;
 
@@ -262,7 +268,7 @@ export function attachResultsPageListeners(
         if (chevron) chevron.style.transform = isOpen ? '' : 'rotate(180deg)';
       }
     }
-  });
+  }, { signal });
 
   // Search input — debounced
   const searchInput = container.querySelector('.a11y-search-input') as HTMLInputElement;
@@ -271,6 +277,8 @@ export function attachResultsPageListeners(
     searchInput.addEventListener('input', () => {
       clearTimeout(debounceTimer);
       debounceTimer = setTimeout(() => actions.onSearchInput!(searchInput.value), 250);
-    });
+    }, { signal });
   }
+
+  return signal;
 }
