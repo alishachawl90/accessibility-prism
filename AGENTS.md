@@ -1,6 +1,6 @@
 # Accessibility Prism — Agent Handoff Documentation
 
-**Version:** 2.0.0  
+**Version:** 2.1.0  
 **Type:** Chrome Extension (content script + optional side panel)  
 **Stack:** TypeScript, Vite, axe-core, Playwright
 
@@ -116,7 +116,9 @@ src/
     ├── escape.ts                    HTML escaping
     ├── wcag-map.ts                  Rule → WCAG criterion mapping
     ├── html-report.ts              Downloadable HTML report
-    └── scorecard-report.ts         Scorecard HTML export
+    ├── scorecard-report.ts         Scorecard HTML export
+    ├── issue-knowledge.ts          Centralized WCAG/fix/impact knowledge per issue type
+    └── fix-suggestions.ts          Element-specific code fix generators
 ```
 
 ---
@@ -161,6 +163,15 @@ Shared UI components live in `results-template.ts`:
 **Phase 3 improvements:**
 - `component-flow-detail.ts` — merged separate "Tab Flow" and "Issues" sections into a single unified list. Each tab stop card now shows matching issues inline via `renderInlineIssue()` in `extraBodyHtml`, eliminating redundancy.
 - `keyboard-results.ts` — replaced flat `sectionWrap` divs with collapsible accordion groups (`renderSectionAccordion`) for all three group modes (By Type, By Region, By Component). Accordion toggle uses delegated click listener with `AbortSignal` for cleanup.
+- `live-region-results.ts` — redesigned with breakdown bar (assertive/polite/empty/healthy counts), severity filter chips, issues grouped by type in collapsible accordions (`lr-acc-header`/`lr-acc-body`), healthy regions collapsed by default. Uses `LrViewData` wrapper with `severityFilter` state managed in `panel.ts`.
+- `acc-name-results.ts` — entries grouped by status (Error/Warning/Pass) in collapsible section accordions (`an-acc-header`/`an-acc-body`). "Pass" chip defaults to OFF so users focus on issues first. Section borders color-coded by severity.
+- `axe-issue-list.ts` — fixed filter bug where result type, search, and WCAG filters were ignored in "By Region" and "By Component" group modes. Added `filterRegionViolations()` and extended `getSortedFilteredComponentGroups()` to apply all active filters.
+
+**Issue Knowledge System (Phase 3):**
+- `utils/issue-knowledge.ts` centralizes WCAG criterion, user impact statements, fix suggestions, and "learn more" links for all non-axe audit issue types.
+- Knowledge bases: `KB_KNOWLEDGE` (keyboard), `FORM_LABEL_KNOWLEDGE` (form labels), `ARIA_KNOWLEDGE` (ARIA validation), `CONTRAST_KNOWLEDGE` (color contrast).
+- `renderKnowledgeBlock(k)` generates a consistent HTML block shown in expanded issue cards across all views.
+- Integrated in: `keyboard-results.ts`, `form-labels-results.ts`, `aria-validation-results.ts`, `contrast-results.ts`.
 
 ---
 
@@ -196,7 +207,7 @@ Shared UI components live in `results-template.ts`:
 ```bash
 npm run build          # tsc && vite build → dist/content.js
 npm run dev:watch      # vite build --watch (auto-rebuild on save)
-npm test               # Playwright: 84 tests, 9 spec files
+npm test               # Playwright: 117 tests, 12 spec files
 npm run test:headed    # Playwright with visible browser
 npm run test:ui        # Playwright interactive UI
 npm run test:report    # Open HTML test report
@@ -226,13 +237,16 @@ test/
 └── specs/
     ├── panel-lifecycle.spec.js    Activate, collapse/expand, footer, buttons
     ├── axe-scan.spec.js           Full scan, chips, filters, details, back nav, search
+    ├── axe-group-filters.spec.js  Group mode switching (By Rule/Region/Component) + filter combos
     ├── card-expand.spec.js        Per-view + multi-view regression (AbortController fix)
     ├── structure-audits.spec.js   Headings, landmarks, reading order
-    ├── visual-audits.spec.js      Contrast, alt text, touch targets
-    ├── form-aria-audits.spec.js   Form labels, ARIA validation, acc names
-    ├── keyboard-audits.spec.js    Auto keyboard, focus management
+    ├── visual-audits.spec.js      Contrast, alt text, touch targets + knowledge blocks
+    ├── form-aria-audits.spec.js   Form labels, ARIA validation, acc names + knowledge blocks
+    ├── keyboard-audits.spec.js    Auto keyboard, focus management + knowledge blocks
     ├── advanced-features.spec.js  SR walkthrough, live regions, scorecard
-    └── scroll-navigation.spec.js  Scroll restore, back nav, severity chips, rapid nav
+    ├── scroll-navigation.spec.js  Scroll restore, back nav, severity chips, rapid nav
+    ├── component-flow.spec.js     Component flow list/detail, navigation, instance counts
+    └── remaining-coverage.spec.js Keyboard group tabs, chip toggles, highlight buttons
 ```
 
 ### Source → Spec Mapping
@@ -241,6 +255,7 @@ test/
 |----------------|-----------|
 | `panel.ts`, `pre-screen.ts` | `panel-lifecycle.spec.js` |
 | `axe-runner.ts`, `axe-issue-list.ts`, `axe-issue-details.ts` | `axe-scan.spec.js` |
+| `axe-issue-list.ts` (group modes, filter combos) | `axe-group-filters.spec.js` |
 | `results-template.ts` (AbortController) | `card-expand.spec.js` |
 | `heading-results.ts`, `landmark-results.ts`, `reading-order-results.ts` | `structure-audits.spec.js` |
 | `contrast-results.ts`, `alt-text-results.ts`, `touch-target-results.ts` | `visual-audits.spec.js` |
@@ -248,6 +263,8 @@ test/
 | `keyboard-results.ts`, `focus-mgmt-results.ts` | `keyboard-audits.spec.js` |
 | `sr-walkthrough.ts`, `live-region-results.ts`, `scorecard-results.ts` | `advanced-features.spec.js` |
 | `panel.ts` (scroll/nav), `results-template.ts` (chips) | `scroll-navigation.spec.js` |
+| `component-flow-list.ts`, `component-flow-detail.ts` | `component-flow.spec.js` |
+| Keyboard group tabs, chip toggles across views, highlight btns | `remaining-coverage.spec.js` |
 
 ### Test Fixtures API
 
@@ -305,3 +322,6 @@ test.describe('My Audit', () => {
 8. **Keyboard results use collapsible accordions (Phase 3)** — sections in all three group modes (By Type, By Region, By Component) are wrapped in `.kb-acc-header` / `.kb-acc-body` accordion elements. The expand/collapse listener uses the `AbortSignal` from `attachResultsPageListeners`.
 9. **Component flow detail merges steps + issues (Phase 3)** — no separate "Issues" section. Each tab stop card shows its matching issues inline via `extraBodyHtml` using `renderInlineIssue()`.
 10. **Live Regions view redesign** — issues grouped by type in collapsible accordions (`lr-acc-header`/`lr-acc-body`), severity filter chips, breakdown bar (assertive/polite/empty/healthy counts), healthy regions in collapsed accordion. Uses `LrViewData` wrapper with `severityFilter` state managed in `panel.ts`.
+11. **Accessible Names view redesign** — entries grouped by status (Error/Warning/Pass) in collapsible section accordions (`an-acc-header`/`an-acc-body`). "Pass" chip defaults to OFF. Section borders color-coded by severity.
+12. **Issue Knowledge blocks** — `utils/issue-knowledge.ts` provides centralized WCAG criterion mapping, plain-English user impact statements, fix suggestions, and "learn more" URLs for non-axe audits (Keyboard, Form Labels, ARIA, Contrast). Rendered via `renderKnowledgeBlock()` in expanded card `extraBodyHtml`.
+13. **Axe group mode filters** — "By Region" and "By Component" tabs now correctly apply result type chips, search query, and WCAG severity filters. Previously these tabs showed all unfiltered results.
