@@ -149,11 +149,11 @@ export function renderPreScreen(): string {
 
   html += `
     <div style="padding: 10px 16px !important; border-top: 1px solid #E5E7EB !important; background: #F9FAFB !important; display: flex !important; align-items: center !important; justify-content: center !important; gap: 6px !important; flex-shrink: 0 !important;">
-      <span style="font-size: 11px !important; color: #9CA3AF !important; line-height: 1.5 !important;">v2.0.0</span>
-      <span style="color: #D1D5DB !important;">·</span>
-      <span style="font-size: 11px !important; color: #9CA3AF !important; line-height: 1.5 !important;">Powered by axe-core + Prism Rules</span>
-      <span style="color: #D1D5DB !important;">·</span>
-      <span style="font-size: 11px !important; color: #9CA3AF !important; line-height: 1.5 !important;">Built by Madhur Batra</span>
+      <span style="font-size: 11px !important; color: #6B7280 !important; line-height: 1.5 !important;">v2.0.0</span>
+      <span style="color: #9CA3AF !important;">·</span>
+      <span style="font-size: 11px !important; color: #6B7280 !important; line-height: 1.5 !important;">Powered by axe-core + Prism Rules</span>
+      <span style="color: #9CA3AF !important;">·</span>
+      <span style="font-size: 11px !important; color: #6B7280 !important; line-height: 1.5 !important;">Built by Madhur Batra</span>
     </div>
   `;
 

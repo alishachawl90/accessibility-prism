@@ -192,7 +192,6 @@ export const PANEL_CSS = `
 
   /* Card body (collapsed by default) */
   .a11y-card-body {
-    display: none;
     padding: 10px 14px !important;
     border-top: 1px solid #F3F4F6 !important;
     background: #FAFAFA !important;

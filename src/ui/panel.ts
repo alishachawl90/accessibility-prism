@@ -347,12 +347,16 @@ export class FloatingPanel {
 
     this.lastRenderedView = this.currentView;
 
-    if (!this.collapsed) {
+    if (!this.collapsed && this.scrollPositions.has(this.currentView)) {
+      const savedScroll = this.scrollPositions.get(this.currentView)!;
+      const viewAtRestore = this.currentView;
+      // Double-rAF ensures layout is complete before restoring scroll position
       requestAnimationFrame(() => {
-        const scrollArea = this.container.querySelector('#scroll-area') as HTMLElement | null;
-        if (scrollArea && this.scrollPositions.has(this.currentView)) {
-          scrollArea.scrollTop = this.scrollPositions.get(this.currentView)!;
-        }
+        requestAnimationFrame(() => {
+          if (this.currentView !== viewAtRestore) return;
+          const scrollArea = this.container.querySelector('#scroll-area') as HTMLElement | null;
+          if (scrollArea) scrollArea.scrollTop = savedScroll;
+        });
       });
     }
   }

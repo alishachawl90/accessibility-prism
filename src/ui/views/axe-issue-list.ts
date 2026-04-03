@@ -67,7 +67,6 @@ export function renderAxeIssueList(data: AxeListData): string {
   const violationsByResultType = data.violations.filter(v => active.has(v.resultType));
   const visibleViolations = violationsByResultType.filter(v => filterImpact.has(normalizeImpactKey(v.impact)));
 
-  const totalNodes = violationsByResultType.reduce((sum, v) => sum + v.nodes.length, 0);
   const counts = { critical: 0, serious: 0, moderate: 0, minor: 0 };
   violationsByResultType.forEach(v => {
     const key = normalizeImpactKey(v.impact);
@@ -89,17 +88,7 @@ export function renderAxeIssueList(data: AxeListData): string {
     </div>
   `;
 
-  // Impact summary counts
-  html += `
-    <div style="padding: 10px 16px !important; background: white !important; border-bottom: 1px solid ${BORDER} !important; display: flex !important; gap: 14px !important; flex-wrap: wrap !important; font-size: 13px !important; font-weight: 600 !important; align-items: center !important;">
-      <span class="a11y-text-secondary">${totalNodes} total</span>
-      ${counts.critical > 0 ? `<span style="color: ${IMPACT.critical.badge} !important;">${counts.critical} Critical</span>` : ''}
-      ${counts.serious > 0 ? `<span style="color: ${IMPACT.serious.badge} !important;">${counts.serious} Serious</span>` : ''}
-      ${counts.moderate > 0 ? `<span style="color: ${IMPACT.moderate.badge} !important;">${counts.moderate} Moderate</span>` : ''}
-      ${counts.minor > 0 ? `<span style="color: ${IMPACT.minor.badge} !important;">${counts.minor} Minor</span>` : ''}
-    </div>
-  `;
-
+  // Impact filter chips
   html += `
     <div style="padding: 10px 16px !important; background: white !important; border-bottom: 1px solid ${BORDER} !important; display: flex !important; gap: 6px !important; flex-wrap: wrap !important;">
       ${impactFilterChip('critical', filterImpact.has('critical'), counts.critical)}

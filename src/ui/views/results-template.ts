@@ -189,7 +189,7 @@ export function renderIssueCard(config: IssueCardConfig): string {
         </div>
         <span class="a11y-card-chevron">${ICON_CHEVRON_DOWN}</span>
       </div>
-      <div class="a11y-card-body">
+      <div class="a11y-card-body" style="display: none !important;">
         <div class="a11y-code-block">${safeSel}</div>
         <div class="a11y-code-block" style="margin-bottom: 8px !important;">${safeSnip}</div>
         ${config.extraBodyHtml || ''}
