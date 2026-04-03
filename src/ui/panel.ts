@@ -125,7 +125,7 @@ export class FloatingPanel {
 
   // Screen reader analysis states
   private accNameResult: AccNameResult = { entries: [], issueCount: 0, warningCount: 0 };
-  private accNameSeverityFilter = new Set<string>(['error', 'warning', 'info']);
+  private accNameSeverityFilter = new Set<string>(['error', 'warning']);
   private accNameSearch = '';
   private ariaResult: AriaValidationResult = { issues: [], errorCount: 0, warningCount: 0 };
   private ariaSeverityFilter = new Set<string>(['error', 'warning', 'info']);
@@ -235,7 +235,7 @@ export class FloatingPanel {
 
   public updateAccNameResults(result: AccNameResult) {
     this.accNameResult = result;
-    this.accNameSeverityFilter = new Set(['error', 'warning', 'info']);
+    this.accNameSeverityFilter = new Set(['error', 'warning']);
     this.accNameSearch = '';
     this.currentView = 'acc-name-results';
     this.render();
