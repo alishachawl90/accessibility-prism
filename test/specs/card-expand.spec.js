@@ -60,6 +60,32 @@ test.describe('Card Expand / Collapse', () => {
     expect(after).toBe('block');
   });
 
+  test('landmark cards expand and collapse', async ({ panelPage }) => {
+    await navigateToView(panelPage, SEL.btnLandmarks);
+    const count = await panelPage.locator(SEL.issueCard).count();
+    test.skip(count === 0, 'No landmarks on test page');
+
+    const { before, after } = await expandFirstCard(panelPage);
+    expect(before).toBe('none');
+    expect(after).toBe('block');
+
+    const collapsed = await collapseFirstCard(panelPage);
+    expect(collapsed).toBe('none');
+  });
+
+  test('reading order cards expand and collapse', async ({ panelPage }) => {
+    await navigateToView(panelPage, SEL.btnReadingOrder);
+    const count = await panelPage.locator(SEL.issueCard).count();
+    test.skip(count === 0, 'No reading order items on test page');
+
+    const { before, after } = await expandFirstCard(panelPage);
+    expect(before).toBe('none');
+    expect(after).toBe('block');
+
+    const collapsed = await collapseFirstCard(panelPage);
+    expect(collapsed).toBe('none');
+  });
+
   test('[regression] expand works after navigating through multiple views', async ({ panelPage }) => {
     // Visit alt-text, expand + collapse a card, go back
     await navigateToView(panelPage, SEL.btnAltText);

@@ -9,7 +9,6 @@ test.describe('Heading Analysis', () => {
 
   test('detects heading hierarchy issues', async ({ panelPage }) => {
     await navigateToView(panelPage, SEL.btnHeadings);
-    // The test page has missing H1 and a skipped H2→H4 — should produce issue cards
     const cards = panelPage.locator(SEL.issueCard);
     expect(await cards.count()).toBeGreaterThan(0);
   });
@@ -36,16 +35,31 @@ test.describe('Heading Analysis', () => {
 });
 
 test.describe('Landmark Analysis', () => {
-  test('renders landmark nodes', async ({ panelPage }) => {
+  test('renders landmark cards', async ({ panelPage }) => {
     await navigateToView(panelPage, SEL.btnLandmarks);
-    const items = panelPage.locator(`${SEL.panel} .landmark-node`);
-    expect(await items.count()).toBeGreaterThan(0);
+    const cards = panelPage.locator(SEL.issueCard);
+    expect(await cards.count()).toBeGreaterThan(0);
   });
 
   test('shows landmark roles', async ({ panelPage }) => {
     await navigateToView(panelPage, SEL.btnLandmarks);
     const content = await panelPage.textContent(SEL.panel);
     expect(content).toMatch(/navigation|main|contentinfo|region/i);
+  });
+
+  test('landmark cards expand to show selector and snippet', async ({ panelPage }) => {
+    await navigateToView(panelPage, SEL.btnLandmarks);
+    const count = await panelPage.locator(SEL.issueCard).count();
+    test.skip(count === 0, 'No landmarks');
+    const { after } = await expandFirstCard(panelPage);
+    expect(after).toBe('block');
+  });
+
+  test('stats strip shows landmark and issue count', async ({ panelPage }) => {
+    await navigateToView(panelPage, SEL.btnLandmarks);
+    const stats = await panelPage.textContent(SEL.statsStrip);
+    expect(stats).toBeTruthy();
+    expect(stats).toMatch(/landmark/i);
   });
 
   test('back returns to pre-screen', async ({ panelPage }) => {
@@ -56,17 +70,31 @@ test.describe('Landmark Analysis', () => {
 });
 
 test.describe('Reading Order', () => {
-  test('renders reading order items', async ({ panelPage }) => {
+  test('renders reading order cards', async ({ panelPage }) => {
     await navigateToView(panelPage, SEL.btnReadingOrder);
-    // Reading order renders highlight buttons with data-idx inside listitem wrappers
-    const items = panelPage.locator(`${SEL.panel} [role="listitem"]`);
-    expect(await items.count()).toBeGreaterThan(0);
+    const cards = panelPage.locator(SEL.issueCard);
+    expect(await cards.count()).toBeGreaterThan(0);
   });
 
-  test('shows numbered sequence', async ({ panelPage }) => {
+  test('shows numbered sequence in badges', async ({ panelPage }) => {
     await navigateToView(panelPage, SEL.btnReadingOrder);
     const content = await panelPage.textContent(SEL.panel);
     expect(content).toContain('1');
+  });
+
+  test('reading order cards expand to show selector and snippet', async ({ panelPage }) => {
+    await navigateToView(panelPage, SEL.btnReadingOrder);
+    const count = await panelPage.locator(SEL.issueCard).count();
+    test.skip(count === 0, 'No reading order items');
+    const { after } = await expandFirstCard(panelPage);
+    expect(after).toBe('block');
+  });
+
+  test('stats strip shows element count', async ({ panelPage }) => {
+    await navigateToView(panelPage, SEL.btnReadingOrder);
+    const stats = await panelPage.textContent(SEL.statsStrip);
+    expect(stats).toBeTruthy();
+    expect(stats).toMatch(/element/i);
   });
 
   test('back returns to pre-screen', async ({ panelPage }) => {

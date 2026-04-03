@@ -1,83 +1,120 @@
-import type { LandmarkAnalysisResult } from '../../core/types';
+import type { LandmarkAnalysisResult, LandmarkIssue } from '../../core/types';
 import { escHtml } from '../../utils/escape';
-import { renderNavBar, hoverListeners } from './helpers';
+import { SEV, type SeverityKey } from '../tokens';
+import {
+  renderResultsPage,
+  renderIssueCard,
+  renderSeverityBadge,
+  getCssSelector,
+  getSnippet,
+  attachResultsPageListeners,
+} from './results-template';
 
 const ROLE_COLORS: Record<string, string> = {
   banner: '#6366F1', navigation: '#F59E0B', main: '#16A34A', complementary: '#7C3AED',
   contentinfo: '#0891B2', search: '#D97706', form: '#2563EB', region: '#6B7280',
 };
 
-export function renderLandmarkResults(data: LandmarkAnalysisResult): string {
-  let html = renderNavBar('Landmark Overview', true, 'Back');
+function renderLandmarkCards(landmarks: LandmarkAnalysisResult['landmarks'], startIdx: number): string {
+  return landmarks.map((lm, i) => {
+    const color = ROLE_COLORS[lm.role] || '#6B7280';
+    const idx = startIdx + i;
+    const labelLine = lm.label
+      ? escHtml(lm.label)
+      : `<span style="color: #6B7280 !important; font-style: italic !important;">no label</span>`;
+    const tagSnippet = `&lt;${escHtml(lm.element.tagName.toLowerCase())}&gt;`;
 
-  const issueCount = data.issues.length;
-  html += `
-    <div class="a11y-header-bar">
-      <span style="color: #1F2937;">${data.landmarks.length} landmark${data.landmarks.length !== 1 ? 's' : ''}</span>
-      <span style="color: ${issueCount > 0 ? '#EF4444' : '#16A34A'};">${issueCount} issue${issueCount !== 1 ? 's' : ''}</span>
-    </div>
-  `;
-
-  html += `<div id="scroll-area" class="a11y-scroll-area">`;
-
-  if (data.issues.length > 0) {
-    html += `<div style="margin-bottom: 16px;">
-      <div class="a11y-section-title">Issues</div>`;
-    data.issues.forEach((issue, idx) => {
-      const sevColor = issue.severity === 'error' ? '#EF4444' : issue.severity === 'warning' ? '#F59E0B' : '#60A5FA';
-      html += `
-        <div class="landmark-issue" data-idx="${idx}" class="a11y-card" style="border-left-color: ${sevColor} !important; ${issue.element ? 'cursor: pointer;' : ''} ">
-          <div class="a11y-card-header">
-            <span style="background: ${sevColor}; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;">${issue.severity === 'error' ? 'Error' : issue.severity === 'warning' ? 'Warning' : 'Info'}</span>
-          </div>
-          <p class="a11y-card-desc">${escHtml(issue.description)}</p>
-        </div>`;
+    return renderIssueCard({
+      idx,
+      borderColor: color,
+      badgeHtml: `<span class="a11y-badge" style="background: ${color} !important; color: white !important;">${escHtml(lm.role)}</span>`,
+      titleHtml: labelLine,
+      descriptionHtml: tagSnippet,
+      selector: getCssSelector(lm.element),
+      snippet: getSnippet(lm.element),
     });
-    html += `</div>`;
-  }
-
-  html += `<div class="a11y-section-title">Page Landmarks</div>`;
-
-  if (data.landmarks.length === 0) {
-    html += `<div class="a11y-empty-state">No landmarks found on this page.</div>`;
-  } else {
-    data.landmarks.forEach((lm, idx) => {
-      const color = ROLE_COLORS[lm.role] || '#6B7280';
-      html += `
-        <div class="landmark-node" data-idx="${idx}" class="a11y-card a11y-flex-center" style="border-left-color: ${color} !important; gap: 10px !important; cursor: pointer !important; margin-bottom: 6px !important;">
-          <span style="background: ${color}; color: white; padding: 3px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; flex-shrink: 0;">${escHtml(lm.role)}</span>
-          <span style="font-size: 13px; color: #1F2937; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1;">
-            ${lm.label ? escHtml(lm.label) : `<span style="color: #6B7280; font-style: italic;">no label</span>`}
-          </span>
-          <span style="font-size: 11px; color: #6B7280; flex-shrink: 0;">&lt;${escHtml(lm.element.tagName.toLowerCase())}&gt;</span>
-        </div>`;
-    });
-  }
-
-  html += `</div>`;
-  return html;
+  }).join('');
 }
 
-export function attachLandmarkListeners(container: HTMLElement, data: LandmarkAnalysisResult, actions: {
-  onBack: () => void;
-  onHighlight: (els: Element[]) => void;
-}): void {
-  container.querySelector('#btn-back')?.addEventListener('click', () => actions.onBack());
-
-  container.querySelectorAll('.landmark-node').forEach(el => {
-    el.addEventListener('click', () => {
-      const idx = parseInt(el.getAttribute('data-idx') || '0', 10);
-      const lm = data.landmarks[idx];
-      if (lm) actions.onHighlight([lm.element]);
+function renderIssueCards(issues: LandmarkIssue[]): string {
+  return issues.map((issue, idx) => {
+    const sev = issue.severity as SeverityKey;
+    const s = SEV[sev] || SEV.info;
+    return renderIssueCard({
+      idx,
+      borderColor: s.badge,
+      badgeHtml: renderSeverityBadge(issue.severity),
+      titleHtml: escHtml(issue.description),
+      selector: issue.element ? getCssSelector(issue.element) : '(page-level)',
+      snippet: issue.element ? getSnippet(issue.element) : '',
+      extraBodyHtml: issue.element
+        ? ''
+        : `<div style="font-size: 12px !important; color: #6B7280 !important; padding: 4px 0 !important;">Page-level structural issue</div>`,
     });
+  }).join('');
+}
+
+export function renderLandmarkResults(data: LandmarkAnalysisResult): string {
+  const issueCount = data.issues.length;
+  const errors = data.issues.filter(i => i.severity === 'error').length;
+  const warnings = data.issues.filter(i => i.severity === 'warning').length;
+  const infos = data.issues.filter(i => i.severity === 'info').length;
+
+  let bodyHtml = '';
+
+  if (issueCount > 0) {
+    bodyHtml += `
+      <div style="margin-bottom: 18px !important;">
+        <div style="padding: 8px 4px 10px !important; font-weight: 600 !important; font-size: 14px !important; color: #1F2937 !important; border-bottom: 1px solid #E5E7EB !important;">Issues (${issueCount})</div>
+        <div style="display: flex !important; flex-direction: column !important; gap: 8px !important; margin-top: 10px !important;">
+          ${renderIssueCards(data.issues)}
+        </div>
+      </div>`;
+  }
+
+  bodyHtml += `
+    <div style="margin-bottom: 18px !important;">
+      <div style="padding: 8px 4px 10px !important; font-weight: 600 !important; font-size: 14px !important; color: #1F2937 !important; border-bottom: 1px solid #E5E7EB !important;">Page Landmarks (${data.landmarks.length})</div>
+      <div style="display: flex !important; flex-direction: column !important; gap: 8px !important; margin-top: 10px !important;">
+        ${data.landmarks.length === 0
+          ? `<div style="text-align: center !important; padding: 20px !important; color: #6B7280 !important;">No landmarks found on this page.</div>`
+          : renderLandmarkCards(data.landmarks, data.issues.length)}
+      </div>
+    </div>`;
+
+  const stats: { label: string; value: string | number; color?: string }[] = [
+    { label: data.landmarks.length === 1 ? 'landmark' : 'landmarks', value: data.landmarks.length },
+    { label: issueCount === 1 ? 'issue' : 'issues', value: issueCount, color: issueCount > 0 ? '#EF4444' : '#16A34A' },
+  ];
+
+  if (errors > 0) stats.push({ label: 'Errors', value: errors, color: SEV.error.badge });
+  if (warnings > 0) stats.push({ label: 'Warnings', value: warnings, color: SEV.warning.badge });
+  if (infos > 0) stats.push({ label: 'Info', value: infos, color: SEV.info.badge });
+
+  return renderResultsPage({
+    title: 'Landmark Overview',
+    backLabel: 'Back',
+    stats,
+    bodyHtml,
+    emptyMessage: data.landmarks.length === 0 && issueCount === 0 ? 'No landmarks found.' : undefined,
   });
-  hoverListeners(container, '.landmark-node', '#6366F1');
+}
 
-  container.querySelectorAll('.landmark-issue').forEach(el => {
-    el.addEventListener('click', () => {
-      const idx = parseInt(el.getAttribute('data-idx') || '0', 10);
-      const issue = data.issues[idx];
-      if (issue?.element) actions.onHighlight([issue.element]);
-    });
+export function attachLandmarkListeners(
+  container: HTMLElement,
+  data: LandmarkAnalysisResult,
+  actions: { onBack: () => void; onHighlight: (els: Element[]) => void },
+): void {
+  const allItems = [
+    ...data.issues.map(i => i.element),
+    ...data.landmarks.map(l => l.element),
+  ];
+
+  attachResultsPageListeners(container, {
+    onBack: actions.onBack,
+    onHighlight: (idx) => {
+      const el = allItems[idx];
+      if (el) actions.onHighlight([el]);
+    },
   });
 }

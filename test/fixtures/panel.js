@@ -84,10 +84,9 @@ export async function navigateToView(page, buttonSelector, opts = {}) {
         panel.querySelector('.a11y-issue-card') ||
         panel.querySelector('.a11y-empty-success') ||
         panel.querySelector('.heading-node') ||
-        panel.querySelector('.landmark-item') ||
-        panel.querySelector('.wt-step') ||
-        panel.querySelector('.reading-item') ||
-        panel.querySelector('.grade-ring') ||
+        panel.querySelector('.landmark-node') ||
+        panel.querySelector('.wt-item') ||
+        panel.querySelector('.cat-card') ||
         panel.querySelector('#btn-back')
       );
     },

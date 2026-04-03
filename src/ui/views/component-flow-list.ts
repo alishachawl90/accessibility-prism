@@ -1,76 +1,77 @@
 import type { ComponentTabFlow } from '../../core/types';
 import { escHtml } from '../../utils/escape';
-import { renderNavBar, hoverListeners } from './helpers';
+import {
+  renderResultsPage,
+  renderIssueCard,
+  attachResultsPageListeners,
+} from './results-template';
 
 export function renderComponentFlowList(flows: ComponentTabFlow[]): string {
-  let html = renderNavBar('Component Keyboard Flows', true, 'Back');
+  const totalInstances = flows.reduce((s, f) => s + f.instances.length, 0);
+  const totalIssues = flows.reduce((s, f) => s + f.instances.reduce((si, inst) => si + inst.issues.length, 0), 0);
 
-  html += `
-    <div style="padding: 10px 16px; background: white; border-bottom: 1px solid #E5E7EB;">
-      <p style="margin: 0; font-size: 13px; color: #6B7280; line-height: 1.5;">
-        Select a component to inspect its keyboard tab flow, entry/exit points, and internal issues.
-      </p>
-    </div>
-  `;
+  const cardsHtml = flows.map((flow, idx) => {
+    const totalFocusable = flow.instances.reduce((s, inst) => s + inst.focusable.length, 0);
+    const flowIssues = flow.instances.reduce((s, inst) => s + inst.issues.length, 0);
+    const issueRatio = totalFocusable > 0 ? flowIssues / totalFocusable : 0;
 
-  html += `<div id="scroll-area" class="a11y-scroll-area">`;
+    let borderColor = '#16A34A';
+    if (issueRatio > 0.5) borderColor = '#EF4444';
+    else if (issueRatio > 0.25) borderColor = '#F59E0B';
+    else if (flowIssues > 0) borderColor = '#D97706';
 
-  if (flows.length === 0) {
-    html += `<div style="text-align: center; padding: 20px; color: #6B7280;">No focusable components detected.</div>`;
-  } else {
-    flows.forEach((flow, idx) => {
-      const totalFocusable = flow.instances.reduce((s, inst) => s + inst.focusable.length, 0);
-      const totalIssues = flow.instances.reduce((s, inst) => s + inst.issues.length, 0);
-      const issueRatio = totalFocusable > 0 ? totalIssues / totalFocusable : 0;
+    const badgeHtml = `
+      <span class="a11y-badge" style="background: ${borderColor} !important; color: white !important;">
+        ${flow.instances.length} inst
+      </span>`;
 
-      let borderColor = '#16A34A';
-      let bgColor = '#F0FDF4';
-      if (issueRatio > 0.5) { borderColor = '#EF4444'; bgColor = '#FEF2F2'; }
-      else if (issueRatio > 0.25) { borderColor = '#F59E0B'; bgColor = '#FFF7ED'; }
-      else if (totalIssues > 0) { borderColor = '#D97706'; bgColor = '#FFFBEB'; }
+    const pillsHtml = `
+      <div style="display: flex !important; gap: 6px !important; flex-wrap: wrap !important; margin-top: 4px !important;">
+        <span style="background: #EEF2FF !important; color: #6366F1 !important; padding: 2px 8px !important; border-radius: 12px !important; font-size: 11px !important; font-weight: 600 !important;">
+          ${totalFocusable} tab stop${totalFocusable !== 1 ? 's' : ''}
+        </span>
+        ${flowIssues > 0
+          ? `<span style="background: #FEF2F2 !important; color: #DC2626 !important; padding: 2px 8px !important; border-radius: 12px !important; font-size: 11px !important; font-weight: 600 !important;">${flowIssues} issue${flowIssues !== 1 ? 's' : ''}</span>`
+          : `<span style="background: #F0FDF4 !important; color: #15803D !important; padding: 2px 8px !important; border-radius: 12px !important; font-size: 11px !important; font-weight: 500 !important;">No issues</span>`
+        }
+      </div>`;
 
-      html += `
-        <div class="flow-card" data-idx="${idx}" style="background: white; border: 1px solid #E5E7EB; border-left: 4px solid ${borderColor}; border-radius: 8px; padding: 14px; margin-bottom: 10px; cursor: pointer; transition: border-color 0.15s, box-shadow 0.15s; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-            <span style="font-weight: 600; font-size: 14px; color: #1F2937;">${escHtml(flow.component.name)}</span>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6B7280" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
-          </div>
-          <div style="display: flex; gap: 10px; flex-wrap: wrap; font-size: 12px;">
-            <span style="background: #EEF2FF; color: #6366F1; padding: 2px 8px; border-radius: 12px; font-weight: 600;">
-              ${flow.instances.length} instance${flow.instances.length !== 1 ? 's' : ''}
-            </span>
-            <span style="background: #F5F3FF; color: #8B5CF6; padding: 2px 8px; border-radius: 12px; font-weight: 500;">
-              ${totalFocusable} tab stop${totalFocusable !== 1 ? 's' : ''}
-            </span>
-            ${totalIssues > 0 ? `
-              <span style="background: ${bgColor}; color: ${borderColor}; padding: 2px 8px; border-radius: 12px; font-weight: 600;">
-                ${totalIssues} issue${totalIssues !== 1 ? 's' : ''}
-              </span>
-            ` : `
-              <span style="background: #F0FDF4; color: #15803D; padding: 2px 8px; border-radius: 12px; font-weight: 500;">
-                No issues
-              </span>
-            `}
-          </div>
-        </div>
-      `;
+    return renderIssueCard({
+      idx,
+      borderColor,
+      badgeHtml,
+      titleHtml: escHtml(flow.component.name),
+      descriptionHtml: pillsHtml,
+      selector: `Component: ${escHtml(flow.component.name)}`,
+      snippet: `${flow.instances.length} instance(s), ${totalFocusable} focusable elements`,
     });
-  }
+  }).join('');
 
-  html += `</div>`;
-  return html;
+  const infoBanner = `
+    <div style="padding: 10px 16px !important; background: #EFF6FF !important; border-bottom: 1px solid #BFDBFE !important; font-size: 12px !important; color: #1E40AF !important; line-height: 1.5 !important; margin-bottom: 12px !important;">
+      Select a component to inspect its keyboard tab flow, entry/exit points, and internal issues.
+    </div>`;
+
+  return renderResultsPage({
+    title: 'Component Keyboard Flows',
+    backLabel: 'Back',
+    stats: [
+      { value: flows.length, label: flows.length === 1 ? 'component' : 'components' },
+      { value: totalInstances, label: 'instances' },
+      { value: totalIssues, label: totalIssues === 1 ? 'issue' : 'issues', color: totalIssues > 0 ? '#EF4444' : '#16A34A' },
+    ],
+    bodyHtml: flows.length === 0 ? '' : infoBanner + cardsHtml,
+    emptyMessage: flows.length === 0 ? 'No focusable components detected.' : undefined,
+  });
 }
 
-export function attachFlowListListeners(container: HTMLElement, _flows: ComponentTabFlow[], actions: {
-  onBack: () => void;
-  onSelectFlow: (idx: number) => void;
-}): void {
-  container.querySelector('#btn-back')?.addEventListener('click', () => actions.onBack());
-  container.querySelectorAll('.flow-card').forEach(el => {
-    el.addEventListener('click', () => {
-      const idx = parseInt(el.getAttribute('data-idx') || '0', 10);
-      actions.onSelectFlow(idx);
-    });
+export function attachFlowListListeners(
+  container: HTMLElement,
+  _flows: ComponentTabFlow[],
+  actions: { onBack: () => void; onSelectFlow: (idx: number) => void },
+): void {
+  attachResultsPageListeners(container, {
+    onBack: actions.onBack,
+    onHighlight: (idx) => actions.onSelectFlow(idx),
   });
-  hoverListeners(container, '.flow-card', '#6366F1');
 }

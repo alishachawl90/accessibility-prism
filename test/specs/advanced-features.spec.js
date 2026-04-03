@@ -9,12 +9,12 @@ test.describe('Screen Reader Walkthrough', () => {
 
   test('has prev/next navigation buttons', async ({ panelPage }) => {
     await navigateToView(panelPage, SEL.btnSrWalkthrough);
-    await expect(panelPage.locator(`${SEL.panel} #btn-wt-next`)).toBeAttached();
+    await expect(panelPage.locator(`${SEL.panel} [data-toolbar-action="wt-next"]`)).toBeAttached();
   });
 
   test('next button changes the active item highlight', async ({ panelPage }) => {
     await navigateToView(panelPage, SEL.btnSrWalkthrough);
-    const nextBtn = panelPage.locator(`${SEL.panel} #btn-wt-next`);
+    const nextBtn = panelPage.locator(`${SEL.panel} [data-toolbar-action="wt-next"]`);
     await expect(nextBtn).toBeVisible();
 
     // Get the current announcement text shown in the header area
