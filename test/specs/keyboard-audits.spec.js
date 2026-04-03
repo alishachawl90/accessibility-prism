@@ -47,6 +47,25 @@ test.describe('Auto Keyboard Analysis', () => {
     expect(after).toBe('block');
   });
 
+  test('expanded card shows WCAG info, user impact, and fix suggestion', async ({ panelPage }) => {
+    await navigateToView(panelPage, SEL.btnAutoKey);
+    const accHeaders = panelPage.locator('.kb-acc-header');
+    const accCount = await accHeaders.count();
+    test.skip(accCount === 0, 'No keyboard sections');
+
+    await accHeaders.first().click();
+    await panelPage.waitForTimeout(200);
+    await panelPage.click(SEL.cardHeader);
+    await panelPage.waitForTimeout(200);
+
+    const body = panelPage.locator(SEL.cardBody).first();
+    const text = await body.textContent();
+    expect(text).toContain('WCAG');
+    expect(text).toContain('User Impact');
+    expect(text).toContain('How to Fix');
+    expect(text).toContain('Learn more');
+  });
+
   test('back returns to pre-screen', async ({ panelPage }) => {
     await navigateToView(panelPage, SEL.btnAutoKey);
     await goBack(panelPage);

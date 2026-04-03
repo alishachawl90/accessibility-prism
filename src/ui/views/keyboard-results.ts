@@ -3,8 +3,9 @@ import { KB_TYPE_LABELS, KB_TYPE_PRIORITY, KB_PRIORITY_LABELS } from '../../core
 import { findRegionForElement } from '../../core/region-detection';
 import { escHtml } from '../../utils/escape';
 import { getElementContext } from '../../utils/wcag-map';
-import { SEV, PRIO } from '../tokens';
-import { ICON_CHEVRON_RIGHT } from '../icons';
+import { KB_KNOWLEDGE } from '../../utils/issue-knowledge';
+import { SEV, PRIO, LINK, WCAG_LEVEL } from '../tokens';
+import { ICON_CHEVRON_RIGHT, ICON_EXTERNAL } from '../icons';
 import {
   renderResultsPage,
   renderIssueCard,
@@ -102,6 +103,31 @@ function renderKbCardBadges(issue: KeyboardIssue): string {
     </div>`;
 }
 
+function renderKbKnowledgeBlock(issue: KeyboardIssue): string {
+  const k = KB_KNOWLEDGE[issue.type];
+  if (!k) return '';
+  const levelColor = WCAG_LEVEL[k.wcagLevel] || WCAG_LEVEL.A;
+  return `
+    <div style="margin-top: 10px !important; border-top: 1px solid #F3F4F6 !important; padding-top: 10px !important;">
+      <div style="display: flex !important; align-items: center !important; gap: 6px !important; margin-bottom: 8px !important; flex-wrap: wrap !important;">
+        <span style="background: ${levelColor} !important; color: white !important; padding: 2px 8px !important; border-radius: 4px !important; font-weight: 700 !important; font-size: 11px !important;">${k.wcagLevel}</span>
+        <span style="font-size: 12px !important; color: #4B5563 !important; font-weight: 500 !important;">WCAG ${k.wcag} — ${escHtml(k.wcagName)}</span>
+      </div>
+      <div style="background: #FEF2F2 !important; border: 1px solid #FECACA !important; border-radius: 6px !important; padding: 10px 12px !important; margin-bottom: 8px !important;">
+        <div style="font-size: 11px !important; font-weight: 600 !important; color: #991B1B !important; margin-bottom: 4px !important; text-transform: uppercase !important; letter-spacing: 0.3px !important;">User Impact</div>
+        <div style="font-size: 12px !important; color: #7F1D1D !important; line-height: 1.5 !important;">${escHtml(k.userImpact)}</div>
+      </div>
+      <div style="background: #F0FDF4 !important; border: 1px solid #BBF7D0 !important; border-radius: 6px !important; padding: 10px 12px !important; margin-bottom: 8px !important;">
+        <div style="font-size: 11px !important; font-weight: 600 !important; color: #166534 !important; margin-bottom: 4px !important; text-transform: uppercase !important; letter-spacing: 0.3px !important;">How to Fix</div>
+        <div style="font-size: 12px !important; color: #14532D !important; line-height: 1.5 !important;">${escHtml(k.fix)}</div>
+      </div>
+      <a href="${k.learnMoreUrl}" target="_blank" rel="noopener noreferrer" style="display: flex !important; align-items: center !important; gap: 6px !important; font-size: 12px !important; color: ${LINK} !important; text-decoration: none !important; font-weight: 500 !important;">
+        ${ICON_EXTERNAL}
+        Learn more — WCAG ${k.wcag}
+      </a>
+    </div>`;
+}
+
 function renderIssueCardsForIssues(issues: KeyboardIssue[], flatIssues: KeyboardIssue[]): string {
   return issues
     .map(issue => {
@@ -116,6 +142,7 @@ function renderIssueCardsForIssues(issues: KeyboardIssue[], flatIssues: Keyboard
         descriptionHtml: escHtml(truncate(issue.description, 220)),
         selector: getCssSelector(issue.element),
         snippet: getSnippet(issue.element),
+        extraBodyHtml: renderKbKnowledgeBlock(issue),
       });
     })
     .join('');
