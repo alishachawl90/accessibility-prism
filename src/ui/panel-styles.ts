@@ -157,6 +157,16 @@ export const PANEL_CSS = `
   .a11y-text-info { color: var(--color-info) !important; }
   .a11y-empty-success { text-align: center !important; padding: 24px !important; color: var(--color-success) !important; font-size: 14px !important; font-weight: 500 !important; }
   .a11y-empty-state { text-align: center !important; padding: 24px !important; color: var(--text-muted) !important; font-size: 14px !important; }
+
+  /* Loading spinner */
+  @keyframes a11y-spin { to { transform: rotate(360deg); } }
+  .a11y-spinner {
+    width: 36px !important; height: 36px !important;
+    border: 3px solid #E5E7EB !important;
+    border-top-color: #6366F1 !important;
+    border-radius: 50% !important;
+    animation: a11y-spin 0.7s linear infinite !important;
+  }
   .a11y-card-header { display: flex !important; align-items: center !important; gap: 8px !important; margin-bottom: 6px !important; }
   .a11y-card-desc { margin: 0 !important; font-size: 13px !important; color: var(--text-secondary) !important; line-height: 1.5 !important; }
   .a11y-card-title { font-size: 12px !important; font-weight: 600 !important; color: var(--text-secondary) !important; }

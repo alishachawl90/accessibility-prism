@@ -118,6 +118,8 @@ class A11yAnalyzer {
     this.dismissPicker();
     this.stopManualKeyboard();
     clearOverlay(this.overlaySvg);
+    this.panel.showLoading('Running automated tests…');
+    await new Promise(r => requestAnimationFrame(r));
 
     console.log('[A11yAnalyzer] Detecting components...');
     this.components = detectComponents();
@@ -138,6 +140,8 @@ class A11yAnalyzer {
   public async runAutoKeyboard() {
     this.stopManualKeyboard();
     clearOverlay(this.overlaySvg);
+    this.panel.showLoading('Analyzing keyboard accessibility…');
+    await new Promise(r => requestAnimationFrame(r));
 
     console.log('[A11yAnalyzer] Detecting components...');
     this.components = detectComponents();
@@ -314,6 +318,8 @@ class A11yAnalyzer {
 
   public async runScopedAxe(root: Element) {
     this.stopManualKeyboard();
+    this.panel.showLoading('Scanning selected region…');
+    await new Promise(r => requestAnimationFrame(r));
 
     console.log('[A11yAnalyzer] Running scoped axe-core on:', root);
     this.components = detectComponents();
@@ -329,6 +335,8 @@ class A11yAnalyzer {
     this.dismissPicker();
     this.stopManualKeyboard();
     clearOverlay(this.overlaySvg);
+    this.panel.showLoading('Running full scorecard…');
+    await new Promise(r => requestAnimationFrame(r));
     console.log('[A11yAnalyzer] Running full scorecard...');
     const result = await runFullScorecard();
     this.latestScorecard = result;

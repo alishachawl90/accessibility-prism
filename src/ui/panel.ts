@@ -164,6 +164,17 @@ export class FloatingPanel {
 
   public getScopeElement(): Element | null { return this.scopeElement; }
 
+  public showLoading(label: string) {
+    const scrollArea = this.container.querySelector('#scroll-area');
+    if (!scrollArea) return;
+    scrollArea.innerHTML = `
+      <div style="display: flex !important; flex-direction: column !important; align-items: center !important; justify-content: center !important; padding: 60px 20px !important; gap: 16px !important;">
+        <div class="a11y-spinner"></div>
+        <span style="font-size: 14px !important; color: #6B7280 !important; font-weight: 500 !important;">${label}</span>
+      </div>
+    `;
+  }
+
   public updateAxeResults(violations: AxeViolation[], components: Map<string, ComponentCluster>, dedupedIssues: ComponentIssue[], regions: PageRegion[]) {
     this.violations = violations;
     this.components = components;
@@ -367,7 +378,7 @@ export class FloatingPanel {
       <div id="panel-header" style="padding: 14px 16px !important; background: ${HEADER_BG} !important; color: white !important; display: flex !important; align-items: center !important; justify-content: space-between !important; cursor: pointer !important; border-radius: ${this.collapsed ? '12px' : '12px 12px 0 0'} !important; user-select: none !important;">
         <div style="display: flex !important; align-items: center !important; gap: 8px !important;">
           <span style="font-weight: 700 !important; font-size: 15px !important; letter-spacing: 0.2px !important; color: white !important;">Accessibility Prism</span>
-          <span style="background: rgba(255,255,255,0.25) !important; padding: 2px 8px !important; border-radius: 4px !important; font-size: 11px !important; font-weight: 700 !important; color: white !important; line-height: 1.5 !important;">v1</span>
+          <span style="background: rgba(255,255,255,0.25) !important; padding: 2px 8px !important; border-radius: 4px !important; font-size: 11px !important; font-weight: 700 !important; color: white !important; line-height: 1.5 !important;">v2</span>
         </div>
         <div style="display: flex !important; align-items: center !important; gap: 4px !important;">
           <button id="btn-export" title="Download accessibility report" style="background: rgba(255,255,255,0.1) !important; border: 1px solid rgba(255,255,255,0.2) !important; border-radius: 6px !important; width: 30px !important; height: 30px !important; display: flex !important; align-items: center !important; justify-content: center !important; cursor: pointer !important; color: rgba(255,255,255,0.85) !important; transition: all 0.15s;"
