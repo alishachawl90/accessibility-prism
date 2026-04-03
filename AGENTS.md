@@ -158,6 +158,10 @@ Shared UI components live in `results-template.ts`:
 **All views now use the shared template (Phase 2 complete).** Views that needed custom interactions
 (component-flow prev/next, sr-walkthrough nav) use `toolbarHtml` + `onToolbarAction` callbacks.
 
+**Phase 3 improvements:**
+- `component-flow-detail.ts` — merged separate "Tab Flow" and "Issues" sections into a single unified list. Each tab stop card now shows matching issues inline via `renderInlineIssue()` in `extraBodyHtml`, eliminating redundancy.
+- `keyboard-results.ts` — replaced flat `sectionWrap` divs with collapsible accordion groups (`renderSectionAccordion`) for all three group modes (By Type, By Region, By Component). Accordion toggle uses delegated click listener with `AbortSignal` for cleanup.
+
 ---
 
 ## How To: Common Tasks
@@ -192,7 +196,7 @@ Shared UI components live in `results-template.ts`:
 ```bash
 npm run build          # tsc && vite build → dist/content.js
 npm run dev:watch      # vite build --watch (auto-rebuild on save)
-npm test               # Playwright: 80 tests, 9 spec files
+npm test               # Playwright: 81 tests, 9 spec files
 npm run test:headed    # Playwright with visible browser
 npm run test:ui        # Playwright interactive UI
 npm run test:report    # Open HTML test report
@@ -298,3 +302,5 @@ test.describe('My Audit', () => {
 5. **`index.html` is a deliberate "bad a11y" fixture page** — it has missing alt text, bad contrast, unlabeled forms, ARIA misuse, small touch targets, etc. for comprehensive test coverage.
 6. **All views unified (Phase 2)** — every view now uses `renderResultsPage` + `renderIssueCard` + `attachResultsPageListeners`. Views with custom navigation (component-flow prev/next, sr-walkthrough) use `toolbarHtml` + `onToolbarAction`. No more hand-built HTML or per-element listeners in any view file.
 7. **Only `axe-issue-list.ts` and `axe-issue-details.ts` remain specialized** — they have unique rule-card grouping and occurrence-level detail that doesn't fit the generic template.
+8. **Keyboard results use collapsible accordions (Phase 3)** — sections in all three group modes (By Type, By Region, By Component) are wrapped in `.kb-acc-header` / `.kb-acc-body` accordion elements. The expand/collapse listener uses the `AbortSignal` from `attachResultsPageListeners`.
+9. **Component flow detail merges steps + issues (Phase 3)** — no separate "Issues" section. Each tab stop card shows its matching issues inline via `extraBodyHtml` using `renderInlineIssue()`.
