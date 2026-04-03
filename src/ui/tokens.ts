@@ -3,6 +3,7 @@ export const SEV = {
   error:   { bg: '#FEF2F2', border: '#FCA5A5', text: '#B91C1C', badge: '#DC2626', label: 'Error' },
   warning: { bg: '#FFFBEB', border: '#FDE68A', text: '#92400E', badge: '#B45309', label: 'Warning' },
   info:    { bg: '#EFF6FF', border: '#BFDBFE', text: '#1E40AF', badge: '#1D4ED8', label: 'Info' },
+  pass:    { bg: '#F0FDF4', border: '#BBF7D0', text: '#166534', badge: '#16A34A', label: 'Pass' },
 } as const;
 
 export type SeverityKey = keyof typeof SEV;
@@ -75,7 +76,7 @@ export const RESULT_TYPE = {
   'best-practice': { bg: '#EFF6FF', border: '#BFDBFE', text: '#1E40AF', badge: '#1D4ED8', label: 'Best Practice', icon: '★' },
 } as const;
 
-export function severityColor(sev: 'error' | 'warning' | 'info') {
+export function severityColor(sev: 'error' | 'warning' | 'info' | 'pass') {
   return SEV[sev];
 }
 

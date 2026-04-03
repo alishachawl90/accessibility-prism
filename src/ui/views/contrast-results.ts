@@ -1,67 +1,111 @@
 import type { ContrastIssue } from '../../core/types';
 import { escHtml } from '../../utils/escape';
-import { renderNavBar, hoverListeners } from './helpers';
+import {
+  renderResultsPage,
+  renderIssueCard,
+  getCssSelector,
+  getSnippet,
+  attachResultsPageListeners,
+} from './results-template';
 
-export function renderContrastResults(issues: ContrastIssue[]): string {
-  let html = renderNavBar('Color Contrast', true, 'Back');
+const AA_FAIL_BORDER = '#EF4444';
+const AAA_ONLY_FAIL_BORDER = '#F97316';
 
-  const aaFails = issues.filter(i => !i.passesAA).length;
-  html += `
-    <div class="a11y-header-bar">
-      <span style="color: #1F2937;">${issues.length} issue${issues.length !== 1 ? 's' : ''}</span>
-      <span style="color: #DC2626;">${aaFails} AA failure${aaFails !== 1 ? 's' : ''}</span>
-    </div>
-  `;
-
-  html += `<div id="scroll-area" class="a11y-scroll-area">`;
-
-  if (issues.length === 0) {
-    html += `<div style="text-align: center; padding: 24px; color: #15803D; font-size: 14px; font-weight: 500;">All text passes AA contrast requirements.</div>`;
-  } else {
-    issues.forEach((issue, idx) => {
-      const sevColor = !issue.passesAA ? '#EF4444' : '#F97316';
-      html += `
-        <div class="contrast-card" data-idx="${idx}" style="background: white; border: 1px solid #E5E7EB; border-left: 3px solid ${sevColor}; border-radius: 8px; padding: 14px; margin-bottom: 8px; cursor: pointer; transition: border-color 0.15s; box-shadow: 0 1px 2px rgba(0,0,0,0.04);">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-            <span style="font-size: 13px; font-weight: 500; color: #1F2937; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1;">"${escHtml(issue.text)}"</span>
-            <span style="background: ${sevColor}12; color: ${sevColor}; padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; flex-shrink: 0; margin-left: 8px;">${issue.ratio}:1</span>
-          </div>
-          <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 8px;">
-            <div style="display: flex; align-items: center; gap: 6px;">
-              <span style="display: inline-block; width: 18px; height: 18px; border-radius: 4px; background: ${issue.foreground}; border: 1px solid #E5E7EB;"></span>
-              <span style="font-size: 11px; color: #6B7280; font-family: monospace;">${issue.foreground}</span>
-            </div>
-            <span style="color: #6B7280; font-size: 11px;">on</span>
-            <div style="display: flex; align-items: center; gap: 6px;">
-              <span style="display: inline-block; width: 18px; height: 18px; border-radius: 4px; background: ${issue.background}; border: 1px solid #E5E7EB;"></span>
-              <span style="font-size: 11px; color: #6B7280; font-family: monospace;">${issue.background}</span>
-            </div>
-          </div>
-          <div style="display: flex; gap: 8px; font-size: 11px;">
-            <span style="color: ${!issue.passesAA ? '#EF4444' : '#15803D'}; font-weight: 600;">${!issue.passesAA ? '&#10007;' : '&#10003;'} AA (${issue.requiredAA}:1)</span>
-            <span style="color: ${!issue.passesAAA ? '#EF4444' : '#15803D'}; font-weight: 600;">${!issue.passesAAA ? '&#10007;' : '&#10003;'} AAA (${issue.requiredAAA}:1)</span>
-            <span style="color: #6B7280;">${Math.round(issue.fontSize)}px${issue.isBold ? ' bold' : ''}${issue.isLargeText ? ' (large)' : ''}</span>
-          </div>
-        </div>`;
-    });
-  }
-
-  html += `</div>`;
-  return html;
+function contrastBorderColor(issue: ContrastIssue): string {
+  if (!issue.passesAA) return AA_FAIL_BORDER;
+  return AAA_ONLY_FAIL_BORDER;
 }
 
-export function attachContrastListeners(container: HTMLElement, issues: ContrastIssue[], actions: {
-  onBack: () => void;
-  onHighlight: (els: Element[]) => void;
-}): void {
-  container.querySelector('#btn-back')?.addEventListener('click', () => actions.onBack());
+function renderRatioBadge(issue: ContrastIssue): string {
+  const sevColor = contrastBorderColor(issue);
+  return `<span style="background: ${sevColor}12; color: ${sevColor}; padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; flex-shrink: 0;">${issue.ratio}:1</span>`;
+}
 
-  container.querySelectorAll('.contrast-card').forEach(el => {
-    el.addEventListener('click', () => {
-      const idx = parseInt(el.getAttribute('data-idx') || '0', 10);
+function renderContrastExtraBody(issue: ContrastIssue): string {
+  const fg = escHtml(issue.foreground);
+  const bg = escHtml(issue.background);
+  const aaOk = issue.passesAA;
+  const aaaOk = issue.passesAAA;
+  const aaColor = aaOk ? '#15803D' : '#EF4444';
+  const aaaColor = aaaOk ? '#15803D' : '#EF4444';
+  const aaMark = aaOk ? '&#10003;' : '&#10007;';
+  const aaaMark = aaaOk ? '&#10003;' : '&#10007;';
+  const meta = `${Math.round(issue.fontSize)}px${issue.isBold ? ' bold' : ''}${issue.isLargeText ? ' (large)' : ''}`;
+
+  return `
+    <div style="display: flex !important; gap: 8px !important; align-items: center !important; margin-bottom: 8px !important;">
+      <div style="display: flex !important; align-items: center !important; gap: 6px !important;">
+        <span style="display: inline-block !important; width: 18px !important; height: 18px !important; border-radius: 4px !important; background: ${issue.foreground} !important; border: 1px solid #E5E7EB !important;"></span>
+        <span style="font-size: 11px !important; color: #6B7280 !important; font-family: monospace !important;">${fg}</span>
+      </div>
+      <span style="color: #6B7280 !important; font-size: 11px !important;">on</span>
+      <div style="display: flex !important; align-items: center !important; gap: 6px !important;">
+        <span style="display: inline-block !important; width: 18px !important; height: 18px !important; border-radius: 4px !important; background: ${issue.background} !important; border: 1px solid #E5E7EB !important;"></span>
+        <span style="font-size: 11px !important; color: #6B7280 !important; font-family: monospace !important;">${bg}</span>
+      </div>
+    </div>
+    <div style="display: flex !important; gap: 8px !important; font-size: 11px !important; flex-wrap: wrap !important;">
+      <span style="color: ${aaColor} !important; font-weight: 600 !important;">${aaMark} AA (${issue.requiredAA}:1)</span>
+      <span style="color: ${aaaColor} !important; font-weight: 600 !important;">${aaaMark} AAA (${issue.requiredAAA}:1)</span>
+      <span style="color: #6B7280 !important;">${escHtml(meta)}</span>
+    </div>`;
+}
+
+export function renderContrastResults(issues: ContrastIssue[]): string {
+  const aaFails = issues.filter(i => !i.passesAA).length;
+  const stats = [
+    {
+      label: issues.length === 1 ? 'issue' : 'issues',
+      value: issues.length,
+      color: '#1F2937',
+    },
+    {
+      label: aaFails === 1 ? 'AA failure' : 'AA failures',
+      value: aaFails,
+      color: '#DC2626',
+    },
+  ];
+
+  let bodyHtml = '';
+  if (issues.length > 0) {
+    bodyHtml = issues
+      .map((issue, idx) =>
+        renderIssueCard({
+          idx,
+          borderColor: contrastBorderColor(issue),
+          badgeHtml: renderRatioBadge(issue),
+          titleHtml: `"${escHtml(issue.text)}"`,
+          selector: getCssSelector(issue.element),
+          snippet: getSnippet(issue.element),
+          extraBodyHtml: renderContrastExtraBody(issue),
+        })
+      )
+      .join('');
+  }
+
+  return renderResultsPage({
+    title: 'Color Contrast',
+    backLabel: 'Back',
+    stats,
+    bodyHtml,
+    emptyMessage:
+      issues.length === 0 ? 'All text passes AA contrast requirements.' : undefined,
+  });
+}
+
+export function attachContrastListeners(
+  container: HTMLElement,
+  issues: ContrastIssue[],
+  actions: {
+    onBack: () => void;
+    onHighlight: (els: Element[]) => void;
+  }
+): void {
+  attachResultsPageListeners(container, {
+    onBack: actions.onBack,
+    onHighlight: (idx) => {
       const issue = issues[idx];
       if (issue) actions.onHighlight([issue.element]);
-    });
+    },
   });
-  hoverListeners(container, '.contrast-card', '#6366F1');
 }

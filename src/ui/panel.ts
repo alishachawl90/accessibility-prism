@@ -113,12 +113,15 @@ export class FloatingPanel {
   private liveRegionData: LiveRegionResult = { regions: [], issues: [] };
   private touchTargetIssues: TouchTargetIssue[] = [];
   private altTextIssues: AltTextIssue[] = [];
+  private altTextSeverityFilter = new Set<string>(['error', 'warning', 'info']);
+  private formLabelsSeverityFilter = new Set<string>(['error', 'warning', 'info']);
 
   // Screen reader analysis states
   private accNameResult: AccNameResult = { entries: [], issueCount: 0, warningCount: 0 };
-  private accNameFilter: 'all' | 'errors' | 'warnings' = 'all';
+  private accNameSeverityFilter = new Set<string>(['error', 'warning', 'info']);
   private accNameSearch = '';
   private ariaResult: AriaValidationResult = { issues: [], errorCount: 0, warningCount: 0 };
+  private ariaSeverityFilter = new Set<string>(['error', 'warning', 'info']);
   private formLabelsResult: FormLabelsResult = { issues: [], totalControls: 0, labeledControls: 0 };
   private walkthroughEntries: AccNameEntry[] = [];
   private walkthroughIndex = 0;
@@ -218,13 +221,14 @@ export class FloatingPanel {
 
   public updateAltTextResults(issues: AltTextIssue[]) {
     this.altTextIssues = issues;
+    this.altTextSeverityFilter = new Set(['error', 'warning', 'info']);
     this.currentView = 'alt-text-results';
     this.render();
   }
 
   public updateAccNameResults(result: AccNameResult) {
     this.accNameResult = result;
-    this.accNameFilter = 'all';
+    this.accNameSeverityFilter = new Set(['error', 'warning', 'info']);
     this.accNameSearch = '';
     this.currentView = 'acc-name-results';
     this.render();
@@ -232,12 +236,14 @@ export class FloatingPanel {
 
   public updateAriaResults(result: AriaValidationResult) {
     this.ariaResult = result;
+    this.ariaSeverityFilter = new Set(['error', 'warning', 'info']);
     this.currentView = 'aria-validation-results';
     this.render();
   }
 
   public updateFormLabelsResults(result: FormLabelsResult) {
     this.formLabelsResult = result;
+    this.formLabelsSeverityFilter = new Set(['error', 'warning', 'info']);
     this.currentView = 'form-labels-results';
     this.render();
   }
@@ -417,10 +423,10 @@ export class FloatingPanel {
       case 'focus-mgmt-results': return renderFocusMgmtResults(this.focusMgmtIssues);
       case 'live-region-results': return renderLiveRegionResults(this.liveRegionData);
       case 'touch-target-results': return renderTouchTargetResults(this.touchTargetIssues);
-      case 'alt-text-results': return renderAltTextResults(this.altTextIssues);
+      case 'alt-text-results': return renderAltTextResults(this.altTextIssues, this.altTextSeverityFilter);
       case 'acc-name-results': return renderAccNameResults(this.getAccNameData());
-      case 'aria-validation-results': return renderAriaResults(this.ariaResult);
-      case 'form-labels-results': return renderFormLabelsResults(this.formLabelsResult);
+      case 'aria-validation-results': return renderAriaResults(this.ariaResult, this.ariaSeverityFilter);
+      case 'form-labels-results': return renderFormLabelsResults(this.formLabelsResult, this.formLabelsSeverityFilter);
       case 'sr-walkthrough': return renderSrWalkthrough(this.getWalkthroughData());
       case 'reading-order': return renderReadingOrderResults(this.readingOrderEntries);
       case 'scorecard': return this.scorecardData ? renderScorecardResults(this.scorecardData) : renderPreScreen();
@@ -555,28 +561,74 @@ export class FloatingPanel {
         break;
 
       case 'alt-text-results':
-        attachAltTextListeners(this.container, this.altTextIssues, { onBack: backToHome, onHighlight: highlight });
+        attachAltTextListeners(
+          this.container,
+          this.altTextIssues,
+          {
+            onBack: backToHome,
+            onHighlight: highlight,
+            onSeverityChange: next => {
+              this.altTextSeverityFilter = next;
+              this.render();
+            },
+          },
+          this.altTextSeverityFilter,
+        );
         break;
 
       case 'acc-name-results':
         attachAccNameListeners(this.container, this.getAccNameData(), {
-          onBack: backToHome, onHighlight: highlight,
-          onFilterChange: (search, filter) => {
-            this.accNameSearch = search; this.accNameFilter = filter;
-            const cursorPos = (this.container.querySelector('#filter-search') as HTMLInputElement)?.selectionStart ?? search.length;
+          onBack: backToHome,
+          onHighlight: highlight,
+          onSeverityChange: next => {
+            this.accNameSeverityFilter = next;
             this.render();
-            const input = this.container.querySelector('#filter-search') as HTMLInputElement;
-            if (input) { input.focus(); input.setSelectionRange(cursorPos, cursorPos); }
+          },
+          onSearchInput: value => {
+            this.accNameSearch = value;
+            const cursorPos =
+              (this.container.querySelector('.a11y-search-input') as HTMLInputElement)?.selectionStart ??
+              value.length;
+            this.render();
+            const input = this.container.querySelector('.a11y-search-input') as HTMLInputElement;
+            if (input) {
+              input.focus();
+              input.setSelectionRange(cursorPos, cursorPos);
+            }
           },
         });
         break;
 
       case 'aria-validation-results':
-        attachAriaListeners(this.container, this.ariaResult, { onBack: backToHome, onHighlight: highlight });
+        attachAriaListeners(
+          this.container,
+          this.ariaResult,
+          {
+            onBack: backToHome,
+            onHighlight: highlight,
+            onSeverityChange: next => {
+              this.ariaSeverityFilter = next;
+              this.render();
+            },
+          },
+          this.ariaSeverityFilter,
+        );
         break;
 
       case 'form-labels-results':
-        attachFormLabelsListeners(this.container, this.formLabelsResult, { onBack: backToHome, onHighlight: highlight });
+        attachFormLabelsListeners(
+          this.container,
+          this.formLabelsResult,
+          {
+            onBack: backToHome,
+            onHighlight: highlight,
+            onSeverityChange: next => {
+              this.formLabelsSeverityFilter = next;
+              this.render();
+            },
+          },
+          this.formLabelsSeverityFilter,
+        );
         break;
 
       case 'sr-walkthrough':
@@ -619,7 +671,11 @@ export class FloatingPanel {
   }
 
   private getAccNameData(): AccNameData {
-    return { result: this.accNameResult, filter: this.accNameFilter, searchQuery: this.accNameSearch };
+    return {
+      result: this.accNameResult,
+      searchQuery: this.accNameSearch,
+      activeSeverities: this.accNameSeverityFilter,
+    };
   }
 
   private getWalkthroughData(): WalkthroughData {

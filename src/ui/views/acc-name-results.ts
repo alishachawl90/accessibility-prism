@@ -1,119 +1,190 @@
 import type { AccNameEntry, AccNameResult } from '../../core/types';
 import { escHtml } from '../../utils/escape';
-import { renderNavBar, hoverListeners } from './helpers';
-import { BORDER } from '../tokens';
-
-type FilterMode = 'all' | 'errors' | 'warnings';
+import { SEV, type SeverityKey } from '../tokens';
+import {
+  renderResultsPage,
+  renderIssueCard,
+  renderSeverityBadge,
+  getCssSelector,
+  getSnippet,
+  attachResultsPageListeners,
+} from './results-template';
 
 export interface AccNameData {
   result: AccNameResult;
-  filter: FilterMode;
   searchQuery: string;
+  /** Chip keys: `error`, `warning`, `info` (passing entries use the `info` chip). */
+  activeSeverities: Set<string>;
 }
 
-function getFilteredEntries(data: AccNameData): AccNameEntry[] {
+function entrySeverity(entry: AccNameEntry): 'error' | 'warning' | 'pass' {
+  return entry.severity || 'pass';
+}
+
+/** Maps entry severity to severity chip key (`pass` → `info` for chip row). */
+function entryChipKey(entry: AccNameEntry): 'error' | 'warning' | 'info' {
+  const s = entrySeverity(entry);
+  if (s === 'error') return 'error';
+  if (s === 'warning') return 'warning';
+  return 'info';
+}
+
+function getFilteredAccNameEntries(data: AccNameData): AccNameEntry[] {
   let entries = data.result.entries;
 
-  if (data.filter === 'errors') entries = entries.filter(e => e.severity === 'error');
-  else if (data.filter === 'warnings') entries = entries.filter(e => e.severity === 'error' || e.severity === 'warning');
+  entries = entries.filter(e => data.activeSeverities.has(entryChipKey(e)));
 
   if (data.searchQuery) {
     const q = data.searchQuery.toLowerCase();
-    entries = entries.filter(e =>
-      e.role.toLowerCase().includes(q) ||
-      e.name.toLowerCase().includes(q) ||
-      (e.announcement || '').toLowerCase().includes(q) ||
-      e.element.tagName.toLowerCase().includes(q)
+    entries = entries.filter(
+      e =>
+        e.role.toLowerCase().includes(q) ||
+        e.name.toLowerCase().includes(q) ||
+        (e.announcement || '').toLowerCase().includes(q) ||
+        e.element.tagName.toLowerCase().includes(q)
     );
   }
   return entries;
 }
 
-export function renderAccNameResults(data: AccNameData): string {
-  let html = renderNavBar('Accessible Names', true, 'Back');
-
-  const total = data.result.entries.length;
-  const errors = data.result.issueCount;
-  const warnings = data.result.warningCount;
-  const pass = total - errors - warnings;
-
-  html += `
-    <div class="a11y-header-bar">
-      <span class="a11y-text-secondary">${total} elements</span>
-      ${errors > 0 ? `<span class="a11y-text-error">${errors} missing name</span>` : ''}
-      ${warnings > 0 ? `<span class="a11y-text-warning">${warnings} warnings</span>` : ''}
-      <span class="a11y-text-success">${pass} pass</span>
-    </div>
-  `;
-
-  html += `
-    <div style="padding: 8px 16px !important; background: white !important; border-bottom: 1px solid ${BORDER} !important; display: flex !important; gap: 8px !important; align-items: center !important;">
-      <input type="text" id="accname-search" value="${escHtml(data.searchQuery)}" placeholder="Filter by role, name, tag..." style="flex: 1 !important; min-width: 0 !important; padding: 6px 10px !important; border: 1px solid #D1D5DB !important; border-radius: 6px !important; font-size: 12px !important; color: #1F2937 !important; background: white !important; outline: none !important;" />
-      <select id="accname-filter" style="width: 110px !important; padding: 6px !important; border: 1px solid #D1D5DB !important; border-radius: 6px !important; font-size: 12px !important; background: white !important; color: #374151 !important; cursor: pointer !important;">
-        <option value="all" ${data.filter === 'all' ? 'selected' : ''}>All</option>
-        <option value="errors" ${data.filter === 'errors' ? 'selected' : ''}>Errors only</option>
-        <option value="warnings" ${data.filter === 'warnings' ? 'selected' : ''}>Issues</option>
-      </select>
-    </div>
-  `;
-
-  const filtered = getFilteredEntries(data);
-  html += `<div id="scroll-area" class="a11y-scroll-area">`;
-
-  if (filtered.length === 0) {
-    html += `<div style="text-align: center !important; padding: 24px !important; color: #15803D !important; font-size: 14px !important;">No issues found.</div>`;
-  } else {
-    filtered.forEach((entry, idx) => {
-      const sev = entry.severity || 'pass';
-      const borderColor = sev === 'error' ? '#EF4444' : sev === 'warning' ? '#F59E0B' : '#16A34A';
-      const tag = entry.element.tagName.toLowerCase();
-      const sevLabel = sev === 'error' ? 'Missing Name' : sev === 'warning' ? 'Warning' : 'Pass';
-      const sevBg = sev === 'error' ? '#EF4444' : sev === 'warning' ? '#F59E0B' : '#16A34A';
-
-      html += `
-        <div class="accname-card" data-idx="${idx}" class="a11y-card" style="border-left-color: ${borderColor} !important; cursor: pointer !important;">
-          <div class="a11y-card-header">
-            <span class="a11y-badge-sm" style="background: ${sevBg} !important; color: white !important;">${sevLabel}</span>
-            <code style="font-size: 11px !important; color: #6366F1 !important; background: #EEF2FF !important; padding: 1px 6px !important; border-radius: 3px !important; font-family: ui-monospace, SFMono-Regular, Menlo, monospace !important;">${entry.role || tag}</code>
-            <code style="font-size: 11px !important; color: #6B7280 !important; font-family: ui-monospace, SFMono-Regular, Menlo, monospace !important;">&lt;${escHtml(tag)}&gt;</code>
-          </div>
-          <div style="font-size: 13px !important; color: #1F2937 !important; margin-bottom: 4px !important;">
-            <span style="color: #6B7280 !important; font-size: 11px !important;">Announcement:</span>
-            <span style="font-weight: 500 !important;">${escHtml(entry.announcement || '(empty)')}</span>
-          </div>
-          ${entry.states.length > 0 ? `<div style="font-size: 11px !important; color: #6B7280 !important;">States: ${escHtml(entry.states.join(', '))}</div>` : ''}
-          ${entry.ariaHidden ? '<div style="font-size: 11px !important; color: #DC2626 !important;">aria-hidden="true"</div>' : ''}
-        </div>
-      `;
-    });
-  }
-  html += `</div>`;
-  return html;
+function sevBorder(sev: 'error' | 'warning' | 'pass'): string {
+  const s = SEV[sev as SeverityKey];
+  return s?.border ?? '#D1D5DB';
 }
 
-export function attachAccNameListeners(container: HTMLElement, data: AccNameData, actions: {
-  onBack: () => void;
-  onHighlight: (els: Element[]) => void;
-  onFilterChange: (search: string, filter: FilterMode) => void;
-}): void {
-  container.querySelector('#btn-back')?.addEventListener('click', () => actions.onBack());
+function badgeLabel(sev: 'error' | 'warning' | 'pass'): string {
+  if (sev === 'error') return 'Missing Name';
+  if (sev === 'warning') return 'Warning';
+  return 'Pass';
+}
 
-  const searchInput = container.querySelector('#accname-search') as HTMLInputElement;
-  const filterSelect = container.querySelector('#accname-filter') as HTMLSelectElement;
+function renderAccNameExtra(entry: AccNameEntry): string {
+  const parts: string[] = [];
+  parts.push(
+    `<div style="font-size: 12px !important; color: #1F2937 !important; margin-bottom: 6px !important;"><span style="color: #6B7280 !important;">Accessible name:</span> <span style="font-weight: 500 !important;">${escHtml(entry.name)}</span></div>`
+  );
+  parts.push(
+    `<div style="font-size: 12px !important; color: #1F2937 !important; margin-bottom: 6px !important;"><span style="color: #6B7280 !important;">Announcement:</span> <span style="font-weight: 500 !important;">${escHtml(entry.announcement || '(empty)')}</span></div>`
+  );
+  if (entry.states.length > 0) {
+    parts.push(
+      `<div style="font-size: 11px !important; color: #6B7280 !important;">States: ${escHtml(entry.states.join(', '))}</div>`
+    );
+  }
+  if (entry.ariaHidden) {
+    parts.push(`<div style="font-size: 11px !important; color: #DC2626 !important;">aria-hidden="true"</div>`);
+  }
+  return parts.join('');
+}
 
-  const emitChange = () => {
-    actions.onFilterChange(searchInput?.value || '', (filterSelect?.value || 'all') as FilterMode);
-  };
-  searchInput?.addEventListener('input', emitChange);
-  filterSelect?.addEventListener('change', emitChange);
+export function renderAccNameResults(data: AccNameData): string {
+  const entries = data.result.entries;
+  const total = entries.length;
+  const errorCount = entries.filter(e => entrySeverity(e) === 'error').length;
+  const warningCount = entries.filter(e => entrySeverity(e) === 'warning').length;
+  const passCount = entries.filter(e => entrySeverity(e) === 'pass').length; // shown under `info` chip
 
-  const filtered = getFilteredEntries(data);
-  container.querySelectorAll('.accname-card').forEach(el => {
-    el.addEventListener('click', () => {
-      const idx = parseInt(el.getAttribute('data-idx') || '0', 10);
-      const entry = filtered[idx];
-      if (entry) actions.onHighlight([entry.element]);
+  const stats: { label: string; value: string | number; color?: string }[] = [
+    { label: total === 1 ? 'element' : 'elements', value: total },
+  ];
+  if (errorCount > 0) {
+    stats.push({
+      label: errorCount === 1 ? 'missing name' : 'missing names',
+      value: errorCount,
+      color: SEV.error.text,
     });
+  }
+  if (warningCount > 0) {
+    stats.push({
+      label: warningCount === 1 ? 'warning' : 'warnings',
+      value: warningCount,
+      color: SEV.warning.text,
+    });
+  }
+  if (passCount > 0) {
+    stats.push({
+      label: passCount === 1 ? 'pass' : 'passes',
+      value: passCount,
+      color: SEV.pass.text,
+    });
+  }
+
+  const filtered = getFilteredAccNameEntries(data);
+
+  const bodyHtml =
+    filtered.length > 0
+      ? filtered
+          .map((entry, idx) => {
+            const sev = entrySeverity(entry);
+            const tag = entry.element.tagName.toLowerCase();
+            const roleOrTag = entry.role || tag;
+            const titleHtml = `<span style="font-family: ui-monospace, SFMono-Regular, Menlo, monospace !important;"><code style="font-size: 11px !important; color: #6366F1 !important; background: #EEF2FF !important; padding: 1px 6px !important; border-radius: 3px !important;">${escHtml(roleOrTag)}</code> <code style="font-size: 11px !important; color: #6B7280 !important;">&lt;${escHtml(tag)}&gt;</code></span>`;
+            const desc =
+              entry.name.length > 120 ? entry.name.substring(0, 120) + '…' : entry.name;
+            const descriptionHtml = `<span style="color: #6B7280 !important;">Name:</span> ${escHtml(desc)}`;
+            return renderIssueCard({
+              idx,
+              borderColor: sevBorder(sev),
+              badgeHtml: renderSeverityBadge(sev, badgeLabel(sev)),
+              titleHtml,
+              descriptionHtml,
+              selector: getCssSelector(entry.element),
+              snippet: getSnippet(entry.element),
+              extraBodyHtml: renderAccNameExtra(entry),
+            });
+          })
+          .join('')
+      : '';
+
+  let emptyMessage: string | undefined;
+  if (total === 0) {
+    emptyMessage = 'No elements found.';
+  } else if (filtered.length === 0) {
+    emptyMessage = 'No entries match the current filters.';
+  }
+
+  return renderResultsPage({
+    title: 'Accessible Names',
+    stats,
+    chips: {
+      levels: [
+        { key: 'error', count: errorCount },
+        { key: 'warning', count: warningCount },
+        { key: 'info', count: passCount, label: 'Pass' },
+      ],
+      active: data.activeSeverities,
+    },
+    search: {
+      value: data.searchQuery,
+      placeholder: 'Filter by role, name, tag, announcement…',
+    },
+    bodyHtml,
+    emptyMessage,
   });
-  hoverListeners(container, '.accname-card', '#6366F1');
+}
+
+export function attachAccNameListeners(
+  container: HTMLElement,
+  data: AccNameData,
+  actions: {
+    onBack: () => void;
+    onHighlight: (els: Element[]) => void;
+    onSeverityChange?: (next: Set<string>) => void;
+    onSearchInput?: (value: string) => void;
+  }
+): void {
+  attachResultsPageListeners(
+    container,
+    {
+      onBack: actions.onBack,
+      onHighlight: idx => {
+        const filtered = getFilteredAccNameEntries(data);
+        const entry = filtered[idx];
+        if (entry) actions.onHighlight([entry.element]);
+      },
+      onSeverityChange: actions.onSeverityChange,
+      onSearchInput: actions.onSearchInput,
+    },
+    { active: data.activeSeverities }
+  );
 }

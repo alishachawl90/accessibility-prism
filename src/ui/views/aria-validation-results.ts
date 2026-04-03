@@ -1,6 +1,15 @@
 import type { AriaValidationResult, AriaIssue } from '../../core/types';
 import { escHtml } from '../../utils/escape';
-import { renderNavBar, hoverListeners } from './helpers';
+import { SEV, type SeverityKey } from '../tokens';
+import {
+  renderResultsPage,
+  renderIssueCard,
+  renderSeverityBadge,
+  getCssSelector,
+  getSnippet,
+  attachResultsPageListeners,
+} from './results-template';
+
 const TYPE_LABELS: Record<string, string> = {
   'invalid-role': 'Invalid Role',
   'redundant-role': 'Redundant Role',
@@ -12,69 +21,106 @@ const TYPE_LABELS: Record<string, string> = {
   'positive-tabindex': 'Positive Tabindex',
 };
 
-export function renderAriaResults(result: AriaValidationResult): string {
-  let html = renderNavBar('ARIA Validation', true, 'Back');
+function vis(issues: AriaIssue[], active: Set<string>): AriaIssue[] {
+  return issues.filter(i => active.has(i.severity));
+}
 
-  html += `
-    <div class="a11y-header-bar">
-      <span class="a11y-text-secondary">${result.issues.length} issue${result.issues.length !== 1 ? 's' : ''}</span>
-      ${result.errorCount > 0 ? `<span class="a11y-text-error">${result.errorCount} Error${result.errorCount !== 1 ? 's' : ''}</span>` : ''}
-      ${result.warningCount > 0 ? `<span class="a11y-text-warning">${result.warningCount} Warning${result.warningCount !== 1 ? 's' : ''}</span>` : ''}
-      ${result.issues.length - result.errorCount - result.warningCount > 0 ? `<span class="a11y-text-info">${result.issues.length - result.errorCount - result.warningCount} Info</span>` : ''}
-    </div>
-  `;
+function sevBorder(sev: AriaIssue['severity']): string {
+  const s = SEV[sev as SeverityKey];
+  return s?.badge ?? '#6B7280';
+}
 
-  html += `<div id="scroll-area" class="a11y-scroll-area">`;
+export function renderAriaResults(result: AriaValidationResult, activeSevs: Set<string>): string {
+  const { issues, errorCount, warningCount } = result;
+  const infoCount = issues.length - errorCount - warningCount;
 
-  if (result.issues.length === 0) {
-    html += `<div style="text-align: center !important; padding: 24px !important; color: #16A34A !important; font-size: 14px !important; font-weight: 500 !important;">No ARIA issues found. Well done!</div>`;
-  } else {
-    const grouped = new Map<string, AriaIssue[]>();
-    result.issues.forEach(issue => {
-      const key = issue.type;
-      if (!grouped.has(key)) grouped.set(key, []);
-      grouped.get(key)!.push(issue);
+  const stats: { label: string; value: string | number; color?: string }[] = [
+    { label: issues.length === 1 ? 'issue' : 'issues', value: issues.length, color: '#1F2937' },
+  ];
+  if (errorCount > 0) {
+    stats.push({
+      label: errorCount === 1 ? 'Error' : 'Errors',
+      value: errorCount,
+      color: SEV.error.badge,
     });
-
-    let cardIdx = 0;
-    grouped.forEach((issues, type) => {
-      const label = TYPE_LABELS[type] || type;
-      const sevColor = issues[0].severity === 'error' ? '#EF4444' : issues[0].severity === 'warning' ? '#F59E0B' : '#60A5FA';
-
-      html += `<div style="font-size: 12px !important; font-weight: 600 !important; color: ${sevColor} !important; margin: 12px 0 6px 0 !important; display: flex !important; align-items: center !important; gap: 6px !important;">
-        <span>${escHtml(label)}</span>
-        <span style="background: ${sevColor}14 !important; color: ${sevColor} !important; padding: 1px 8px !important; border-radius: 10px !important; font-size: 11px !important;">${issues.length}</span>
-      </div>`;
-
-      issues.forEach(issue => {
-        const tag = issue.element.tagName.toLowerCase();
-        html += `
-          <div class="aria-card" data-idx="${cardIdx}" style="background: white !important; border: 1px solid #E5E7EB !important; border-left: 3px solid ${sevColor} !important; border-radius: 8px !important; padding: 12px 14px !important; margin-bottom: 6px !important; cursor: pointer !important; transition: border-color 0.15s !important; box-shadow: 0 1px 2px rgba(0,0,0,0.04) !important;">
-            <p class="a11y-card-desc">${escHtml(issue.description)}</p>
-            <code style="font-size: 11px !important; color: #6B7280 !important; margin-top: 4px !important; display: block !important; font-family: ui-monospace, SFMono-Regular, Menlo, monospace !important;">&lt;${escHtml(tag)}${issue.element.id ? ` id="${escHtml(issue.element.id)}"` : ''}${issue.element.getAttribute('role') ? ` role="${escHtml(issue.element.getAttribute('role')!)}"` : ''}&gt;</code>
-          </div>
-        `;
-        cardIdx++;
-      });
+  }
+  if (warningCount > 0) {
+    stats.push({
+      label: warningCount === 1 ? 'Warning' : 'Warnings',
+      value: warningCount,
+      color: SEV.warning.badge,
+    });
+  }
+  if (infoCount > 0) {
+    stats.push({
+      label: 'info',
+      value: infoCount,
+      color: SEV.info.badge,
     });
   }
 
-  html += `</div>`;
-  return html;
+  if (issues.length === 0) {
+    return renderResultsPage({
+      title: 'ARIA Validation',
+      backLabel: 'Back',
+      stats,
+      bodyHtml: '',
+      emptyMessage: 'No ARIA issues found. Well done!',
+    });
+  }
+
+  const filtered = vis(issues, activeSevs);
+  const bodyHtml = !filtered.length
+    ? '<div class="a11y-empty-state">No issues match the selected filters.</div>'
+    : filtered
+        .map((issue, idx) => {
+          const title = TYPE_LABELS[issue.type] || issue.type;
+          return renderIssueCard({
+            idx,
+            borderColor: sevBorder(issue.severity),
+            badgeHtml: renderSeverityBadge(issue.severity),
+            titleHtml: escHtml(title),
+            descriptionHtml: escHtml(issue.description),
+            selector: getCssSelector(issue.element),
+            snippet: getSnippet(issue.element),
+          });
+        })
+        .join('');
+
+  const levels = (['error', 'warning', 'info'] as const)
+    .map(k => ({ key: k, count: issues.filter(i => i.severity === k).length }))
+    .filter(l => l.count > 0);
+
+  return renderResultsPage({
+    title: 'ARIA Validation',
+    backLabel: 'Back',
+    stats,
+    chips: levels.length ? { levels, active: activeSevs } : undefined,
+    bodyHtml,
+  });
 }
 
-export function attachAriaListeners(container: HTMLElement, result: AriaValidationResult, actions: {
-  onBack: () => void;
-  onHighlight: (els: Element[]) => void;
-}): void {
-  container.querySelector('#btn-back')?.addEventListener('click', () => actions.onBack());
-
-  container.querySelectorAll('.aria-card').forEach(el => {
-    el.addEventListener('click', () => {
-      const idx = parseInt(el.getAttribute('data-idx') || '0', 10);
-      const issue = result.issues[idx];
-      if (issue) actions.onHighlight([issue.element]);
-    });
-  });
-  hoverListeners(container, '.aria-card', '#6366F1');
+export function attachAriaListeners(
+  container: HTMLElement,
+  result: AriaValidationResult,
+  actions: {
+    onBack: () => void;
+    onHighlight: (els: Element[]) => void;
+    onSeverityChange?: (next: Set<string>) => void;
+  },
+  activeSevs: Set<string>,
+): void {
+  const filtered = vis(result.issues, activeSevs);
+  attachResultsPageListeners(
+    container,
+    {
+      onBack: actions.onBack,
+      onHighlight: idx => {
+        const issue = filtered[idx];
+        if (issue) actions.onHighlight([issue.element]);
+      },
+      onSeverityChange: actions.onSeverityChange,
+    },
+    { active: activeSevs },
+  );
 }

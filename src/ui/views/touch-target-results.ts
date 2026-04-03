@@ -1,6 +1,14 @@
 import type { TouchTargetIssue } from '../../core/types';
 import { escHtml } from '../../utils/escape';
-import { renderNavBar, hoverListeners } from './helpers';
+import { SEV } from '../tokens';
+import {
+  renderResultsPage,
+  renderIssueCard,
+  renderSeverityBadge,
+  getCssSelector,
+  getSnippet,
+  attachResultsPageListeners,
+} from './results-template';
 
 function getContext(el: Element): string {
   const tag = el.tagName.toLowerCase();
@@ -9,58 +17,71 @@ function getContext(el: Element): string {
   return ariaLabel || text || tag;
 }
 
-export function renderTouchTargetResults(issues: TouchTargetIssue[]): string {
-  let html = renderNavBar('Touch Targets', true, 'Back');
-
-  const aaFails = issues.filter(i => i.level === 'AA').length;
-  const aaaFails = issues.filter(i => i.level === 'AAA').length;
-  html += `
-    <div class="a11y-header-bar">
-      <span style="color: #1F2937;">${issues.length} undersized</span>
-      ${aaFails > 0 ? `<span style="color: #DC2626;">${aaFails} below 24px (AA)</span>` : ''}
-      ${aaaFails > 0 ? `<span style="color: #B45309;">${aaaFails} below 44px (AAA)</span>` : ''}
-    </div>
-  `;
-
-  html += `<div id="scroll-area" class="a11y-scroll-area">`;
-
-  if (issues.length === 0) {
-    html += `<div style="text-align: center; padding: 24px; color: #16A34A; font-size: 14px; font-weight: 500;">All interactive elements meet touch target size requirements.</div>`;
-  } else {
-    issues.forEach((issue, idx) => {
-      const sevColor = issue.severity === 'error' ? '#EF4444' : '#F59E0B';
-      const context = getContext(issue.element);
-      html += `
-        <div class="touch-card" data-idx="${idx}" style="background: white; border: 1px solid #E5E7EB; border-left: 3px solid ${sevColor}; border-radius: 8px; padding: 14px; margin-bottom: 8px; cursor: pointer; transition: border-color 0.15s; box-shadow: 0 1px 2px rgba(0,0,0,0.04);">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-            <span style="font-size: 13px; font-weight: 500; color: #1F2937; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1;">${escHtml(context)}</span>
-            <span style="background: ${sevColor}12; color: ${sevColor}; padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; flex-shrink: 0; margin-left: 8px;">${issue.width}x${issue.height}px</span>
-          </div>
-          <div style="display: flex; gap: 8px; align-items: center; font-size: 12px;">
-            <span style="color: ${sevColor}; font-weight: 600;">${issue.level}</span>
-            <span style="color: #6B7280;">Min: ${issue.minRequired}x${issue.minRequired}px</span>
-            <span style="color: #6B7280;">&lt;${escHtml(issue.element.tagName.toLowerCase())}&gt;</span>
-          </div>
-        </div>`;
-    });
-  }
-
-  html += `</div>`;
-  return html;
+function touchTargetBorderColor(issue: TouchTargetIssue): string {
+  return SEV[issue.severity].badge;
 }
 
-export function attachTouchTargetListeners(container: HTMLElement, issues: TouchTargetIssue[], actions: {
-  onBack: () => void;
-  onHighlight: (els: Element[]) => void;
-}): void {
-  container.querySelector('#btn-back')?.addEventListener('click', () => actions.onBack());
+function renderTouchTargetDescription(issue: TouchTargetIssue): string {
+  const line = `Actual: ${issue.width}×${issue.height}px · Minimum required: ${issue.minRequired}×${issue.minRequired}px · WCAG ${issue.level}`;
+  return escHtml(line);
+}
 
-  container.querySelectorAll('.touch-card').forEach(el => {
-    el.addEventListener('click', () => {
-      const idx = parseInt(el.getAttribute('data-idx') || '0', 10);
+export function renderTouchTargetResults(issues: TouchTargetIssue[]): string {
+  const aaFails = issues.filter(i => i.level === 'AA').length;
+  const aaaFails = issues.filter(i => i.level === 'AAA').length;
+
+  const stats: { label: string; value: string | number; color?: string }[] = [
+    { label: 'undersized', value: issues.length, color: '#1F2937' },
+  ];
+  if (aaFails > 0) {
+    stats.push({ label: 'below 24px (AA)', value: aaFails, color: '#DC2626' });
+  }
+  if (aaaFails > 0) {
+    stats.push({ label: 'below 44px (AAA)', value: aaaFails, color: '#B45309' });
+  }
+
+  let bodyHtml = '';
+  if (issues.length > 0) {
+    bodyHtml = issues
+      .map((issue, idx) =>
+        renderIssueCard({
+          idx,
+          borderColor: touchTargetBorderColor(issue),
+          badgeHtml: renderSeverityBadge(issue.severity),
+          titleHtml: escHtml(getContext(issue.element)),
+          descriptionHtml: renderTouchTargetDescription(issue),
+          selector: getCssSelector(issue.element),
+          snippet: getSnippet(issue.element),
+        })
+      )
+      .join('');
+  }
+
+  return renderResultsPage({
+    title: 'Touch Targets',
+    backLabel: 'Back',
+    stats,
+    bodyHtml,
+    emptyMessage:
+      issues.length === 0
+        ? 'All interactive elements meet touch target size requirements.'
+        : undefined,
+  });
+}
+
+export function attachTouchTargetListeners(
+  container: HTMLElement,
+  issues: TouchTargetIssue[],
+  actions: {
+    onBack: () => void;
+    onHighlight: (els: Element[]) => void;
+  }
+): void {
+  attachResultsPageListeners(container, {
+    onBack: actions.onBack,
+    onHighlight: idx => {
       const issue = issues[idx];
       if (issue) actions.onHighlight([issue.element]);
-    });
+    },
   });
-  hoverListeners(container, '.touch-card', '#6366F1');
 }

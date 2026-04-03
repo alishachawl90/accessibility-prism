@@ -1,7 +1,15 @@
 import type { FormLabelsResult } from '../../core/types';
 import { escHtml } from '../../utils/escape';
-import { renderNavBar, hoverListeners } from './helpers';
-import { BORDER } from '../tokens';
+import { SEV } from '../tokens';
+import {
+  renderResultsPage,
+  renderIssueCard,
+  renderSeverityBadge,
+  getCssSelector,
+  getSnippet,
+  attachResultsPageListeners,
+  type ResultsPageConfig,
+} from './results-template';
 
 const TYPE_LABELS: Record<string, string> = {
   'missing-label': 'No Label',
@@ -11,62 +19,57 @@ const TYPE_LABELS: Record<string, string> = {
   'ungrouped-radio': 'Ungrouped Radio/Checkbox',
 };
 
-export function renderFormLabelsResults(result: FormLabelsResult): string {
-  let html = renderNavBar('Form Labels Audit', true, 'Back');
+const vis = (issues: FormLabelsResult['issues'], active: Set<string>) => issues.filter(i => active.has(i.severity));
 
-  const coverage = result.totalControls > 0 ? Math.round((result.labeledControls / result.totalControls) * 100) : 100;
-  const errors = result.issues.filter(i => i.severity === 'error').length;
-  const warnings = result.issues.filter(i => i.severity === 'warning').length;
-  const coverageColor = coverage >= 90 ? '#15803D' : coverage >= 70 ? '#F59E0B' : '#EF4444';
-
-  html += `
-    <div style="padding: 12px 16px !important; background: white !important; border-bottom: 1px solid ${BORDER} !important; display: flex !important; gap: 16px !important; font-size: 13px !important; font-weight: 600 !important; align-items: center !important; flex-wrap: wrap !important;">
-      <span class="a11y-text-secondary">${result.totalControls} controls</span>
-      <span style="color: ${coverageColor} !important;">${coverage}% labeled</span>
-      ${errors > 0 ? `<span class="a11y-text-error">${errors} Error${errors !== 1 ? 's' : ''}</span>` : ''}
-      ${warnings > 0 ? `<span class="a11y-text-warning">${warnings} Warning${warnings !== 1 ? 's' : ''}</span>` : ''}
-    </div>
-  `;
-
-  html += `<div id="scroll-area" class="a11y-scroll-area">`;
-
-  if (result.issues.length === 0) {
-    html += `<div class="a11y-empty-success">All form controls are properly labeled!</div>`;
-  } else {
-    result.issues.forEach((issue, idx) => {
-      const sevColor = issue.severity === 'error' ? '#EF4444' : issue.severity === 'warning' ? '#F59E0B' : '#60A5FA';
-      const sevLabel = issue.severity === 'error' ? 'Error' : issue.severity === 'warning' ? 'Warning' : 'Info';
-      const typeLabel = TYPE_LABELS[issue.type] || issue.type;
-
-      html += `
-        <div class="form-card" data-idx="${idx}" class="a11y-card" style="border-left-color: ${sevColor} !important; cursor: pointer !important;">
-          <div class="a11y-card-header">
-            <span class="a11y-badge-sm" style="background: ${sevColor} !important; color: white !important;">${sevLabel}</span>
-            <span class="a11y-card-title">${escHtml(typeLabel)}</span>
-            <code class="a11y-code">${escHtml(issue.fieldType)}</code>
-          </div>
-          <p class="a11y-card-desc">${escHtml(issue.description.substring(0, 180))}${issue.description.length > 180 ? '...' : ''}</p>
-        </div>
-      `;
-    });
+export function renderFormLabelsResults(result: FormLabelsResult, activeSevs: Set<string>): string {
+  const { issues, totalControls, labeledControls } = result;
+  const pct = totalControls ? Math.round((labeledControls / totalControls) * 100) : 100;
+  const covCol = pct >= 90 ? '#15803D' : pct >= 70 ? '#F59E0B' : '#EF4444';
+  const err = issues.filter(i => i.severity === 'error').length;
+  const warn = issues.filter(i => i.severity === 'warning').length;
+  const stats: ResultsPageConfig['stats'] = [
+    { label: 'controls', value: totalControls, color: '#374151' },
+    { label: 'labeled', value: `${pct}%`, color: covCol },
+    ...(err ? [{ label: err === 1 ? 'Error' : 'Errors', value: err, color: SEV.error.badge }] : []),
+    ...(warn ? [{ label: warn === 1 ? 'Warning' : 'Warnings', value: warn, color: SEV.warning.badge }] : []),
+  ];
+  if (!issues.length) {
+    return renderResultsPage({ title: 'Form Labels Audit', stats, bodyHtml: '', emptyMessage: 'All form controls are properly labeled!' });
   }
-
-  html += `</div>`;
-  return html;
+  const levels = (['error', 'warning', 'info'] as const)
+    .map(k => ({ key: k, count: issues.filter(i => i.severity === k).length }))
+    .filter(l => l.count);
+  const fil = vis(issues, activeSevs);
+  const bodyHtml = !fil.length
+    ? '<div class="a11y-empty-state">No issues match the selected filters.</div>'
+    : fil.map((issue, idx) => {
+        const s = SEV[issue.severity];
+        const tl = TYPE_LABELS[issue.type] || issue.type;
+        const d = issue.description;
+        const short = d.length > 180 ? `${d.slice(0, 180)}...` : d;
+        return renderIssueCard({
+          idx,
+          borderColor: s.border,
+          badgeHtml: renderSeverityBadge(issue.severity),
+          titleHtml: `${escHtml(tl)} <code class="a11y-code">${escHtml(issue.fieldType)}</code>`,
+          descriptionHtml: escHtml(short),
+          selector: getCssSelector(issue.element),
+          snippet: getSnippet(issue.element),
+        });
+      }).join('');
+  return renderResultsPage({ title: 'Form Labels Audit', stats, chips: levels.length ? { levels, active: activeSevs } : undefined, bodyHtml });
 }
 
-export function attachFormLabelsListeners(container: HTMLElement, result: FormLabelsResult, actions: {
-  onBack: () => void;
-  onHighlight: (els: Element[]) => void;
-}): void {
-  container.querySelector('#btn-back')?.addEventListener('click', () => actions.onBack());
-
-  container.querySelectorAll('.form-card').forEach(el => {
-    el.addEventListener('click', () => {
-      const idx = parseInt(el.getAttribute('data-idx') || '0', 10);
-      const issue = result.issues[idx];
-      if (issue) actions.onHighlight([issue.element]);
-    });
-  });
-  hoverListeners(container, '.form-card', '#6366F1');
+export function attachFormLabelsListeners(
+  container: HTMLElement,
+  result: FormLabelsResult,
+  actions: { onBack: () => void; onHighlight: (els: Element[]) => void; onSeverityChange?: (next: Set<string>) => void },
+  activeSevs: Set<string>,
+): void {
+  const filtered = vis(result.issues, activeSevs);
+  attachResultsPageListeners(container, {
+    onBack: actions.onBack,
+    onHighlight: (idx) => { const i = filtered[idx]; if (i) actions.onHighlight([i.element]); },
+    onSeverityChange: actions.onSeverityChange,
+  }, { active: activeSevs });
 }

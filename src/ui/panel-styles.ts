@@ -161,4 +161,139 @@ export const PANEL_CSS = `
   .a11y-card-desc { margin: 0 !important; font-size: 13px !important; color: var(--text-secondary) !important; line-height: 1.5 !important; }
   .a11y-card-title { font-size: 12px !important; font-weight: 600 !important; color: var(--text-secondary) !important; }
 
+  /* Severity filter chip */
+  .a11y-sev-chip {
+    padding: 5px 10px !important;
+    border: 1.5px solid #D1D5DB !important;
+    border-radius: 6px !important;
+    font-size: 11px !important;
+    cursor: pointer !important;
+    background: white !important;
+    color: #6B7280 !important;
+    font-weight: 600 !important;
+    transition: all 0.15s !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+    white-space: nowrap !important;
+  }
+
+  /* Expandable issue card */
+  .a11y-issue-card {
+    background: white !important;
+    border: 1px solid #E5E7EB !important;
+    border-radius: 8px !important;
+    margin-bottom: 8px !important;
+    overflow: hidden !important;
+    transition: border-color 0.15s !important;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.04) !important;
+  }
+  .a11y-issue-card:hover { border-color: var(--color-accent) !important; }
+
+  /* Card body (collapsed by default) */
+  .a11y-card-body {
+    display: none;
+    padding: 10px 14px !important;
+    border-top: 1px solid #F3F4F6 !important;
+    background: #FAFAFA !important;
+  }
+
+  /* Card chevron */
+  .a11y-card-chevron { transition: transform 0.2s !important; flex-shrink: 0 !important; color: #6B7280 !important; }
+
+  /* Highlight button */
+  .a11y-highlight-btn {
+    padding: 6px 12px !important;
+    background: var(--color-accent-bg) !important;
+    border: 1px solid #C7D2FE !important;
+    border-radius: 6px !important;
+    cursor: pointer !important;
+    font-size: 12px !important;
+    color: var(--color-accent) !important;
+    font-weight: 500 !important;
+    transition: all 0.15s !important;
+  }
+  .a11y-highlight-btn:hover { background: #E0E7FF !important; }
+
+  /* Stats strip */
+  .a11y-stats-strip {
+    padding: 10px 16px !important;
+    background: white !important;
+    border-bottom: 1px solid var(--border) !important;
+    display: flex !important;
+    gap: 14px !important;
+    flex-wrap: wrap !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    align-items: center !important;
+  }
+
+  /* Search input */
+  .a11y-search-input {
+    flex: 1 !important;
+    min-width: 0 !important;
+    padding: 8px 12px !important;
+    border: 1px solid #D1D5DB !important;
+    border-radius: 8px !important;
+    font-size: 13px !important;
+    outline: none !important;
+    color: #1F2937 !important;
+    background: white !important;
+    transition: border-color 0.15s !important;
+  }
+  .a11y-search-input:focus { border-color: var(--color-accent) !important; }
+
+  /* Group tab */
+  .a11y-group-tab {
+    padding: 6px 14px !important;
+    border: 1px solid #D1D5DB !important;
+    border-radius: 6px !important;
+    font-size: 12px !important;
+    cursor: pointer !important;
+    background: white !important;
+    color: #6B7280 !important;
+    font-weight: 500 !important;
+    transition: all 0.15s !important;
+  }
+  .a11y-group-tab[data-active="true"] {
+    border-color: var(--color-accent) !important;
+    background: var(--color-accent-bg) !important;
+    color: var(--color-accent) !important;
+    font-weight: 600 !important;
+  }
+
+  /* Chip row + toolbar row */
+  .a11y-chip-row {
+    padding: 10px 16px !important;
+    background: white !important;
+    border-bottom: 1px solid var(--border) !important;
+    display: flex !important;
+    gap: 6px !important;
+    flex-wrap: wrap !important;
+  }
+  .a11y-toolbar-row {
+    padding: 8px 16px !important;
+    background: white !important;
+    border-bottom: 1px solid var(--border) !important;
+  }
+
+  /* Code block for selectors */
+  .a11y-code-block {
+    background: #F9FAFB !important;
+    border: 1px solid #F3F4F6 !important;
+    border-radius: 6px !important;
+    padding: 8px 10px !important;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace !important;
+    font-size: 11px !important;
+    color: #374151 !important;
+    word-break: break-all !important;
+    margin-bottom: 6px !important;
+  }
+  .a11y-selector-code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace !important;
+    font-size: 11px !important;
+    color: #6B7280 !important;
+    word-break: break-all !important;
+  }
+
 `;
