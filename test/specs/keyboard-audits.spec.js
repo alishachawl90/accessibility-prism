@@ -87,3 +87,61 @@ test.describe('Focus Management', () => {
     await expect(panelPage.locator(SEL.btnFocusMgmt)).toBeVisible();
   });
 });
+
+test.describe('Manual Keyboard Trail', () => {
+  test('focusing elements on page adds entries to the trail log', async ({ panelPage }) => {
+    // 1. Navigate to manual mode
+    await navigateToView(panelPage, SEL.btnManualKey);
+    
+    // 2. Initial state: 0 steps
+    const counter = panelPage.locator(`${SEL.panel} #manual-counter`);
+    await expect(counter).toHaveText('0 steps');
+    
+    // 3. Inject and focus test elements on the host page
+    await panelPage.evaluate(() => {
+      const btn1 = document.createElement('button');
+      btn1.id = 'manual-test-btn-1';
+      btn1.innerText = 'First Tab Stop';
+      document.body.appendChild(btn1);
+      
+      const btn2 = document.createElement('button');
+      btn2.id = 'manual-test-btn-2';
+      btn2.innerText = 'Second Tab Stop';
+      document.body.appendChild(btn2);
+      
+      btn1.focus();
+    });
+    
+    // Wait for the panel to update (it uses focusin event)
+    await panelPage.waitForTimeout(300);
+    await expect(counter).toHaveText('1 steps');
+    
+    // Focus the second button
+    await panelPage.evaluate(() => {
+      document.getElementById('manual-test-btn-2')?.focus();
+    });
+    
+    await panelPage.waitForTimeout(300);
+    await expect(counter).toHaveText('2 steps');
+    
+    // 4. Verify log entries in the panel
+    const log = panelPage.locator(`${SEL.panel} #manual-trail-log`);
+    const entries = log.locator('div[style*="display: flex"]');
+    expect(await entries.count()).toBe(2);
+    
+    const secondEntry = await entries.last().textContent();
+    expect(secondEntry).toContain('button');
+    expect(secondEntry).toContain('Second Tab Stop');
+    
+    // 5. Reset trail
+    await panelPage.click(`${SEL.panel} #btn-reset-trail`);
+    await expect(counter).toHaveText('0 steps');
+    await expect(log).toContainText('Start pressing Tab');
+    
+    // Clean up
+    await panelPage.evaluate(() => {
+       document.getElementById('manual-test-btn-1')?.remove();
+       document.getElementById('manual-test-btn-2')?.remove();
+    });
+  });
+});
