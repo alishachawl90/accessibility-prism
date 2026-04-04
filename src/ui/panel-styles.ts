@@ -112,6 +112,12 @@ export const PANEL_CSS = `
     font-size: 10px !important;
     font-weight: 600 !important;
   }
+  .a11y-panel-title {
+    font-weight: 700 !important;
+    font-size: 15px !important;
+    letter-spacing: 0.2px !important;
+    color: white !important;
+  }
   .a11y-scroll-area {
     padding: 14px 16px !important;
     background: var(--bg-subtle) !important;

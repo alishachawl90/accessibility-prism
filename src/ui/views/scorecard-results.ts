@@ -81,7 +81,7 @@ export function renderScorecardResults(data: ScorecardResult): string {
     </div>
   `;
 
-  html += `<div id="scroll-area" class="a11y-scroll-area">`;
+  html += `<div id="scroll-area" class="a11y-scroll-area" tabindex="0">`;
 
   data.categories.forEach((cat, idx) => {
     html += renderCategoryCard(cat, idx);

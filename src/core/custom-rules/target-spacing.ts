@@ -20,6 +20,8 @@ export const targetSpacingCheck = {
   evaluate(node: HTMLElement): boolean {
     const rect = node.getBoundingClientRect();
     if (rect.width === 0 || rect.height === 0) return true;
+    // WCAG 2.5.8: targets >= 24x24 CSS pixels pass automatically
+    if (rect.width >= 24 && rect.height >= 24) return true;
     const interactiveSelector =
       'a[href], button, input, select, textarea, [role="button"], [role="link"], [tabindex]';
     const siblings = node.parentElement?.querySelectorAll(interactiveSelector);

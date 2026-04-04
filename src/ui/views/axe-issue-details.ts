@@ -53,7 +53,7 @@ export function renderAxeIssueDetails(v: AxeViolation): string {
     </div>
   `;
 
-  html += `<div id="scroll-area" class="a11y-scroll-area">`;
+  html += `<div id="scroll-area" class="a11y-scroll-area" tabindex="0">`;
 
   v.nodes.forEach((node, idx) => {
     const context = getElementContext(node.element);

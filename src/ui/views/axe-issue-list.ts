@@ -41,7 +41,7 @@ function resultTypeChip(type: AxeResultType, active: boolean, count: number): st
   const border = active ? t.border : '#D1D5DB';
   const color = active ? t.text : '#6B7280';
   return `
-    <button type="button" class="result-type-chip" data-type="${type}" style="padding: 5px 10px !important; border: 1.5px solid ${border} !important; border-radius: 6px !important; font-size: 11px !important; cursor: pointer !important; background: ${bg} !important; color: ${color} !important; font-weight: 600 !important; transition: all 0.15s !important; display: flex !important; align-items: center !important; gap: 4px !important; white-space: nowrap !important;">
+    <button type="button" class="result-type-chip" data-type="${type}" style="padding: 6px 12px !important; border: 1.5px solid ${border} !important; border-radius: 6px !important; font-size: 11px !important; cursor: pointer !important; background: ${bg} !important; color: ${color} !important; font-weight: 600 !important; transition: all 0.15s !important; display: flex !important; align-items: center !important; gap: 4px !important; white-space: nowrap !important;">
       <span style="font-size: 10px !important;">${t.icon}</span>
       ${t.label}
       <span style="background: ${active ? t.badge : '#D1D5DB'} !important; color: white !important; padding: 1px 6px !important; border-radius: 10px !important; font-size: 10px !important; font-weight: 700 !important; min-width: 18px !important; text-align: center !important;">${count}</span>
@@ -55,7 +55,7 @@ function impactFilterChip(level: ImpactLevel, active: boolean, count: number): s
   const border = active ? t.border : '#D1D5DB';
   const color = active ? t.text : '#6B7280';
   return `
-    <button type="button" class="result-type-chip impact-filter-chip" data-impact="${level}" style="padding: 5px 10px !important; border: 1.5px solid ${border} !important; border-radius: 6px !important; font-size: 11px !important; cursor: pointer !important; background: ${bg} !important; color: ${color} !important; font-weight: 600 !important; transition: all 0.15s !important; display: flex !important; align-items: center !important; gap: 4px !important; white-space: nowrap !important;">
+    <button type="button" class="result-type-chip impact-filter-chip" data-impact="${level}" style="padding: 6px 12px !important; border: 1.5px solid ${border} !important; border-radius: 6px !important; font-size: 11px !important; cursor: pointer !important; background: ${bg} !important; color: ${color} !important; font-weight: 600 !important; transition: all 0.15s !important; display: flex !important; align-items: center !important; gap: 4px !important; white-space: nowrap !important;">
       ${label}
       <span style="background: ${active ? t.badge : '#D1D5DB'} !important; color: white !important; padding: 1px 6px !important; border-radius: 10px !important; font-size: 10px !important; font-weight: 700 !important; min-width: 18px !important; text-align: center !important;">${count}</span>
     </button>`;
@@ -80,7 +80,7 @@ export function renderAxeIssueList(data: AxeListData): string {
 
   // Result type filter chips
   html += `
-    <div style="padding: 10px 16px !important; background: white !important; border-bottom: 1px solid ${BORDER} !important; display: flex !important; gap: 6px !important; flex-wrap: wrap !important;">
+    <div style="padding: 10px 16px !important; background: white !important; border-bottom: 1px solid ${BORDER} !important; display: flex !important; gap: 8px !important; flex-wrap: wrap !important;">
       ${resultTypeChip('violation', active.has('violation'), typeCounts.violation)}
       ${resultTypeChip('needs-review', active.has('needs-review'), typeCounts['needs-review'])}
       ${resultTypeChip('best-practice', active.has('best-practice'), typeCounts['best-practice'])}
@@ -90,7 +90,7 @@ export function renderAxeIssueList(data: AxeListData): string {
 
   // Impact filter chips
   html += `
-    <div style="padding: 10px 16px !important; background: white !important; border-bottom: 1px solid ${BORDER} !important; display: flex !important; gap: 6px !important; flex-wrap: wrap !important;">
+    <div style="padding: 10px 16px !important; background: white !important; border-bottom: 1px solid ${BORDER} !important; display: flex !important; gap: 8px !important; flex-wrap: wrap !important;">
       ${impactFilterChip('critical', filterImpact.has('critical'), counts.critical)}
       ${impactFilterChip('serious', filterImpact.has('serious'), counts.serious)}
       ${impactFilterChip('moderate', filterImpact.has('moderate'), counts.moderate)}
@@ -102,8 +102,8 @@ export function renderAxeIssueList(data: AxeListData): string {
   html += `
     <div style="background: white !important; padding: 12px 16px !important; border-bottom: 1px solid ${BORDER} !important;">
       <div style="display: flex !important; gap: 8px !important; margin-bottom: 10px !important; align-items: center !important;">
-        <input type="text" id="filter-search" value="${escHtml(data.searchQuery)}" placeholder="Search by rule, WCAG criterion, tag..." style="flex: 1 !important; min-width: 0 !important; padding: 8px 12px !important; border: 1px solid #D1D5DB !important; border-radius: 8px !important; font-size: 13px !important; outline: none !important; color: #1F2937 !important; background: white !important; transition: border-color 0.15s;" onfocus="this.style.borderColor='#6366F1'" onblur="this.style.borderColor='#D1D5DB'" />
-        <select id="filter-severity" style="width: 110px !important; flex-shrink: 0 !important; padding: 8px 6px !important; border: 1px solid #D1D5DB !important; border-radius: 8px !important; font-size: 12px !important; background: white !important; color: #374151 !important; cursor: pointer !important;">
+        <input type="text" id="filter-search" aria-label="Search issues" value="${escHtml(data.searchQuery)}" placeholder="Search by rule, WCAG criterion, tag..." style="flex: 1 !important; min-width: 0 !important; padding: 8px 12px !important; border: 1px solid #D1D5DB !important; border-radius: 8px !important; font-size: 13px !important; outline: none !important; color: #1F2937 !important; background: white !important; transition: border-color 0.15s;" onfocus="this.style.borderColor='#6366F1'" onblur="this.style.borderColor='#D1D5DB'" />
+        <select id="filter-severity" aria-label="Filter by WCAG level" style="width: 110px !important; flex-shrink: 0 !important; padding: 8px 6px !important; border: 1px solid #D1D5DB !important; border-radius: 8px !important; font-size: 12px !important; background: white !important; color: #374151 !important; cursor: pointer !important;">
           <option value="ALL" ${data.filterSeverity === 'ALL' ? 'selected' : ''}>All levels</option>
           <option value="AA" ${data.filterSeverity === 'AA' ? 'selected' : ''}>A + AA</option>
           <option value="AAA" ${data.filterSeverity === 'AAA' ? 'selected' : ''}>AAA only</option>
@@ -120,7 +120,7 @@ export function renderAxeIssueList(data: AxeListData): string {
     </div>
   `;
 
-  html += `<div id="scroll-area" class="a11y-scroll-area">`;
+  html += `<div id="scroll-area" class="a11y-scroll-area" tabindex="0">`;
 
   const filteredData = { ...data, violations: visibleViolations };
 

@@ -162,7 +162,7 @@ export function renderResultsPage(config: ResultsPageConfig): string {
   }
 
   // Scroll area
-  html += `<div id="scroll-area" class="a11y-scroll-area">`;
+  html += `<div id="scroll-area" class="a11y-scroll-area" tabindex="0">`;
   if (config.bodyHtml) {
     html += config.bodyHtml;
   } else if (config.emptyMessage) {

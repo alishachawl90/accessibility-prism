@@ -72,4 +72,43 @@ test.describe('Axe Full Page Scan', () => {
     const after = await panelPage.locator(SEL.ruleCard).count();
     expect(after).toBeLessThanOrEqual(before);
   });
+
+  test.describe('Partial Scoped Scan', () => {
+    test('hides panel, selects element, and runs scan', async ({ panelPage }) => {
+      // Don't use navigateToView because panel hides immediately
+      await panelPage.click(SEL.btnPartialScan);
+      
+      // Panel should be hidden during picking
+      await expect(panelPage.locator(SEL.panel)).not.toBeVisible();
+      
+      // Use a specific card known to have violations (contrast, etc.)
+      const targetCard = panelPage.locator('.card').first();
+      await targetCard.hover();
+      await targetCard.click();
+      
+      // Panel should re-appear after selection (initial show)
+      await expect(panelPage.locator(SEL.panel)).toBeVisible({ timeout: 15000 });
+      
+      // The "Scoped" banner only appears once the scan completes and 
+      // the view switches from pre-screen to axe-issue-list
+      const banner = panelPage.locator(`${SEL.panel} #btn-clear-scope`);
+      await expect(banner).toBeVisible({ timeout: 25000 });
+      
+      // Should show results (rule cards in default "By Rule" mode, or issue cards)
+      const ruleCards = panelPage.locator(SEL.ruleCard);
+      const issueCards = panelPage.locator(SEL.issueCard);
+      await panelPage.waitForFunction(
+        (sel) => {
+          const p = document.querySelector(sel);
+          return p && (p.querySelector('.rule-card') || p.querySelector('.a11y-issue-card'));
+        },
+        SEL.panel,
+        { timeout: 15000 }
+      );
+      
+      // Clear scope should return to pre-screen
+      await panelPage.click('#btn-clear-scope');
+      await expect(panelPage.locator(SEL.btnAxe)).toBeVisible();
+    });
+  });
 });

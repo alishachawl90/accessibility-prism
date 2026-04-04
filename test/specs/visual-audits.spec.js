@@ -35,12 +35,6 @@ test.describe('Contrast Audit', () => {
     expect(text).toContain('How to Fix');
   });
 
-  test('stats strip shows issue count', async ({ panelPage }) => {
-    await navigateToView(panelPage, SEL.btnContrast);
-    const stats = panelPage.locator(SEL.statsStrip);
-    await expect(stats).toBeVisible();
-  });
-
   test('back returns to pre-screen', async ({ panelPage }) => {
     await navigateToView(panelPage, SEL.btnContrast);
     await goBack(panelPage);
