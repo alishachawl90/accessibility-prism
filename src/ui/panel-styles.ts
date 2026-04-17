@@ -28,6 +28,12 @@ export const PANEL_CSS = `
   --color-accent: #4F46E5;
   --color-accent-bg: #EEF2FF;
 
+    /* Lock font to the OS system UI stack — prevents host-page fonts (serif fallbacks,
+       custom brand fonts, etc.) from bleeding into the panel on other machines/browsers. */
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
+                 Ubuntu, Cantarell, 'Helvetica Neue', Arial, sans-serif !important;
+    font-size: 14px !important;
+    font-weight: 400 !important;
     color: #1F2937 !important;
     background-color: #FFFFFF !important;
     line-height: 1.5 !important;
@@ -51,7 +57,8 @@ export const PANEL_CSS = `
     color: inherit;
   }
   #a11y-analyzer-panel button {
-    font-family: inherit !important;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
+                 Ubuntu, Cantarell, 'Helvetica Neue', Arial, sans-serif !important;
     line-height: 1.5 !important;
   }
   #a11y-analyzer-panel button:disabled {
@@ -60,7 +67,8 @@ export const PANEL_CSS = `
   }
   #a11y-analyzer-panel input,
   #a11y-analyzer-panel select {
-    font-family: inherit !important;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
+                 Ubuntu, Cantarell, 'Helvetica Neue', Arial, sans-serif !important;
     line-height: 1.5 !important;
   }
   #a11y-analyzer-panel input::placeholder {
