@@ -19,7 +19,7 @@ function contrastBorderColor(issue: ContrastIssue): string {
 
 function renderRatioBadge(issue: ContrastIssue): string {
   const sevColor = contrastBorderColor(issue);
-  return `<span style="background: ${sevColor}12; color: ${sevColor}; padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; flex-shrink: 0;">${issue.ratio}:1</span>`;
+  return `<span style="background: ${sevColor}12 !important; color: ${sevColor} !important; padding: 3px 10px !important; border-radius: 12px !important; font-size: 12px !important; font-weight: 600 !important; flex-shrink: 0 !important; display: inline-flex !important; align-items: center !important;">${issue.ratio}:1</span>`;
 }
 
 function renderContrastExtraBody(issue: ContrastIssue): string {

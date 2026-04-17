@@ -385,14 +385,14 @@ export class FloatingPanel {
           <span style="background: rgba(255,255,255,0.25) !important; padding: 2px 8px !important; border-radius: 4px !important; font-size: 11px !important; font-weight: 700 !important; color: white !important; line-height: 1.5 !important;">v2</span>
         </div>
         <div style="display: flex !important; align-items: center !important; gap: 8px !important;">
-          <button id="btn-export" title="Download accessibility report" style="background: rgba(255,255,255,0.1) !important; border: 1px solid rgba(255,255,255,0.2) !important; border-radius: 6px !important; width: 30px !important; height: 30px !important; display: flex !important; align-items: center !important; justify-content: center !important; cursor: pointer !important; color: rgba(255,255,255,0.85) !important; transition: all 0.15s;"
-            onmouseover="this.style.background='rgba(255,255,255,0.2)';this.style.color='white';"
-            onmouseout="this.style.background='rgba(255,255,255,0.1)';this.style.color='rgba(255,255,255,0.85)';">
+          <button id="btn-export" title="Download accessibility report" style="background: rgba(255,255,255,0.1) !important; border: 1px solid rgba(255,255,255,0.2) !important; border-radius: 6px !important; width: 30px !important; height: 30px !important; display: flex !important; align-items: center !important; justify-content: center !important; cursor: pointer !important; color: rgba(255,255,255,0.85) !important; transition: all 0.15s !important;"
+            onmouseover="this.style.setProperty('background','rgba(255,255,255,0.2)','important');this.style.setProperty('color','white','important');"
+            onmouseout="this.style.setProperty('background','rgba(255,255,255,0.1)','important');this.style.setProperty('color','rgba(255,255,255,0.85)','important');">
             ${icons.ICON_EXPORT}
           </button>
-          <button id="btn-close-panel" title="Close Accessibility Prism" style="background: rgba(255,255,255,0.1) !important; border: 1px solid rgba(255,255,255,0.2) !important; border-radius: 6px !important; width: 30px !important; height: 30px !important; display: flex !important; align-items: center !important; justify-content: center !important; cursor: pointer !important; color: rgba(255,255,255,0.85) !important; transition: all 0.15s;"
-            onmouseover="this.style.background='rgba(239,68,68,0.3)';this.style.color='white';"
-            onmouseout="this.style.background='rgba(255,255,255,0.1)';this.style.color='rgba(255,255,255,0.85)';">
+          <button id="btn-close-panel" title="Close Accessibility Prism" style="background: rgba(255,255,255,0.1) !important; border: 1px solid rgba(255,255,255,0.2) !important; border-radius: 6px !important; width: 30px !important; height: 30px !important; display: flex !important; align-items: center !important; justify-content: center !important; cursor: pointer !important; color: rgba(255,255,255,0.85) !important; transition: all 0.15s !important;"
+            onmouseover="this.style.setProperty('background','rgba(239,68,68,0.3)','important');this.style.setProperty('color','white','important');"
+            onmouseout="this.style.setProperty('background','rgba(255,255,255,0.1)','important');this.style.setProperty('color','rgba(255,255,255,0.85)','important');">
             ${icons.ICON_CLOSE}
           </button>
           <span id="collapse-icon" style="display: flex !important; align-items: center !important; color: rgba(255,255,255,0.85) !important; margin-left: 4px !important;">
@@ -436,7 +436,7 @@ export class FloatingPanel {
     if (!this.scopeElement) return '';
     return `
       <div style="padding: 8px 16px !important; background: #EFF6FF !important; border-bottom: 1px solid #BFDBFE !important; display: flex !important; align-items: center !important; gap: 8px !important; font-size: 12px !important; color: #1E40AF !important;">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2" style="flex-shrink: 0;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2" style="flex-shrink: 0 !important;">
           <circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line>
         </svg>
         <span style="font-weight: 600 !important; color: #1E40AF !important;">Scoped:</span>

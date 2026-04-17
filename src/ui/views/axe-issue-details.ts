@@ -12,33 +12,33 @@ export function renderAxeIssueDetails(v: AxeViolation): string {
   let html = renderNavBar('', true, 'Issues overview');
 
   html += `
-    <div style="padding: 18px 16px; background: white; border-bottom: 1px solid #E5E7EB;">
-      <div style="display: flex; align-items: start; gap: 10px; margin-bottom: 14px;">
+    <div style="padding: 18px 16px !important; background: white !important; border-bottom: 1px solid #E5E7EB !important;">
+      <div style="display: flex !important; align-items: start !important; gap: 10px !important; margin-bottom: 14px !important;">
         ${ICON_ALERT}
-        <h3 style="margin: 0; font-size: 16px; font-weight: 600; line-height: 1.5; color: #1F2937;">${escHtml(v.help)}</h3>
+        <h3 style="margin: 0 !important; font-size: 16px !important; font-weight: 600 !important; line-height: 1.5 !important; color: #1F2937 !important;">${escHtml(v.help)}</h3>
       </div>
 
-      <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 14px; flex-wrap: wrap;">
-        ${(() => { const rt = RESULT_TYPE[v.resultType]; return `<span style="background: ${rt.bg}; color: ${rt.text}; border: 1px solid ${rt.border}; padding: 3px 8px; border-radius: 4px; font-weight: 600; font-size: 11px;">${rt.icon} ${rt.label}</span>`; })()}
-        <span style="background: ${WCAG_LEVEL[wcag.level]}; color: white; padding: 3px 10px; border-radius: 4px; font-weight: 700; font-size: 12px;">${wcag.level}</span>
-        <span style="font-size: 13px; color: #4B5563;">${wcag.fullLabel || v.id}</span>
+      <div style="display: flex !important; align-items: center !important; gap: 8px !important; margin-bottom: 14px !important; flex-wrap: wrap !important;">
+        ${(() => { const rt = RESULT_TYPE[v.resultType]; return `<span style="background: ${rt.bg} !important; color: ${rt.text} !important; border: 1px solid ${rt.border} !important; padding: 3px 8px !important; border-radius: 4px !important; font-weight: 600 !important; font-size: 11px !important;">${rt.icon} ${rt.label}</span>`; })()}
+        <span style="background: ${WCAG_LEVEL[wcag.level]} !important; color: white !important; padding: 3px 10px !important; border-radius: 4px !important; font-weight: 700 !important; font-size: 12px !important;">${wcag.level}</span>
+        <span style="font-size: 13px !important; color: #4B5563 !important;">${wcag.fullLabel || v.id}</span>
       </div>
 
-      <p style="margin: 0 0 14px 0; font-size: 13px; color: #6B7280; line-height: 1.6;">${escHtml(v.description)}</p>
+      <p style="margin: 0 0 14px 0 !important; font-size: 13px !important; color: #6B7280 !important; line-height: 1.6 !important;">${escHtml(v.description)}</p>
 
-      <div style="border: 1px solid #E5E7EB; border-radius: 8px; overflow: hidden; margin-bottom: 12px;">
-        <div id="why-issue-toggle" style="padding: 12px 14px; cursor: pointer; display: flex; align-items: center; gap: 8px; background: #F9FAFB; transition: background 0.1s;">
+      <div style="border: 1px solid #E5E7EB !important; border-radius: 8px !important; overflow: hidden !important; margin-bottom: 12px !important;">
+        <div id="why-issue-toggle" style="padding: 12px 14px !important; cursor: pointer !important; display: flex !important; align-items: center !important; gap: 8px !important; background: #F9FAFB !important; transition: background 0.1s !important;">
           ${ICON_HELP}
-          <span style="font-size: 13px; font-weight: 500; color: #374151;">Why is this an issue</span>
-          <span id="why-chevron" style="margin-left: auto; transition: transform 0.2s; color: #6B7280;">${ICON_CHEVRON_DOWN}</span>
+          <span style="font-size: 13px !important; font-weight: 500 !important; color: #374151 !important;">Why is this an issue</span>
+          <span id="why-chevron" style="margin-left: auto !important; transition: transform 0.2s !important; color: #6B7280 !important;">${ICON_CHEVRON_DOWN}</span>
         </div>
-        <div id="why-issue-body" style="display: none; padding: 12px 14px; border-top: 1px solid #E5E7EB; font-size: 13px; color: #4B5563; line-height: 1.6;">
+        <div id="why-issue-body" style="display: none !important; padding: 12px 14px !important; border-top: 1px solid #E5E7EB !important; font-size: 13px !important; color: #4B5563 !important; line-height: 1.6 !important;">
           ${renderFixSuggestions(v)}
         </div>
       </div>
 
       ${v.helpUrl ? `
-        <a href="${v.helpUrl}" target="_blank" rel="noopener noreferrer" style="display: flex; align-items: center; gap: 6px; font-size: 13px; color: ${LINK}; text-decoration: none; font-weight: 500;">
+        <a href="${v.helpUrl}" target="_blank" rel="noopener noreferrer" style="display: flex !important; align-items: center !important; gap: 6px !important; font-size: 13px !important; color: ${LINK} !important; text-decoration: none !important; font-weight: 500 !important;">
           ${ICON_EXTERNAL}
           Learn more at Deque University
         </a>
@@ -47,9 +47,9 @@ export function renderAxeIssueDetails(v: AxeViolation): string {
   `;
 
   html += `
-    <div style="padding: 14px 16px; background: white; border-bottom: 1px solid #E5E7EB; display: flex; align-items: center; gap: 8px;">
-      <span style="font-size: 15px; font-weight: 600; color: #1F2937;">Occurrences</span>
-      <span style="background: #EEF2FF; color: #6366F1; padding: 3px 10px; border-radius: 12px; font-size: 13px; font-weight: 600;">${v.nodes.length}</span>
+    <div style="padding: 14px 16px !important; background: white !important; border-bottom: 1px solid #E5E7EB !important; display: flex !important; align-items: center !important; gap: 8px !important;">
+      <span style="font-size: 15px !important; font-weight: 600 !important; color: #1F2937 !important;">Occurrences</span>
+      <span style="background: #EEF2FF !important; color: #6366F1 !important; padding: 3px 10px !important; border-radius: 12px !important; font-size: 13px !important; font-weight: 600 !important;">${v.nodes.length}</span>
     </div>
   `;
 
@@ -61,21 +61,21 @@ export function renderAxeIssueDetails(v: AxeViolation): string {
     if (codeSnippet.length > 120) codeSnippet = codeSnippet.substring(0, 120) + '...';
 
     html += `
-      <div style="background: white; border: 1px solid #E5E7EB; border-radius: 8px; margin-bottom: 8px; overflow: hidden; transition: border-color 0.15s; box-shadow: 0 1px 2px rgba(0,0,0,0.04);">
-        <div class="occ-header" data-idx="${idx}" style="padding: 12px 14px; cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
-          <span style="font-size: 13px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; color: #1F2937;">${escHtml(context)}</span>
-          <span class="occ-chevron" data-idx="${idx}" style="flex-shrink: 0; transition: transform 0.2s; color: #6B7280;">${ICON_CHEVRON_DOWN}</span>
+      <div style="background: white !important; border: 1px solid #E5E7EB !important; border-radius: 8px !important; margin-bottom: 8px !important; overflow: hidden !important; transition: border-color 0.15s !important; box-shadow: 0 1px 2px rgba(0,0,0,0.04) !important;">
+        <div class="occ-header" data-idx="${idx}" style="padding: 12px 14px !important; cursor: pointer !important; display: flex !important; justify-content: space-between !important; align-items: center !important;">
+          <span style="font-size: 13px !important; font-weight: 500 !important; overflow: hidden !important; text-overflow: ellipsis !important; white-space: nowrap !important; flex: 1 !important; color: #1F2937 !important;">${escHtml(context)}</span>
+          <span class="occ-chevron" data-idx="${idx}" style="flex-shrink: 0 !important; transition: transform 0.2s !important; color: #6B7280 !important;">${ICON_CHEVRON_DOWN}</span>
         </div>
-        <div class="occ-body" data-idx="${idx}" style="display: none; padding: 0 14px 12px 14px; border-top: 1px solid #F3F4F6;">
-          <div style="margin-top: 10px;">
-            <div style="font-size: 11px; color: #4B5563; margin-bottom: 4px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px; line-height: 1.5;">Selector</div>
-            <code style="display: block; background: #F3F4F6; padding: 8px 10px; border-radius: 6px; font-size: 12px; color: #374151; word-break: break-all; line-height: 1.5;">${escHtml(node.target.join(' > '))}</code>
+        <div class="occ-body" data-idx="${idx}" style="display: none !important; padding: 0 14px 12px 14px !important; border-top: 1px solid #F3F4F6 !important;">
+          <div style="margin-top: 10px !important;">
+            <div style="font-size: 11px !important; color: #4B5563 !important; margin-bottom: 4px !important; font-weight: 600 !important; text-transform: uppercase !important; letter-spacing: 0.3px !important; line-height: 1.5 !important;">Selector</div>
+            <code style="display: block !important; background: #F3F4F6 !important; padding: 8px 10px !important; border-radius: 6px !important; font-size: 12px !important; color: #374151 !important; word-break: break-all !important; line-height: 1.5 !important;">${escHtml(node.target.join(' > '))}</code>
           </div>
-          <div style="margin-top: 10px;">
-            <div style="font-size: 11px; color: #4B5563; margin-bottom: 4px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px; line-height: 1.5;">HTML</div>
-            <code style="display: block; background: #FEF2F2; padding: 8px 10px; border-radius: 6px; font-size: 12px; color: #DC2626; word-break: break-all; line-height: 1.5;">${escHtml(codeSnippet)}</code>
+          <div style="margin-top: 10px !important;">
+            <div style="font-size: 11px !important; color: #4B5563 !important; margin-bottom: 4px !important; font-weight: 600 !important; text-transform: uppercase !important; letter-spacing: 0.3px !important; line-height: 1.5 !important;">HTML</div>
+            <code style="display: block !important; background: #FEF2F2 !important; padding: 8px 10px !important; border-radius: 6px !important; font-size: 12px !important; color: #DC2626 !important; word-break: break-all !important; line-height: 1.5 !important;">${escHtml(codeSnippet)}</code>
           </div>
-          <button class="highlight-btn" data-idx="${idx}" style="margin-top: 10px; width: 100%; padding: 8px; background: #F5F3FF; border: 1px solid #C4B5FD; border-radius: 6px; cursor: pointer; font-size: 12px; color: ${HIGHLIGHT}; font-weight: 500; transition: all 0.15s;">
+          <button class="highlight-btn" data-idx="${idx}" style="margin-top: 10px !important; width: 100% !important; padding: 8px !important; background: #F5F3FF !important; border: 1px solid #C4B5FD !important; border-radius: 6px !important; cursor: pointer !important; font-size: 12px !important; color: ${HIGHLIGHT} !important; font-weight: 500 !important; transition: all 0.15s !important;">
             Highlight on page
           </button>
           ${generateFixSuggestion(v, idx)}
@@ -96,13 +96,13 @@ function renderFixSuggestions(v: AxeViolation): string {
 
   if (firstNode.failureSummary) {
     const lines = firstNode.failureSummary.split('\n').filter(l => l.trim());
-    html += `<div style="margin-bottom: 8px;">`;
+    html += `<div style="margin-bottom: 8px !important;">`;
     lines.forEach(line => {
       const trimmed = line.trim();
       if (trimmed.startsWith('Fix')) {
-        html += `<div style="font-weight: 600; margin-bottom: 6px; color: #1F2937;">${escHtml(trimmed)}</div>`;
+        html += `<div style="font-weight: 600 !important; margin-bottom: 6px !important; color: #1F2937 !important;">${escHtml(trimmed)}</div>`;
       } else {
-        html += `<div style="padding-left: 14px; margin-bottom: 3px; color: #4B5563;">&bull; ${escHtml(trimmed)}</div>`;
+        html += `<div style="padding-left: 14px !important; margin-bottom: 3px !important; color: #4B5563 !important;">&bull; ${escHtml(trimmed)}</div>`;
       }
     });
     html += `</div>`;
@@ -110,15 +110,15 @@ function renderFixSuggestions(v: AxeViolation): string {
 
   const allChecks = [...firstNode.any, ...firstNode.all, ...firstNode.none].filter(c => c.message);
   if (allChecks.length > 0 && !firstNode.failureSummary) {
-    html += `<ul style="margin: 0; padding-left: 18px;">`;
+    html += `<ul style="margin: 0 !important; padding-left: 18px !important;">`;
     allChecks.forEach(c => {
-      html += `<li style="margin-bottom: 4px; color: #4B5563;">${escHtml(c.message)}</li>`;
+      html += `<li style="margin-bottom: 4px !important; color: #4B5563 !important;">${escHtml(c.message)}</li>`;
     });
     html += `</ul>`;
   }
 
   if (!firstNode.failureSummary && allChecks.length === 0) {
-    html += `<p style="color: #4B5563;">${escHtml(v.description)}</p>`;
+    html += `<p style="color: #4B5563 !important;">${escHtml(v.description)}</p>`;
   }
 
   return html;
@@ -134,9 +134,9 @@ export function attachAxeDetailsListeners(container: HTMLElement, violation: Axe
     const body = container.querySelector('#why-issue-body') as HTMLElement;
     const chevron = container.querySelector('#why-chevron') as HTMLElement;
     if (body) {
-      const isOpen = body.style.display !== 'none';
-      body.style.display = isOpen ? 'none' : 'block';
-      if (chevron) chevron.style.transform = isOpen ? '' : 'rotate(180deg)';
+      const isOpen = body.style.getPropertyValue('display') !== 'none';
+      body.style.setProperty('display', isOpen ? 'none' : 'block', 'important');
+      if (chevron) chevron.style.setProperty('transform', isOpen ? '' : 'rotate(180deg)', 'important');
     }
   });
 
@@ -146,9 +146,9 @@ export function attachAxeDetailsListeners(container: HTMLElement, violation: Axe
       const body = container.querySelector(`.occ-body[data-idx="${idx}"]`) as HTMLElement;
       const chevron = container.querySelector(`.occ-chevron[data-idx="${idx}"]`) as HTMLElement;
       if (body) {
-        const isOpen = body.style.display !== 'none';
-        body.style.display = isOpen ? 'none' : 'block';
-        if (chevron) chevron.style.transform = isOpen ? '' : 'rotate(180deg)';
+        const isOpen = body.style.getPropertyValue('display') !== 'none';
+        body.style.setProperty('display', isOpen ? 'none' : 'block', 'important');
+        if (chevron) chevron.style.setProperty('transform', isOpen ? '' : 'rotate(180deg)', 'important');
       }
     });
   });

@@ -96,7 +96,7 @@ export const PANEL_CSS = `
     background: #F9FAFB !important;
   }
   #a11y-analyzer-panel [title] {
-    position: relative;
+    position: relative !important;
   }
 
   /* ─── Utility Classes ───────────────────────────────────────────────────

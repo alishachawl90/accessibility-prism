@@ -102,17 +102,17 @@ export function renderAxeIssueList(data: AxeListData): string {
   html += `
     <div style="background: white !important; padding: 12px 16px !important; border-bottom: 1px solid ${BORDER} !important;">
       <div style="display: flex !important; gap: 8px !important; margin-bottom: 10px !important; align-items: center !important;">
-        <input type="text" id="filter-search" aria-label="Search issues" value="${escHtml(data.searchQuery)}" placeholder="Search by rule, WCAG criterion, tag..." style="flex: 1 !important; min-width: 0 !important; padding: 8px 12px !important; border: 1px solid #D1D5DB !important; border-radius: 8px !important; font-size: 13px !important; outline: none !important; color: #1F2937 !important; background: white !important; transition: border-color 0.15s;" onfocus="this.style.borderColor='#6366F1'" onblur="this.style.borderColor='#D1D5DB'" />
+        <input type="text" id="filter-search" aria-label="Search issues" value="${escHtml(data.searchQuery)}" placeholder="Search by rule, WCAG criterion, tag..." style="flex: 1 !important; min-width: 0 !important; padding: 8px 12px !important; border: 1px solid #D1D5DB !important; border-radius: 8px !important; font-size: 13px !important; outline: none !important; color: #1F2937 !important; background: white !important; transition: border-color 0.15s !important;" onfocus="this.style.setProperty('border-color','#6366F1','important')" onblur="this.style.setProperty('border-color','#D1D5DB','important')" />
         <select id="filter-severity" aria-label="Filter by WCAG level" style="width: 110px !important; flex-shrink: 0 !important; padding: 8px 6px !important; border: 1px solid #D1D5DB !important; border-radius: 8px !important; font-size: 12px !important; background: white !important; color: #374151 !important; cursor: pointer !important;">
           <option value="ALL" ${data.filterSeverity === 'ALL' ? 'selected' : ''}>All levels</option>
           <option value="AA" ${data.filterSeverity === 'AA' ? 'selected' : ''}>A + AA</option>
           <option value="AAA" ${data.filterSeverity === 'AAA' ? 'selected' : ''}>AAA only</option>
         </select>
       </div>
-      <div style="display: flex; gap: 8px;">
+      <div style="display: flex !important; gap: 8px !important; flex-wrap: wrap !important;">
         ${(['rule', 'region', 'component'] as GroupMode[]).map(mode => {
           const isActive = data.groupMode === mode;
-          return `<button class="group-mode-btn" data-mode="${mode}" style="padding: 6px 14px; border: 1px solid ${isActive ? '#6366F1' : '#D1D5DB'}; border-radius: 6px; font-size: 12px; cursor: pointer; background: ${isActive ? '#EEF2FF' : 'white'}; color: ${isActive ? '#6366F1' : '#6B7280'}; font-weight: ${isActive ? '600' : '500'}; transition: all 0.15s;">
+          return `<button class="group-mode-btn" data-mode="${mode}" style="padding: 6px 14px !important; border: 1px solid ${isActive ? '#6366F1' : '#D1D5DB'} !important; border-radius: 6px !important; font-size: 12px !important; cursor: pointer !important; background: ${isActive ? '#EEF2FF' : 'white'} !important; color: ${isActive ? '#6366F1' : '#6B7280'} !important; font-weight: ${isActive ? '600' : '500'} !important; transition: all 0.15s !important; white-space: nowrap !important; flex-shrink: 0 !important;">
             ${mode === 'rule' ? 'By Rule' : mode === 'region' ? 'By Region' : 'By Component'}
           </button>`;
         }).join('')}
@@ -296,41 +296,41 @@ function renderComponentGroup(data: AxeListData): string {
       issue.nodes.forEach((nodeEl, nIdx) => {
         const context = getElementContext(nodeEl);
         nodeHtml += `
-          <div class="comp-node" data-cidx="${cIdx}" data-iidx="${iIdx}" data-nidx="${nIdx}" style="padding: 8px 10px; margin-bottom: 4px; background: white; border: 1px solid #E5E7EB; border-radius: 6px; cursor: pointer; font-size: 12px; color: #374151; display: flex; justify-content: space-between; align-items: center; transition: border-color 0.15s;">
-            <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1;">${escHtml(context)}</span>
-            <span style="color: ${HIGHLIGHT}; font-weight: 500; flex-shrink: 0; margin-left: 8px; font-size: 12px;">Highlight &rarr;</span>
+          <div class="comp-node" data-cidx="${cIdx}" data-iidx="${iIdx}" data-nidx="${nIdx}" style="padding: 8px 10px !important; margin-bottom: 4px !important; background: white !important; border: 1px solid #E5E7EB !important; border-radius: 6px !important; cursor: pointer !important; font-size: 12px !important; color: #374151 !important; display: flex !important; justify-content: space-between !important; align-items: center !important; transition: border-color 0.15s !important;">
+            <span style="overflow: hidden !important; text-overflow: ellipsis !important; white-space: nowrap !important; flex: 1 !important;">${escHtml(context)}</span>
+            <span style="color: ${HIGHLIGHT} !important; font-weight: 500 !important; flex-shrink: 0 !important; margin-left: 8px !important; font-size: 12px !important;">Highlight &rarr;</span>
           </div>
         `;
       });
 
       body += renderAccordion(
         ruleKey,
-        `<div style="flex: 1; min-width: 0;">
-          <div style="font-size: 13px; font-weight: 500; margin-bottom: 4px; color: #1F2937;">${escHtml(issue.help)}</div>
-          <div style="display: flex; align-items: center; gap: 8px;">
-            <span style="background: ${WCAG_LEVEL[wcag.level]}; color: white; padding: 2px 7px; border-radius: 4px; font-weight: 600; font-size: 11px;">${wcag.level}</span>
-            <span style="font-size: 12px; color: #6B7280;">${issue.ruleId}</span>
+        `<div style="flex: 1 !important; min-width: 0 !important;">
+          <div style="font-size: 13px !important; font-weight: 500 !important; margin-bottom: 4px !important; color: #1F2937 !important;">${escHtml(issue.help)}</div>
+          <div style="display: flex !important; align-items: center !important; gap: 8px !important;">
+            <span style="background: ${WCAG_LEVEL[wcag.level]} !important; color: white !important; padding: 2px 7px !important; border-radius: 4px !important; font-weight: 600 !important; font-size: 11px !important;">${wcag.level}</span>
+            <span style="font-size: 12px !important; color: #6B7280 !important;">${issue.ruleId}</span>
           </div>
         </div>`,
-        `<span style="background: #F3F4F6; padding: 2px 8px; border-radius: 6px; font-size: 12px; font-weight: 600; color: #6B7280;">${issue.count}</span>`,
+        `<span style="background: #F3F4F6 !important; padding: 2px 8px !important; border-radius: 6px !important; font-size: 12px !important; font-weight: 600 !important; color: #6B7280 !important;">${issue.count}</span>`,
         nodeHtml
       );
     });
 
-    body += `
-      <button class="comp-highlight-btn" data-compid="${compId}" style="width: 100%; padding: 8px; background: #F5F3FF; border: 1px solid #C4B5FD; border-radius: 6px; cursor: pointer; font-size: 12px; color: ${HIGHLIGHT}; font-weight: 500; margin-top: 6px; transition: all 0.15s;">
+      body += `
+      <button class="comp-highlight-btn" data-compid="${compId}" style="width: 100% !important; padding: 8px !important; background: #F5F3FF !important; border: 1px solid #C4B5FD !important; border-radius: 6px !important; cursor: pointer !important; font-size: 12px !important; color: ${HIGHLIGHT} !important; font-weight: 500 !important; margin-top: 6px !important; transition: all 0.15s !important;">
         Highlight all ${totalInstances} instances on page
       </button>
     `;
 
     const instanceLabel = compId === UNCATEGORIZED_ID
       ? ''
-      : `<div style="font-size: 12px; color: #6B7280; margin-top: 2px; line-height: 1.5;">${affectedCount} of ${totalInstances} instance${totalInstances !== 1 ? 's' : ''} affected</div>`;
+      : `<div style="font-size: 12px !important; color: #6B7280 !important; margin-top: 2px !important; line-height: 1.5 !important;">${affectedCount} of ${totalInstances} instance${totalInstances !== 1 ? 's' : ''} affected</div>`;
 
     html += renderAccordion(
       `comp-${cIdx}`,
-      `<div style="min-width: 0;">
-        <div style="font-weight: 600; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #1F2937;">${escHtml(compName)}</div>
+      `<div style="min-width: 0 !important;">
+        <div style="font-weight: 600 !important; font-size: 14px !important; white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; color: #1F2937 !important;">${escHtml(compName)}</div>
         ${instanceLabel}
       </div>`,
       renderCountBadge(totalIssues),
@@ -342,22 +342,22 @@ function renderComponentGroup(data: AxeListData): string {
 
 function renderRuleSubGroup(ruleId: string, help: string, wcag: ReturnType<typeof parseWcagInfo>, nodes: { node: Element; html: string }[], parentKey: string): string {
   let html = `
-    <div style="margin-bottom: 8px; padding: 10px 12px; background: #F9FAFB; border-radius: 8px; border: 1px solid #F3F4F6;">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-        <span style="font-size: 13px; font-weight: 500; color: #1F2937;">${escHtml(help)}</span>
-        <span style="background: #F3F4F6; padding: 2px 8px; border-radius: 6px; font-size: 12px; font-weight: 600; color: #6B7280;">${nodes.length}</span>
+    <div style="margin-bottom: 8px !important; padding: 10px 12px !important; background: #F9FAFB !important; border-radius: 8px !important; border: 1px solid #F3F4F6 !important;">
+      <div style="display: flex !important; justify-content: space-between !important; align-items: center !important; margin-bottom: 6px !important;">
+        <span style="font-size: 13px !important; font-weight: 500 !important; color: #1F2937 !important;">${escHtml(help)}</span>
+        <span style="background: #F3F4F6 !important; padding: 2px 8px !important; border-radius: 6px !important; font-size: 12px !important; font-weight: 600 !important; color: #6B7280 !important;">${nodes.length}</span>
       </div>
-      <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
-        <span style="background: ${WCAG_LEVEL[wcag.level]}; color: white; padding: 2px 7px; border-radius: 4px; font-weight: 600; font-size: 11px;">${wcag.level}</span>
-        <span style="font-size: 12px; color: #6B7280;">${ruleId}</span>
+      <div style="display: flex !important; align-items: center !important; gap: 8px !important; margin-bottom: 8px !important;">
+        <span style="background: ${WCAG_LEVEL[wcag.level]} !important; color: white !important; padding: 2px 7px !important; border-radius: 4px !important; font-weight: 600 !important; font-size: 11px !important;">${wcag.level}</span>
+        <span style="font-size: 12px !important; color: #6B7280 !important;">${ruleId}</span>
       </div>
   `;
   nodes.forEach((n, nIdx) => {
     const context = getElementContext(n.node);
     html += `
-      <div class="group-node" data-pkey="${parentKey}" data-rule="${ruleId}" data-nidx="${nIdx}" style="padding: 8px 10px; margin-bottom: 4px; background: white; border: 1px solid #E5E7EB; border-radius: 6px; cursor: pointer; font-size: 12px; color: #374151; display: flex; justify-content: space-between; align-items: center; transition: border-color 0.15s;">
-        <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escHtml(context)}</span>
-        <span style="color: ${HIGHLIGHT}; font-weight: 500; flex-shrink: 0; margin-left: 8px; font-size: 12px;">Highlight &rarr;</span>
+      <div class="group-node" data-pkey="${parentKey}" data-rule="${ruleId}" data-nidx="${nIdx}" style="padding: 8px 10px !important; margin-bottom: 4px !important; background: white !important; border: 1px solid #E5E7EB !important; border-radius: 6px !important; cursor: pointer !important; font-size: 12px !important; color: #374151 !important; display: flex !important; justify-content: space-between !important; align-items: center !important; transition: border-color 0.15s !important;">
+        <span style="overflow: hidden !important; text-overflow: ellipsis !important; white-space: nowrap !important; flex: 1 !important;">${escHtml(context)}</span>
+        <span style="color: ${HIGHLIGHT} !important; font-weight: 500 !important; flex-shrink: 0 !important; margin-left: 8px !important; font-size: 12px !important;">Highlight &rarr;</span>
       </div>
     `;
   });

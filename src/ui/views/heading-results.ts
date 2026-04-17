@@ -37,10 +37,10 @@ function renderHeadingTree(data: HeadingAnalysisResult): string {
       ? escHtml(h.text)
       : '<em style="color: #6B7280;">empty</em>';
     html += `
-        <div class="heading-node" data-idx="${idx}" style="display: flex; align-items: center; gap: 10px; padding: 10px 12px; padding-left: ${12 + indent}px; margin-bottom: 4px; background: white; border: 1px solid ${hasIssue ? '#FCA5A5' : '#E5E7EB'}; border-left: 3px solid ${color}; border-radius: 8px; cursor: pointer; transition: border-color 0.15s; box-shadow: 0 1px 2px rgba(0,0,0,0.04);">
-          <span style="background: ${color}; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; flex-shrink: 0;">H${h.level}</span>
-          <span style="font-size: 13px; color: #1F2937; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1;">${textHtml}</span>
-          ${hasIssue ? '<span style="color: #DC2626; font-size: 12px; flex-shrink: 0;">&#9888;</span>' : ''}
+        <div class="heading-node" data-idx="${idx}" style="display: flex !important; align-items: center !important; gap: 10px !important; padding: 10px 12px !important; padding-left: ${12 + indent}px !important; margin-bottom: 4px !important; background: white !important; border: 1px solid ${hasIssue ? '#FCA5A5' : '#E5E7EB'} !important; border-left: 3px solid ${color} !important; border-radius: 8px !important; cursor: pointer !important; transition: border-color 0.15s !important; box-shadow: 0 1px 2px rgba(0,0,0,0.04) !important;">
+          <span style="background: ${color} !important; color: white !important; padding: 2px 8px !important; border-radius: 4px !important; font-size: 11px !important; font-weight: 700 !important; flex-shrink: 0 !important;">H${h.level}</span>
+          <span style="font-size: 13px !important; color: #1F2937 !important; overflow: hidden !important; text-overflow: ellipsis !important; white-space: nowrap !important; flex: 1 !important;">${textHtml}</span>
+          ${hasIssue ? '<span style="color: #DC2626 !important; font-size: 12px !important; flex-shrink: 0 !important;">&#9888;</span>' : ''}
         </div>`;
   });
   return html;
@@ -61,7 +61,7 @@ export function renderHeadingResults(data: HeadingAnalysisResult): string {
 
   const issuesHtml =
     data.issues.length > 0
-      ? `<div style="margin-bottom: 16px;">
+      ? `<div style="margin-bottom: 16px !important;">
       <div class="a11y-section-title">Issues</div>
       ${data.issues
         .map((issue, idx) => {

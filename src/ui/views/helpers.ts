@@ -17,12 +17,12 @@ export function renderAccordion(key: string, headerHtml: string, badgeHtml: stri
     <div style="background: white !important; border: 1px solid #E5E7EB !important; border-left: 3px solid #E5E7EB !important; border-radius: 8px !important; margin-bottom: 10px !important; overflow: hidden !important; box-shadow: 0 1px 2px rgba(0,0,0,0.04) !important;">
       <div class="acc-header" data-key="${key}" style="padding: 14px 16px !important; cursor: pointer !important; display: flex !important; justify-content: space-between !important; align-items: center !important; transition: background 0.1s;">
         <div style="display: flex !important; align-items: center !important; gap: 10px !important; flex: 1 !important; min-width: 0 !important;">
-          <span class="acc-chevron" data-key="${key}" style="transition: transform 0.2s; flex-shrink: 0 !important; color: #6B7280 !important;">${ICON_CHEVRON_RIGHT}</span>
+          <span class="acc-chevron" data-key="${key}" style="transition: transform 0.2s !important; flex-shrink: 0 !important; color: #6B7280 !important;">${ICON_CHEVRON_RIGHT}</span>
           ${headerHtml}
         </div>
         ${badgeHtml}
       </div>
-      <div class="acc-body" data-key="${key}" style="display: none; padding: 8px 16px 14px 16px !important; border-top: 1px solid #F3F4F6 !important;">
+      <div class="acc-body" data-key="${key}" style="display: none !important; padding: 8px 16px 14px 16px !important; border-top: 1px solid #F3F4F6 !important;">
         ${bodyHtml}
       </div>
     </div>
@@ -36,9 +36,9 @@ export function attachAccordionListeners(container: HTMLElement): void {
       const body = container.querySelector(`.acc-body[data-key="${key}"]`) as HTMLElement;
       const chevron = container.querySelector(`.acc-chevron[data-key="${key}"]`) as HTMLElement;
       if (body) {
-        const isOpen = body.style.display !== 'none';
-        body.style.display = isOpen ? 'none' : 'block';
-        if (chevron) chevron.style.transform = isOpen ? '' : 'rotate(90deg)';
+        const isOpen = body.style.getPropertyValue('display') !== 'none';
+        body.style.setProperty('display', isOpen ? 'none' : 'block', 'important');
+        if (chevron) chevron.style.setProperty('transform', isOpen ? '' : 'rotate(90deg)', 'important');
       }
     });
   });

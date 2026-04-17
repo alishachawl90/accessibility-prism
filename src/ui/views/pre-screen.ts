@@ -10,20 +10,20 @@ interface PreScreenButton {
   icon: string;
 }
 
-const SECTION_STYLE = `font-size: 11px; font-weight: 700; color: #6B7280; text-transform: uppercase; letter-spacing: 0.5px; margin: 4px 0 6px 0; line-height: 1.5;`;
+const SECTION_STYLE = `font-size: 11px !important; font-weight: 700 !important; color: #6B7280 !important; text-transform: uppercase !important; letter-spacing: 0.5px !important; margin: 4px 0 6px 0 !important; line-height: 1.5 !important;`;
 
 function renderButton(btn: PreScreenButton): string {
-  const base = `padding: 14px; background: white; border: 1px solid #E5E7EB; border-radius: 10px; cursor: pointer; text-align: left; font-size: 14px; box-shadow: 0 1px 2px rgba(0,0,0,0.04); transition: border-color 0.15s, box-shadow 0.15s; display: flex; align-items: center; gap: 14px; width: 100%;`;
+  const base = `padding: 14px !important; background: white !important; border: 1px solid #E5E7EB !important; border-radius: 10px !important; cursor: pointer !important; text-align: left !important; font-size: 14px !important; box-shadow: 0 1px 2px rgba(0,0,0,0.04) !important; transition: border-color 0.15s, box-shadow 0.15s !important; display: flex !important; align-items: center !important; gap: 14px !important; width: 100% !important;`;
   return `
     <button id="${btn.id}" style="${base}"
-      onmouseover="this.style.borderColor='${btn.hoverColor}';this.style.boxShadow='0 2px 8px ${btn.hoverColor}20'"
-      onmouseout="this.style.borderColor='#E5E7EB';this.style.boxShadow='0 1px 2px rgba(0,0,0,0.04)'">
-      <span style="width: 34px; height: 34px; border-radius: 8px; background: ${btn.iconBg}; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+      onmouseover="this.style.setProperty('border-color','${btn.hoverColor}','important');this.style.setProperty('box-shadow','0 2px 8px ${btn.hoverColor}20','important');"
+      onmouseout="this.style.setProperty('border-color','#E5E7EB','important');this.style.setProperty('box-shadow','0 1px 2px rgba(0,0,0,0.04)','important');">
+      <span style="width: 34px !important; height: 34px !important; border-radius: 8px !important; background: ${btn.iconBg} !important; display: flex !important; align-items: center !important; justify-content: center !important; flex-shrink: 0 !important;">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="${btn.iconStroke}" stroke-width="2">${btn.icon}</svg>
       </span>
-      <div>
-        <div style="font-weight: 600; color: #1F2937; font-size: 13px; line-height: 1.5;">${btn.label}</div>
-        <div style="font-size: 12px; color: #4B5563; margin-top: 2px; line-height: 1.5;">${btn.description}</div>
+      <div style="display: flex !important; flex-direction: column !important; min-width: 0 !important; flex: 1 !important;">
+        <div style="font-weight: 600 !important; color: #1F2937 !important; font-size: 13px !important; line-height: 1.5 !important;">${btn.label}</div>
+        <div style="font-size: 12px !important; color: #4B5563 !important; margin-top: 2px !important; line-height: 1.5 !important;">${btn.description}</div>
       </div>
     </button>`;
 }
@@ -31,7 +31,7 @@ function renderButton(btn: PreScreenButton): string {
 export function renderPreScreen(): string {
   let html = renderNavBar('Select Analysis', false);
 
-  html += `<div id="scroll-area" tabindex="0" style="padding: 16px; display: flex; flex-direction: column; gap: 6px; background: #F9FAFB; overflow-y: auto; flex: 1;">`;
+  html += `<div id="scroll-area" tabindex="0" style="padding: 16px !important; display: flex !important; flex-direction: column !important; gap: 6px !important; background: #F9FAFB !important; overflow-y: auto !important; flex: 1 !important;">`;
 
   // --- Full Scorecard ---
   html += renderButton({
@@ -40,7 +40,7 @@ export function renderPreScreen(): string {
     icon: '<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline>',
   });
 
-  html += `<div style="height: 6px;"></div>`;
+  html += `<div style="height: 6px !important;"></div>`;
 
   // --- WCAG Violations ---
   html += `<div style="${SECTION_STYLE}">WCAG Violations</div>`;

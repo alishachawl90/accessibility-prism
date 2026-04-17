@@ -37,7 +37,7 @@ export function drawHighlight(el: Element, color: string, label?: string): SVGGE
   rect.setAttribute("fill-opacity", "0.2");
   rect.setAttribute("stroke", color);
   rect.setAttribute("stroke-width", "2");
-  rect.style.pointerEvents = "none";
+  rect.style.setProperty("pointer-events", "none", "important");
   g.appendChild(rect);
 
   if (label) {
@@ -94,7 +94,7 @@ export function drawTabOrderOverlay(svg: SVGSVGElement, elements: Element[]) {
     centers.push({ x: cx, y: cy });
 
     const g = document.createElementNS(ns, 'g');
-    g.style.pointerEvents = 'none';
+    g.style.setProperty("pointer-events", "none", "important");
 
     const rect = document.createElementNS(ns, 'rect');
     rect.setAttribute('x', coords.x.toString());
@@ -149,7 +149,7 @@ export function drawTabOrderOverlay(svg: SVGSVGElement, elements: Element[]) {
     line.setAttribute('stroke-opacity', '0.5');
     line.setAttribute('stroke-dasharray', '6,3');
     line.setAttribute('marker-end', 'url(#arrowhead)');
-    line.style.pointerEvents = 'none';
+    line.style.setProperty("pointer-events", "none", "important");
     svg.appendChild(line);
   }
 }
@@ -170,7 +170,7 @@ export function drawHeadingMarkers(svg: SVGSVGElement, headings: { element: Elem
     const y = coords.y;
     const color = HEADING_COLORS[h.level] || '#6B7280';
     const g = document.createElementNS(ns, 'g');
-    g.style.pointerEvents = 'none';
+    g.style.setProperty("pointer-events", "none", "important");
 
     const outline = document.createElementNS(ns, 'rect');
     outline.setAttribute('x', x.toString());
@@ -230,7 +230,7 @@ export function drawLandmarkMarkers(svg: SVGSVGElement, landmarks: { element: El
     const y = coords.y;
     const color = LANDMARK_COLORS[lm.role] || '#6B7280';
     const g = document.createElementNS(ns, 'g');
-    g.style.pointerEvents = 'none';
+    g.style.setProperty("pointer-events", "none", "important");
 
     const outline = document.createElementNS(ns, 'rect');
     outline.setAttribute('x', x.toString());
@@ -285,7 +285,7 @@ export function drawReadingOrderMarkers(svg: SVGSVGElement, elements: { element:
     const x = coords.x;
     const y = coords.y;
     const g = document.createElementNS(ns, 'g');
-    g.style.pointerEvents = 'none';
+    g.style.setProperty("pointer-events", "none", "important");
 
     const outline = document.createElementNS(ns, 'rect');
     outline.setAttribute('x', x.toString());
@@ -338,17 +338,20 @@ export function initializeOverlay(): SVGSVGElement {
     const ns = "http://www.w3.org/2000/svg";
     svg = document.createElementNS(ns, 'svg');
     svg.id = 'a11y-analyzer-overlay';
-    svg.style.position = 'absolute';
-    svg.style.top = '0';
-    svg.style.left = '0';
-    svg.style.width = '100%';
-    svg.style.height = document.documentElement.scrollHeight + 'px';
-    svg.style.pointerEvents = 'none';
-    svg.style.zIndex = '999998';
+    // Use setProperty(..., 'important') so host-page rules on svg/[id] cannot
+    // reposition or resize the overlay regardless of their specificity.
+    const sp = (p: string, v: string) => svg!.style.setProperty(p, v, 'important');
+    sp('position', 'absolute');
+    sp('top', '0');
+    sp('left', '0');
+    sp('width', '100%');
+    sp('height', document.documentElement.scrollHeight + 'px');
+    sp('pointer-events', 'none');
+    sp('z-index', '999998');
     document.body.appendChild(svg);
-    
+
     const updateHeight = () => {
-      svg!.style.height = document.documentElement.scrollHeight + 'px';
+      svg!.style.setProperty('height', document.documentElement.scrollHeight + 'px', 'important');
     };
 
     const resizeObserver = new ResizeObserver(updateHeight);
