@@ -10,11 +10,21 @@ import { analyzeFocusManagement } from './core/focus-management';
 import { analyzeLiveRegions } from './core/live-region-monitor';
 import { analyzeTouchTargets } from './core/touch-target-analysis';
 import { analyzeAltText } from './core/alt-text-analysis';
-import { analyzeAccessibleNames } from './core/acc-name-analysis';
+import { analyzeAccessibleNames, analyzeForSrWalkthrough } from './core/acc-name-analysis';
 import { validateAria } from './core/aria-validation';
 import { analyzeFormLabels } from './core/form-labels-analysis';
 import type { PageRegion } from './core/region-detection';
-import type { AxeViolation, ComponentCluster, ComponentIssue, KeyboardIssue, ComponentTabFlow } from './core/types';
+import type { AxeViolation, ComponentCluster, ComponentIssue, KeyboardIssue, ComponentTabFlow, AccNameEntry } from './core/types';
+
+// chrome.runtime is available when running as a Chrome/Edge extension.
+// Declare a minimal type so TypeScript doesn't complain in the content-script bundle.
+declare const chrome: {
+  runtime: {
+    id?: string;
+    sendMessage: (msg: unknown, cb: (response: unknown) => void) => void;
+    lastError?: { message?: string };
+  };
+} | undefined;
 import { FloatingPanel } from './ui/panel';
 import { initializeOverlay, drawHighlight, drawTabOrderOverlay, drawHeadingMarkers, drawLandmarkMarkers, drawReadingOrderMarkers, clearOverlay } from './ui/overlay';
 import { generateHtmlReport } from './utils/html-report';
@@ -280,8 +290,52 @@ class A11yAnalyzer {
   public runSrWalkthrough() {
     clearOverlay(this.overlaySvg);
     console.log('[A11yAnalyzer] Preparing screen reader walk-through...');
-    const result = analyzeAccessibleNames();
-    console.log(`[A11yAnalyzer] Walk-through ready: ${result.entries.length} elements`);
+
+    // Prefer chrome.automation (real AX tree, same source as ChromeVox) when available.
+    // It requires the "automation" permission + background service worker.
+    // Falls back to DOM analysis when running outside the extension context (e.g. Playwright tests).
+    // chrome.runtime.id is only non-null in extension content scripts — not in regular web pages.
+    const runtime = typeof chrome !== 'undefined' && chrome?.runtime?.id
+      ? chrome.runtime
+      : undefined;
+    if (runtime?.sendMessage) {
+      runtime.sendMessage({ type: 'get-ax-tree' }, (raw: unknown) => {
+        const lastError = runtime.lastError; // consume to avoid Chrome error log
+        const response = raw as { error?: string; nodes?: unknown[] } | null;
+        if (lastError || !response || response.error || !response.nodes?.length) {
+          console.warn(
+            '[A11yAnalyzer] AX tree unavailable, falling back to DOM analysis.',
+            lastError?.message ?? response?.error ?? 'empty response',
+          );
+          this.runSrWalkthroughDomFallback();
+          return;
+        }
+
+        const entries: AccNameEntry[] = (response.nodes as {
+          role: string; name: string; description: string;
+          states: string[]; announcement: string;
+        }[]).map(n => ({
+          element: null,          // AX nodes have no 1:1 DOM element — highlight skipped
+          role: n.role,
+          name: n.name,
+          description: n.description,
+          states: n.states,
+          ariaHidden: false,
+          severity: 'pass' as const,
+          announcement: n.announcement,
+        }));
+
+        console.log(`[A11yAnalyzer] AX tree walk-through ready: ${entries.length} elements`);
+        this.panel.startWalkthrough(entries);
+      });
+    } else {
+      this.runSrWalkthroughDomFallback();
+    }
+  }
+
+  private runSrWalkthroughDomFallback() {
+    const result = analyzeForSrWalkthrough();
+    console.log(`[A11yAnalyzer] DOM walk-through (fallback) ready: ${result.entries.length} elements`);
     this.panel.startWalkthrough(result.entries);
   }
 

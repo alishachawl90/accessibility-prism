@@ -273,11 +273,12 @@ export function drawLandmarkMarkers(svg: SVGSVGElement, landmarks: { element: El
   });
 }
 
-export function drawReadingOrderMarkers(svg: SVGSVGElement, elements: { element: Element }[]) {
+export function drawReadingOrderMarkers(svg: SVGSVGElement, elements: { element: Element | null }[]) {
   const ns = 'http://www.w3.org/2000/svg';
   const color = '#5C6BC0';
 
   elements.forEach((item, idx) => {
+    if (!item.element) return;
     const coords = getAbsoluteCoords(item.element);
     if (coords.w === 0 && coords.h === 0) return;
 

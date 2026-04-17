@@ -270,6 +270,10 @@ export class FloatingPanel {
     this.walkthroughEntries = entries;
     this.walkthroughIndex = 0;
     this.currentView = 'sr-walkthrough';
+    // Expose announcement list on a stable window key for Playwright test verification.
+    // String literals survive minification; property-name access does not.
+    (window as unknown as Record<string, unknown>)['__a11y_sr_announcements'] =
+      entries.map(e => e.announcement ?? '');
     this.render();
   }
 
@@ -487,7 +491,9 @@ export class FloatingPanel {
       this.callbacks.onViolationClick([]);
       this.render();
     };
-    const highlight = (els: Element[]) => this.callbacks.onViolationClick(els);
+    // Filter out null elements (e.g. from AX-tree-sourced SR walkthrough entries)
+    const highlight = (els: (Element | null)[]) =>
+      this.callbacks.onViolationClick(els.filter((e): e is Element => e !== null));
 
     this.container.querySelector('#btn-clear-scope')?.addEventListener('click', () => {
       this.preserveScrollOnNavigate = true;

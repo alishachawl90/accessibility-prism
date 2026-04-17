@@ -39,6 +39,66 @@ test.describe('Screen Reader Walkthrough', () => {
     await goBack(panelPage);
     await expect(panelPage.locator(SEL.btnSrWalkthrough)).toBeVisible();
   });
+
+  /**
+   * Helper: reads ALL walkthrough announcements set on the window by startWalkthrough().
+   * The nearby-items panel only renders a 7-element window around the current position,
+   * so querying .wt-item elements misses entries deeper in the list.
+   * We use a stable string key (__a11y_sr_announcements) that survives Vite minification.
+   */
+  async function getAllWalkthroughAnnouncements(page) {
+    return page.evaluate(() => window['__a11y_sr_announcements'] ?? []);
+  }
+
+  test('paragraph text is included in the walkthrough list', async ({ panelPage }) => {
+    // The fixture page has <p>Description of product A</p> etc.
+    // These must appear after the v2.1 DOM fix (analyzeForSrWalkthrough includes <p> tags).
+    await navigateToView(panelPage, SEL.btnSrWalkthrough);
+    // Wait for startWalkthrough to fire — the window key is set synchronously during the click
+    // handler, so we poll until the key is populated (avoids race between event dispatch and evaluate).
+    await panelPage.waitForFunction(() =>
+      Array.isArray(window['__a11y_sr_announcements']) && window['__a11y_sr_announcements'].length > 0,
+      { timeout: 5000 }
+    );
+    const announcements = await getAllWalkthroughAnnouncements(panelPage);
+    expect(announcements.length).toBeGreaterThan(0);
+    const hasParagraph = announcements.some(a => /description of product/i.test(a));
+    expect(hasParagraph).toBe(true);
+  });
+
+  test('paragraph announcement contains only text with no spurious role suffix', async ({ panelPage }) => {
+    // <p> has no meaningful ARIA role — the announcement must not append
+    // "paragraph", "generic", or a similar role label.
+    await navigateToView(panelPage, SEL.btnSrWalkthrough);
+    await panelPage.waitForFunction(() =>
+      Array.isArray(window['__a11y_sr_announcements']) && window['__a11y_sr_announcements'].length > 0,
+      { timeout: 5000 }
+    );
+    const announcements = await getAllWalkthroughAnnouncements(panelPage);
+    const paragraphAnnouncements = announcements.filter(a => /description of product/i.test(a));
+    expect(paragraphAnnouncements.length).toBeGreaterThan(0);
+    for (const text of paragraphAnnouncements) {
+      expect(text).not.toMatch(/\b(paragraph|generic|staticText)\b/i);
+    }
+  });
+
+  test('paragraph immediately follows its parent heading in walkthrough order', async ({ panelPage }) => {
+    // The fixture page has <h4>Product A</h4><p>Description of product A</p> in sequence.
+    // The walkthrough must preserve DOM order so assistive technology consumers
+    // see content in the same order as sighted users.
+    await navigateToView(panelPage, SEL.btnSrWalkthrough);
+    await panelPage.waitForFunction(() =>
+      Array.isArray(window['__a11y_sr_announcements']) && window['__a11y_sr_announcements'].length > 0,
+      { timeout: 5000 }
+    );
+    const announcements = await getAllWalkthroughAnnouncements(panelPage);
+    const headingIdx = announcements.findIndex(a => /product a/i.test(a) && /heading/i.test(a));
+    const paragraphIdx = announcements.findIndex(a => /description of product a/i.test(a));
+    expect(headingIdx).toBeGreaterThanOrEqual(0);
+    expect(paragraphIdx).toBeGreaterThan(headingIdx);
+    // Allow at most one intermediate item (e.g. a nested button) between heading and paragraph.
+    expect(paragraphIdx - headingIdx).toBeLessThanOrEqual(2);
+  });
 });
 
 test.describe('Live Regions', () => {

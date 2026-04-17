@@ -263,7 +263,9 @@ export interface AltTextIssue {
 // === Accessible Name Inspector ===
 
 export interface AccNameEntry {
-  element: Element;
+  /** DOM element reference. Null for entries sourced from the chrome.automation AX tree
+   *  (which have no 1:1 element mapping). Highlight overlay is skipped when null. */
+  element: Element | null;
   role: string;
   name: string;
   description: string;

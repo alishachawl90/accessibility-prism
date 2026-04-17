@@ -28,7 +28,7 @@ export function renderSrWalkthrough(data: WalkthroughData): string {
   const entry = data.entries[current];
   const sev = entry.severity || 'pass';
   const sevColor = sev === 'error' ? '#EF4444' : sev === 'warning' ? '#F59E0B' : '#2563EB';
-  const tag = entry.element.tagName.toLowerCase();
+  const tag = entry.element?.tagName.toLowerCase() ?? entry.role ?? 'element';
 
   const toolbarHtml = `
     <div style="display: flex !important; align-items: center !important; justify-content: space-between !important; width: 100% !important;">
@@ -137,8 +137,9 @@ export function attachWalkthroughListeners(
     },
   });
 
-  if (data.entries[data.currentIndex]) {
-    actions.onHighlight([data.entries[data.currentIndex].element]);
+  const currentEntry = data.entries[data.currentIndex];
+  if (currentEntry?.element) {
+    actions.onHighlight([currentEntry.element]);
   }
 
   container.querySelectorAll('.wt-item').forEach(el => {

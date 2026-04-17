@@ -44,7 +44,7 @@ function getFilteredAccNameEntries(data: AccNameData): AccNameEntry[] {
         e.role.toLowerCase().includes(q) ||
         e.name.toLowerCase().includes(q) ||
         (e.announcement || '').toLowerCase().includes(q) ||
-        e.element.tagName.toLowerCase().includes(q)
+        (e.element?.tagName ?? '').toLowerCase().includes(q)
     );
   }
   return entries;
@@ -89,7 +89,7 @@ function renderAccNameExtra(entry: AccNameEntry): string {
 
 function renderEntryCard(entry: AccNameEntry, idx: number): string {
   const sev = entrySeverity(entry);
-  const tag = entry.element.tagName.toLowerCase();
+  const tag = entry.element?.tagName.toLowerCase() ?? entry.role ?? 'element';
   const roleOrTag = entry.role || tag;
   const titleHtml = `<span style="font-family: ui-monospace, SFMono-Regular, Menlo, monospace !important;"><code style="font-size: 11px !important; color: #6366F1 !important; background: #EEF2FF !important; padding: 1px 6px !important; border-radius: 3px !important;">${escHtml(roleOrTag)}</code> <code style="font-size: 11px !important; color: #6B7280 !important;">&lt;${escHtml(tag)}&gt;</code></span>`;
   const desc = entry.name.length > 120 ? entry.name.substring(0, 120) + '…' : entry.name;
@@ -100,8 +100,8 @@ function renderEntryCard(entry: AccNameEntry, idx: number): string {
     badgeHtml: renderSeverityBadge(sev, badgeLabel(sev)),
     titleHtml,
     descriptionHtml,
-    selector: getCssSelector(entry.element),
-    snippet: getSnippet(entry.element),
+    selector: entry.element ? getCssSelector(entry.element) : '',
+    snippet: entry.element ? getSnippet(entry.element) : '',
     extraBodyHtml: renderAccNameExtra(entry),
   });
 }
@@ -229,7 +229,7 @@ export function attachAccNameListeners(
       onHighlight: idx => {
         const filtered = getFilteredAccNameEntries(data);
         const entry = filtered[idx];
-        if (entry) actions.onHighlight([entry.element]);
+        if (entry?.element) actions.onHighlight([entry.element]);
       },
       onSeverityChange: actions.onSeverityChange,
       onSearchInput: actions.onSearchInput,

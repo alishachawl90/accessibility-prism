@@ -17,7 +17,7 @@ export function renderReadingOrderResults(entries: AccNameEntry[]): string {
 
   const cardsHtml = entries.map((entry, idx) => {
     const isErr = entry.severity === 'error';
-    const tag = entry.element.tagName.toLowerCase();
+    const tag = entry.element?.tagName.toLowerCase() ?? entry.role ?? 'element';
     const roleOrTag = escHtml(entry.role || tag);
     const nameLine = entry.name
       ? escHtml(entry.name)
@@ -39,8 +39,8 @@ export function renderReadingOrderResults(entries: AccNameEntry[]): string {
       borderColor,
       badgeHtml,
       titleHtml,
-      selector: getCssSelector(entry.element),
-      snippet: getSnippet(entry.element),
+      selector: entry.element ? getCssSelector(entry.element) : '',
+      snippet: entry.element ? getSnippet(entry.element) : '',
     });
   }).join('');
 
@@ -68,7 +68,7 @@ export function attachReadingOrderListeners(
     onBack: actions.onBack,
     onHighlight: (idx) => {
       const entry = entries[idx];
-      if (entry) actions.onHighlight([entry.element]);
+      if (entry?.element) actions.onHighlight([entry.element]);
     },
   });
 }

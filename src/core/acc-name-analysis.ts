@@ -1,4 +1,5 @@
 import type { AccNameEntry, AccNameResult } from './types';
+import { computeAccessibleName as w3cName, computeAccessibleDescription as w3cDesc } from 'dom-accessibility-api';
 
 const IMPLICIT_ROLES: Record<string, string> = {
   a: 'link', button: 'button', h1: 'heading', h2: 'heading', h3: 'heading',
@@ -32,96 +33,24 @@ function computeRole(el: Element): string {
   return getImplicitRole(el);
 }
 
-function getTextFromLabelledBy(el: Element): string | null {
-  const ids = el.getAttribute('aria-labelledby');
-  if (!ids) return null;
-  const parts = ids.split(/\s+/).map(id => {
-    const ref = document.getElementById(id);
-    return ref ? (ref.textContent || '').trim() : '';
-  }).filter(Boolean);
-  return parts.length > 0 ? parts.join(' ') : null;
-}
-
-function getAssociatedLabel(el: Element): string | null {
-  if (!(el instanceof HTMLElement)) return null;
-  const id = el.id;
-  if (id) {
-    const label = document.querySelector(`label[for="${CSS.escape(id)}"]`);
-    if (label) return (label.textContent || '').trim();
-  }
-  const parent = el.closest('label');
-  if (parent) {
-    const clone = parent.cloneNode(true) as HTMLElement;
-    clone.querySelectorAll('input, select, textarea').forEach(c => c.remove());
-    const text = (clone.textContent || '').trim();
-    if (text) return text;
-  }
-  return null;
-}
 
 function computeAccessibleName(el: Element): string {
-  const labelledBy = getTextFromLabelledBy(el);
-  if (labelledBy) return labelledBy;
-
-  const ariaLabel = el.getAttribute('aria-label');
-  if (ariaLabel?.trim()) return ariaLabel.trim();
-
-  const tag = el.tagName.toLowerCase();
-
-  if (['input', 'select', 'textarea'].includes(tag)) {
-    const label = getAssociatedLabel(el);
-    if (label) return label;
-    const placeholder = el.getAttribute('placeholder');
-    if (placeholder?.trim()) return placeholder.trim();
-  }
-
-  if (tag === 'img' || tag === 'area') {
-    const alt = el.getAttribute('alt');
-    if (alt?.trim()) return alt.trim();
-  }
-
-  if (tag === 'input' && ['submit', 'reset', 'button', 'image'].includes((el as HTMLInputElement).type)) {
-    const val = (el as HTMLInputElement).value;
-    if (val?.trim()) return val.trim();
-  }
-
-  if (['a', 'button', 'summary', 'legend', 'caption', 'figcaption', 'label', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'].includes(tag)) {
+  try {
+    const name = w3cName(el).trim();
+    return name.length > 120 ? name.substring(0, 117) + '...' : name;
+  } catch {
+    // Fallback for edge cases (detached nodes, etc.)
     const text = (el.textContent || '').trim();
-    if (text) return text.length > 80 ? text.substring(0, 77) + '...' : text;
+    return text.length > 120 ? text.substring(0, 117) + '...' : text;
   }
-
-  const title = el.getAttribute('title');
-  if (title?.trim()) return title.trim();
-
-  if (tag === 'fieldset') {
-    const legend = el.querySelector('legend');
-    if (legend?.textContent?.trim()) return legend.textContent.trim();
-  }
-
-  if (tag === 'table') {
-    const caption = el.querySelector('caption');
-    if (caption?.textContent?.trim()) return caption.textContent.trim();
-  }
-
-  if (tag === 'figure') {
-    const figcaption = el.querySelector('figcaption');
-    if (figcaption?.textContent?.trim()) return figcaption.textContent.trim();
-  }
-
-  const text = (el.textContent || '').trim();
-  if (text) return text.length > 80 ? text.substring(0, 77) + '...' : text;
-
-  return '';
 }
 
 function computeAccessibleDescription(el: Element): string {
-  const describedBy = el.getAttribute('aria-describedby');
-  if (!describedBy) return '';
-  const parts = describedBy.split(/\s+/).map(id => {
-    const ref = document.getElementById(id);
-    return ref ? (ref.textContent || '').trim() : '';
-  }).filter(Boolean);
-  return parts.join(' ');
+  try {
+    return w3cDesc(el).trim();
+  } catch {
+    return '';
+  }
 }
 
 function getStates(el: Element): string[] {
@@ -183,6 +112,14 @@ function evaluateEntry(entry: AccNameEntry): AccNameSeverity {
   if (entry.role === 'presentation' || entry.role === 'none') return 'pass';
   if (entry.ariaHidden) return 'pass';
 
+  // AX-tree sourced entries have no DOM element reference — evaluate by role only.
+  if (!entry.element) {
+    const needsNameAx = ['button', 'link', 'textbox', 'searchbox', 'checkbox', 'radio',
+      'slider', 'spinbutton', 'combobox', 'listbox', 'heading', 'img'];
+    if (needsNameAx.includes(entry.role) && !entry.name) return 'error';
+    return 'pass';
+  }
+
   const tag = entry.element.tagName.toLowerCase();
   const needsName = ['button', 'link', 'textbox', 'searchbox', 'checkbox', 'radio',
     'slider', 'spinbutton', 'combobox', 'listbox', 'switch', 'tab', 'treeitem',
@@ -207,6 +144,68 @@ function buildAnnouncement(entry: AccNameEntry): string {
   if (entry.states.length > 0) parts.push(entry.states.join(', '));
   if (entry.description) parts.push(`— ${entry.description}`);
   return parts.join(', ') || '(empty announcement)';
+}
+
+// Tags that carry visible text content and should be read aloud by a screen reader
+// even though they have no interactive or landmark role.
+const SR_TEXT_TAGS = new Set(['p', 'li', 'dt', 'dd', 'blockquote', 'figcaption', 'caption']);
+
+function isSignificantForSr(el: Element): boolean {
+  if (isSignificant(el)) return true;
+  const tag = el.tagName.toLowerCase();
+  if (SR_TEXT_TAGS.has(tag)) {
+    return (el.textContent || '').trim().length > 0;
+  }
+  return false;
+}
+
+/**
+ * Builds an element list that mirrors what a screen reader actually traverses —
+ * includes plain text containers (p, li, etc.) in addition to the semantic/interactive
+ * elements captured by analyzeAccessibleNames().
+ */
+export function analyzeForSrWalkthrough(): AccNameResult {
+  const entries: AccNameEntry[] = [];
+  const selector = [
+    'a, button, input, select, textarea, img, svg[role="img"]',
+    'h1, h2, h3, h4, h5, h6',
+    'p, li, blockquote, figcaption, dt, dd, caption',
+    'nav, main, header, footer, aside, form, section, table, dialog',
+    'details, summary, fieldset, iframe, object, embed, area, meter, progress, output',
+    '[role], [tabindex], [aria-label], [aria-labelledby]',
+  ].join(', ');
+
+  const elements = document.querySelectorAll(selector);
+  elements.forEach(el => {
+    if (isExtension(el) || !isSignificantForSr(el)) return;
+    const visible = isVisible(el);
+    const ariaHidden = el.getAttribute('aria-hidden') === 'true' || !!el.closest('[aria-hidden="true"]');
+
+    if (!visible && !ariaHidden) return;
+
+    const role = computeRole(el);
+    // W3C AccName algorithm returns empty for text-container elements like <p>, <li>, <blockquote>.
+    // For the SR walkthrough (NOT the accessible names audit), fall back to textContent so that
+    // plain prose is included in the step list — screen readers do read this content.
+    let name = computeAccessibleName(el);
+    const tag = el.tagName.toLowerCase();
+    if (!name && SR_TEXT_TAGS.has(tag)) {
+      name = (el.textContent || '').trim();
+      if (name.length > 120) name = name.substring(0, 117) + '…';
+    }
+    const description = computeAccessibleDescription(el);
+    const states = getStates(el);
+
+    const entry: AccNameEntry = { element: el, role, name, description, states, ariaHidden };
+    entry.severity = evaluateEntry(entry);
+    entry.announcement = buildAnnouncement(entry);
+    entries.push(entry);
+  });
+
+  const issues = entries.filter(e => e.severity === 'error').length;
+  const warnings = entries.filter(e => e.severity === 'warning').length;
+
+  return { entries, issueCount: issues, warningCount: warnings };
 }
 
 export function analyzeAccessibleNames(): AccNameResult {

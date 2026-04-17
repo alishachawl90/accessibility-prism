@@ -22,6 +22,7 @@
   },
   "dependencies": {
     "@types/axe-core": "^2.0.2",
-    "axe-core": "^4.11.1"
+    "axe-core": "^4.11.1",
+    "dom-accessibility-api": "^0.7.1"
   }
 }
