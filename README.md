@@ -1,5 +1,7 @@
 # Accessibility Prism
 
+**Current version: v2.1.0** | [Changelog](#changelog)
+
 A comprehensive, all-in-one accessibility testing Chrome extension that goes far beyond automated scanning. Accessibility Prism combines axe-core engine analysis with manual testing tools, visual overlays, and plain-English scored reports — giving developers, QA engineers, and accessibility specialists everything they need in a single panel.
 
 ## The Problem
@@ -37,7 +39,7 @@ Run every analysis engine at once and get an A-F scored report across five categ
 - **Accessible Name Inspector** — computed name, role, and state for every significant element
 - **ARIA Validation** — broken references, invalid roles, forbidden patterns, missing required props
 - **Form Labels Audit** — unlabeled controls, placeholder-only inputs, missing fieldset legends
-- **Announcement Walk-Through** — step through elements hearing what a screen reader would announce
+- **Announcement Walk-Through** — step through elements hearing what a screen reader would announce. Uses Chrome's Accessibility Tree (`chrome.automation` API, the same data source as ChromeVox) for high-fidelity announcements; falls back to DOM-based W3C AccName spec computation when running outside extension context
 - **Reading Order** — numbered DOM-order markers drawn directly on the page
 
 ### Monitoring
@@ -91,22 +93,28 @@ This builds and launches Chrome with the extension pre-loaded.
 ```
 src/
 ├── core/            # Analysis engines (axe runner, keyboard, headings, ARIA, etc.)
+│   └── custom-rules/  # 10 custom Prism rules extending axe-core
 ├── ui/
 │   ├── panel.ts     # Main floating panel controller
 │   ├── overlay.ts   # SVG overlay drawing (highlights, markers, arrows)
 │   ├── views/       # Individual view renderers (pre-screen, results, details)
 │   ├── tokens.ts    # Design tokens (colors, palettes)
-│   ├── panel-styles.ts  # CSS variables and utility classes
+│   ├── panel-styles.ts  # CSS variables and utility classes (all scoped + !important)
 │   └── icons.ts     # SVG icon constants
 ├── utils/           # Report generators, WCAG mapping, HTML escaping
 └── main.ts          # Entry point, A11yAnalyzer class
+
+public/
+└── background.js    # MV3 service worker — walks chrome.automation AX tree for SR
+                     # Walk-Through and relays serialized nodes to the content script
 ```
 
 ### Key Design Decisions
 
 - **On-demand injection** — The extension only injects when activated via popup or floating button, using Manifest V3 `chrome.scripting.executeScript`
 - **Zero remote code** — Everything is bundled locally (axe-core included), fully Chrome Web Store compliant
-- **Host CSS isolation** — All panel styles use `!important` and CSS variables scoped to `#a11y-analyzer-panel` to prevent host page styles from leaking in
+- **Host CSS isolation** — Every panel style uses `!important` scoped under `#a11y-analyzer-panel` (specificity 1,1,0+) and all programmatic style assignments use `element.style.setProperty(prop, value, 'important')`, so host-page `!important` rules — even ID-based ones — cannot alter the panel's layout, fonts, or colours across any browser or OS
+- **Accessibility Tree for SR simulation** — The Announcement Walk-Through uses `chrome.automation` to read the browser's native AX tree (the same source ChromeVox uses), so announcements reflect the real computed role, name, and description rather than raw DOM text
 - **Instant navigation** — Clicking any issue scrolls instantly to the element and draws the highlight after the scroll completes for accurate positioning
 
 ## Tech Stack
@@ -120,8 +128,20 @@ src/
 
 - `activeTab` — Access the current tab when the user activates the extension
 - `scripting` — Inject the analyzer content script on demand
+- `automation` — Read the browser's native Accessibility Tree for the Screen Reader Walk-Through (same API used by ChromeVox). This permission is required for AX-tree-based SR simulation; the extension falls back gracefully to DOM analysis when the AX tree is unavailable
 
-No background scripts. No persistent permissions. No data collection.
+No data collection. All analysis runs locally in the browser tab.
+
+## Changelog
+
+### v2.1.0
+- **Screen Reader Walk-Through** — Upgraded to use Chrome's native Accessibility Tree via `chrome.automation` (same source as ChromeVox). Announcements now correctly include prose elements (`<p>`, `<li>`, etc.), computed descriptions from `aria-describedby`, and accurate role/name pairs. Falls back to W3C AccName spec DOM computation in non-extension contexts
+- **CSS isolation hardening** — All inline styles, JS `setProperty` calls, and class rules now use `!important` scoped under `#a11y-analyzer-panel`. The activation button and overlay SVG are also fully isolated. Eliminates layout breakage (stacked chips, wrong fonts, oversized padding) caused by host-page CSS on any browser or OS
+- **Cross-platform font consistency** — Explicit system UI font stack (`-apple-system, Segoe UI, Roboto, …`) applied to the panel and all form controls, preventing host-page serif fallbacks from bleeding in on Windows/Linux
+- Added `automation` permission for AX tree access; added MV3 background service worker
+
+### v2.0.0
+- Initial release with 15+ accessibility checks, Accessibility Scorecard, axe-core integration, and all audit views
 
 ## Credits
 
