@@ -28,10 +28,35 @@ function renderButton(btn: PreScreenButton): string {
     </button>`;
 }
 
-export function renderPreScreen(): string {
+export function renderPreScreen(scopeLabel?: string): string {
   let html = renderNavBar('Select Analysis', false);
 
   html += `<div id="scroll-area" tabindex="0" style="padding: 16px !important; display: flex !important; flex-direction: column !important; gap: 6px !important; background: #F9FAFB !important; overflow-y: auto !important; flex: 1 !important;">`;
+
+  // --- Scope Controls ---
+  html += `<div style="display: flex !important; gap: 6px !important; align-items: stretch !important; margin-bottom: 4px !important;">
+    <input id="scope-selector-input" type="text" placeholder="CSS selector to scope (e.g. .card, #hero)"
+      style="flex: 1 !important; padding: 8px 10px !important; border: 1px solid #D1D5DB !important; border-radius: 8px !important; font-size: 12px !important; font-family: ui-monospace, SFMono-Regular, Menlo, monospace !important; background: white !important; color: #1F2937 !important; outline: none !important;"
+      onfocus="this.style.setProperty('border-color','#2563EB','important');this.style.setProperty('box-shadow','0 0 0 2px rgba(37,99,235,0.15)','important');"
+      onblur="this.style.setProperty('border-color','#D1D5DB','important');this.style.setProperty('box-shadow','none','important');" />
+    <button id="btn-scope-apply" title="Apply selector scope" style="padding: 6px 10px !important; background: #2563EB !important; color: white !important; border: none !important; border-radius: 8px !important; cursor: pointer !important; font-size: 12px !important; font-weight: 600 !important; white-space: nowrap !important;"
+      onmouseover="this.style.setProperty('background','#1D4ED8','important');"
+      onmouseout="this.style.setProperty('background','#2563EB','important');">Scope</button>
+    <button id="btn-scope-pick" title="Pick element on page" style="padding: 6px 8px !important; background: #F3F4F6 !important; border: 1px solid #D1D5DB !important; border-radius: 8px !important; cursor: pointer !important; display: flex !important; align-items: center !important; justify-content: center !important;"
+      onmouseover="this.style.setProperty('border-color','#2563EB','important');"
+      onmouseout="this.style.setProperty('border-color','#D1D5DB','important');">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4B5563" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+    </button>
+  </div>`;
+
+  if (scopeLabel) {
+    html += `<div id="scope-active-banner" style="display: flex !important; align-items: center !important; gap: 8px !important; padding: 8px 12px !important; background: #EFF6FF !important; border: 1px solid #BFDBFE !important; border-radius: 8px !important; margin-bottom: 4px !important;">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2" style="flex-shrink: 0 !important;"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+      <span style="font-size: 12px !important; color: #1E40AF !important; font-weight: 500 !important;">Scoped to:</span>
+      <code style="background: #DBEAFE !important; padding: 1px 6px !important; border-radius: 4px !important; font-size: 11px !important; color: #1E3A8A !important; max-width: 200px !important; overflow: hidden !important; text-overflow: ellipsis !important; white-space: nowrap !important; font-family: ui-monospace, SFMono-Regular, Menlo, monospace !important;">${scopeLabel}</code>
+      <button id="btn-scope-clear" style="margin-left: auto !important; background: none !important; border: none !important; cursor: pointer !important; color: #6B7280 !important; font-size: 11px !important; text-decoration: underline !important; padding: 0 !important;">Clear</button>
+    </div>`;
+  }
 
   // --- Full Scorecard ---
   html += renderButton({
@@ -172,6 +197,9 @@ export function attachPreScreenListeners(container: HTMLElement, actions: {
   onRunTouchTargets: () => void;
   onRunAltText: () => void;
   onPartialScan: () => void;
+  onScopePick: () => void;
+  onScopeSelector: (selector: string) => boolean;
+  onScopeClear: () => void;
   onRunAccNames: () => void;
   onRunAriaValidation: () => void;
   onRunFormLabels: () => void;
@@ -183,6 +211,29 @@ export function attachPreScreenListeners(container: HTMLElement, actions: {
     const el = container.querySelector(`#${id} div div`) as HTMLElement;
     if (el) el.textContent = text;
   }
+
+  // Scope controls
+  container.querySelector('#btn-scope-pick')?.addEventListener('click', () => actions.onScopePick());
+  container.querySelector('#btn-scope-clear')?.addEventListener('click', () => actions.onScopeClear());
+
+  const selectorInput = container.querySelector('#scope-selector-input') as HTMLInputElement | null;
+  const applyBtn = container.querySelector('#btn-scope-apply');
+  const applyScope = () => {
+    if (!selectorInput) return;
+    const sel = selectorInput.value.trim();
+    if (!sel) return;
+    const ok = actions.onScopeSelector(sel);
+    if (!ok) {
+      selectorInput.style.setProperty('border-color', '#EF4444', 'important');
+      selectorInput.style.setProperty('box-shadow', '0 0 0 2px rgba(239,68,68,0.15)', 'important');
+      setTimeout(() => {
+        selectorInput.style.setProperty('border-color', '#D1D5DB', 'important');
+        selectorInput.style.setProperty('box-shadow', 'none', 'important');
+      }, 1500);
+    }
+  };
+  applyBtn?.addEventListener('click', applyScope);
+  selectorInput?.addEventListener('keydown', (e) => { if (e.key === 'Enter') applyScope(); });
 
   container.querySelector('#btn-auto-axe')?.addEventListener('click', () => { setLoading('btn-auto-axe', 'Analyzing...'); actions.onRunAxe(); });
   container.querySelector('#btn-partial-scan')?.addEventListener('click', () => { setLoading('btn-partial-scan', 'Pick an element...'); actions.onPartialScan(); });

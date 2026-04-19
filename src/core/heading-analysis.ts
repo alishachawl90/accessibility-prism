@@ -11,8 +11,8 @@ function isExtension(el: Element): boolean {
   return !!el.closest('#a11y-analyzer-panel') || !!el.closest('#a11y-analyzer-overlay');
 }
 
-export function analyzeHeadings(): HeadingAnalysisResult {
-  const allHeadings = Array.from(document.querySelectorAll('h1, h2, h3, h4, h5, h6'))
+export function analyzeHeadings(root?: Element | Document): HeadingAnalysisResult {
+  const allHeadings = Array.from((root ?? document).querySelectorAll('h1, h2, h3, h4, h5, h6'))
     .filter(el => !isExtension(el) && isVisible(el));
 
   const headings: HeadingNode[] = allHeadings.map(el => ({

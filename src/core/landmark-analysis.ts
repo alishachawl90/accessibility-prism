@@ -51,8 +51,8 @@ function getLandmarkLabel(el: Element): string {
   return '';
 }
 
-export function analyzeLandmarks(): LandmarkAnalysisResult {
-  const allElements = Array.from(document.querySelectorAll('*'));
+export function analyzeLandmarks(root?: Element | Document): LandmarkAnalysisResult {
+  const allElements = Array.from((root ?? document).querySelectorAll('*'));
   const landmarks: LandmarkInfo[] = [];
   const issues: LandmarkIssue[] = [];
 

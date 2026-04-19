@@ -55,11 +55,12 @@ function colorToHex(r: number, g: number, b: number): string {
   return '#' + [r, g, b].map(c => c.toString(16).padStart(2, '0')).join('');
 }
 
-export function analyzeContrast(): ContrastIssue[] {
+export function analyzeContrast(root?: Element | Document): ContrastIssue[] {
   const issues: ContrastIssue[] = [];
   const seen = new Set<Element>();
+  const walkRoot = root instanceof Element ? root : document.body;
 
-  const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, {
+  const walker = document.createTreeWalker(walkRoot, NodeFilter.SHOW_TEXT, {
     acceptNode(node) {
       if (!node.textContent?.trim()) return NodeFilter.FILTER_REJECT;
       const parent = node.parentElement;

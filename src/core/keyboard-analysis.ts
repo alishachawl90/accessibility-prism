@@ -85,28 +85,29 @@ function getAccessibleName(el: Element): string {
   return '';
 }
 
-export function analyzeKeyboardFlow(): KeyboardIssue[] {
+export function analyzeKeyboardFlow(root?: Element | Document): KeyboardIssue[] {
   const issues: KeyboardIssue[] = [];
+  const qsa = root ?? document;
 
-  checkSkipLink(issues);
-  checkNotFocusable(issues);
-  checkPositiveTabindex(issues);
-  checkMouseOnlyHandlers(issues);
-  checkTabVisualMismatch(issues);
-  checkMissingFocusStyles(issues);
-  checkFocusTrap(issues);
-  checkPhantomFocus(issues);
-  checkFocusableInAriaHidden(issues);
-  checkNoAccessibleName(issues);
-  checkDoubleTabStop(issues);
+  checkSkipLink(issues, qsa);
+  checkNotFocusable(issues, qsa);
+  checkPositiveTabindex(issues, qsa);
+  checkMouseOnlyHandlers(issues, qsa);
+  checkTabVisualMismatch(issues, qsa);
+  checkMissingFocusStyles(issues, qsa);
+  checkFocusTrap(issues, qsa);
+  checkPhantomFocus(issues, qsa);
+  checkFocusableInAriaHidden(issues, qsa);
+  checkNoAccessibleName(issues, qsa);
+  checkDoubleTabStop(issues, qsa);
 
   issues.sort((a, b) => a.priority - b.priority);
 
   return issues;
 }
 
-function checkSkipLink(issues: KeyboardIssue[]) {
-  const tabOrder = getTabOrder();
+function checkSkipLink(issues: KeyboardIssue[], qsa: Element | Document) {
+  const tabOrder = getTabOrder(qsa);
   const first3 = tabOrder.slice(0, 3);
   const hasSkip = first3.some(el => {
     if (el.tagName !== 'A') return false;
@@ -126,8 +127,8 @@ function checkSkipLink(issues: KeyboardIssue[]) {
   }
 }
 
-function checkNotFocusable(issues: KeyboardIssue[]) {
-  const interactiveElements = Array.from(document.querySelectorAll(focusableSelectors.join(', ')));
+function checkNotFocusable(issues: KeyboardIssue[], qsa: Element | Document) {
+  const interactiveElements = Array.from(qsa.querySelectorAll(focusableSelectors.join(', ')));
   interactiveElements.forEach(el => {
     if (isExtensionElement(el)) return;
     if (!isVisible(el)) return;
@@ -143,8 +144,8 @@ function checkNotFocusable(issues: KeyboardIssue[]) {
   });
 }
 
-function checkPositiveTabindex(issues: KeyboardIssue[]) {
-  const allTabindexed = Array.from(document.querySelectorAll('[tabindex]'));
+function checkPositiveTabindex(issues: KeyboardIssue[], qsa: Element | Document) {
+  const allTabindexed = Array.from(qsa.querySelectorAll('[tabindex]'));
   allTabindexed.forEach(el => {
     if (isExtensionElement(el)) return;
     if (!isVisible(el)) return;
@@ -161,8 +162,8 @@ function checkPositiveTabindex(issues: KeyboardIssue[]) {
   });
 }
 
-function checkMouseOnlyHandlers(issues: KeyboardIssue[]) {
-  const mouseOnly = Array.from(document.querySelectorAll('div[onclick], span[onclick]'));
+function checkMouseOnlyHandlers(issues: KeyboardIssue[], qsa: Element | Document) {
+  const mouseOnly = Array.from(qsa.querySelectorAll('div[onclick], span[onclick]'));
   mouseOnly.forEach(el => {
     if (isExtensionElement(el)) return;
     if (!isVisible(el)) return;
@@ -180,8 +181,8 @@ function checkMouseOnlyHandlers(issues: KeyboardIssue[]) {
   });
 }
 
-function checkTabVisualMismatch(issues: KeyboardIssue[]) {
-  const tabOrder = getTabOrder();
+function checkTabVisualMismatch(issues: KeyboardIssue[], qsa: Element | Document) {
+  const tabOrder = getTabOrder(qsa);
   const THRESHOLD_PX = 200;
 
   for (let i = 0; i < tabOrder.length - 1; i++) {
@@ -200,8 +201,8 @@ function checkTabVisualMismatch(issues: KeyboardIssue[]) {
   }
 }
 
-function checkMissingFocusStyles(issues: KeyboardIssue[]) {
-  const tabOrder = getTabOrder();
+function checkMissingFocusStyles(issues: KeyboardIssue[], qsa: Element | Document) {
+  const tabOrder = getTabOrder(qsa);
   const sampled = tabOrder.slice(0, 30);
 
   sampled.forEach(el => {
@@ -225,8 +226,8 @@ function checkMissingFocusStyles(issues: KeyboardIssue[]) {
   });
 }
 
-function checkFocusTrap(issues: KeyboardIssue[]) {
-  const openDialogs = Array.from(document.querySelectorAll('dialog[open], [role="dialog"]'));
+function checkFocusTrap(issues: KeyboardIssue[], qsa: Element | Document) {
+  const openDialogs = Array.from(qsa.querySelectorAll('dialog[open], [role="dialog"]'));
   openDialogs.forEach(dialog => {
     const isOpen = dialog.tagName === 'DIALOG'
       ? (dialog as HTMLDialogElement).open
@@ -258,8 +259,8 @@ function checkFocusTrap(issues: KeyboardIssue[]) {
   });
 }
 
-function checkPhantomFocus(issues: KeyboardIssue[]) {
-  const focusable = Array.from(document.querySelectorAll('[tabindex="0"]'));
+function checkPhantomFocus(issues: KeyboardIssue[], qsa: Element | Document) {
+  const focusable = Array.from(qsa.querySelectorAll('[tabindex="0"]'));
   focusable.forEach(el => {
     if (isExtensionElement(el)) return;
     if (!isVisible(el)) return;
@@ -293,9 +294,9 @@ function checkPhantomFocus(issues: KeyboardIssue[]) {
   });
 }
 
-function checkFocusableInAriaHidden(issues: KeyboardIssue[]) {
+function checkFocusableInAriaHidden(issues: KeyboardIssue[], qsa: Element | Document) {
   const selectors = 'a[href], button, input, select, textarea, [tabindex]:not([tabindex="-1"])';
-  const ariaHiddenRoots = Array.from(document.querySelectorAll('[aria-hidden="true"]'));
+  const ariaHiddenRoots = Array.from(qsa.querySelectorAll('[aria-hidden="true"]'));
 
   ariaHiddenRoots.forEach(root => {
     if (isExtensionElement(root)) return;
@@ -314,8 +315,8 @@ function checkFocusableInAriaHidden(issues: KeyboardIssue[]) {
   });
 }
 
-function checkNoAccessibleName(issues: KeyboardIssue[]) {
-  const tabOrder = getTabOrder();
+function checkNoAccessibleName(issues: KeyboardIssue[], qsa: Element | Document) {
+  const tabOrder = getTabOrder(qsa);
   tabOrder.forEach(el => {
     if (isExtensionElement(el)) return;
     const name = getAccessibleName(el);
@@ -331,8 +332,8 @@ function checkNoAccessibleName(issues: KeyboardIssue[]) {
   });
 }
 
-function checkDoubleTabStop(issues: KeyboardIssue[]) {
-  const tabOrder = getTabOrder();
+function checkDoubleTabStop(issues: KeyboardIssue[], qsa: Element | Document) {
+  const tabOrder = getTabOrder(qsa);
   tabOrder.forEach(el => {
     if (isExtensionElement(el)) return;
     if (!isNativelyInteractive(el)) return;
@@ -352,9 +353,9 @@ function checkDoubleTabStop(issues: KeyboardIssue[]) {
   });
 }
 
-export function getTabOrder(): Element[] {
+export function getTabOrder(root?: Element | Document): Element[] {
   const allFocusable = Array.from(
-    document.querySelectorAll('a[href], button, input, select, textarea, [tabindex]')
+    (root ?? document).querySelectorAll('a[href], button, input, select, textarea, [tabindex]')
   ).filter(el => {
     if (isExtensionElement(el)) return false;
     if (!isVisible(el)) return false;

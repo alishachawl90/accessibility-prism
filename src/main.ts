@@ -59,6 +59,8 @@ class A11yAnalyzer {
       onRunTouchTargets: () => this.runTouchTargetAnalysis(),
       onRunAltText: () => this.runAltTextAudit(),
       onPartialScan: () => this.startPartialScan(),
+      onScopePick: () => this.startScopePicker(),
+      onScopeSelector: (sel: string) => this.setScopeFromSelector(sel),
       onRunAccNames: () => this.runAccNameInspector(),
       onRunAriaValidation: () => this.runAriaValidation(),
       onRunFormLabels: () => this.runFormLabelsAudit(),
@@ -195,10 +197,14 @@ class A11yAnalyzer {
 
   // === New analysis methods ===
 
+  private get scope(): Element | undefined {
+    return this.panel.getScopeElement() ?? undefined;
+  }
+
   public runHeadingAnalysis() {
     clearOverlay(this.overlaySvg);
     console.log('[A11yAnalyzer] Analyzing heading structure...');
-    const result = analyzeHeadings();
+    const result = analyzeHeadings(this.scope);
     console.log(`[A11yAnalyzer] Found ${result.headings.length} headings, ${result.issues.length} issues`);
     drawHeadingMarkers(this.overlaySvg, result.headings);
     this.panel.updateHeadingResults(result);
@@ -207,7 +213,7 @@ class A11yAnalyzer {
   public runLandmarkAnalysis() {
     clearOverlay(this.overlaySvg);
     console.log('[A11yAnalyzer] Analyzing landmarks...');
-    const result = analyzeLandmarks();
+    const result = analyzeLandmarks(this.scope);
     console.log(`[A11yAnalyzer] Found ${result.landmarks.length} landmarks, ${result.issues.length} issues`);
     drawLandmarkMarkers(this.overlaySvg, result.landmarks);
     this.panel.updateLandmarkResults(result);
@@ -216,7 +222,7 @@ class A11yAnalyzer {
   public runContrastAnalysis() {
     clearOverlay(this.overlaySvg);
     console.log('[A11yAnalyzer] Analyzing color contrast...');
-    const issues = analyzeContrast();
+    const issues = analyzeContrast(this.scope);
     console.log(`[A11yAnalyzer] Found ${issues.length} contrast issues`);
     this.panel.updateContrastResults(issues);
   }
@@ -224,7 +230,7 @@ class A11yAnalyzer {
   public runFocusManagement() {
     clearOverlay(this.overlaySvg);
     console.log('[A11yAnalyzer] Analyzing focus management...');
-    const issues = analyzeFocusManagement();
+    const issues = analyzeFocusManagement(this.scope);
     console.log(`[A11yAnalyzer] Found ${issues.length} focus management issues`);
     this.panel.updateFocusMgmtResults(issues);
   }
@@ -232,7 +238,7 @@ class A11yAnalyzer {
   public runLiveRegionAnalysis() {
     clearOverlay(this.overlaySvg);
     console.log('[A11yAnalyzer] Scanning live regions...');
-    const result = analyzeLiveRegions();
+    const result = analyzeLiveRegions(this.scope);
     console.log(`[A11yAnalyzer] Found ${result.regions.length} live regions, ${result.issues.length} issues`);
     this.panel.updateLiveRegionResults(result);
   }
@@ -240,7 +246,7 @@ class A11yAnalyzer {
   public runTouchTargetAnalysis() {
     clearOverlay(this.overlaySvg);
     console.log('[A11yAnalyzer] Measuring touch targets...');
-    const issues = analyzeTouchTargets();
+    const issues = analyzeTouchTargets(this.scope);
     console.log(`[A11yAnalyzer] Found ${issues.length} undersized touch targets`);
     this.panel.updateTouchTargetResults(issues);
   }
@@ -248,7 +254,7 @@ class A11yAnalyzer {
   public runAltTextAudit() {
     clearOverlay(this.overlaySvg);
     console.log('[A11yAnalyzer] Auditing alt text...');
-    const issues = analyzeAltText();
+    const issues = analyzeAltText(this.scope);
     console.log(`[A11yAnalyzer] Found ${issues.length} alt text issues`);
     this.panel.updateAltTextResults(issues);
   }
@@ -256,7 +262,7 @@ class A11yAnalyzer {
   public runAccNameInspector() {
     clearOverlay(this.overlaySvg);
     console.log('[A11yAnalyzer] Computing accessible names...');
-    const result = analyzeAccessibleNames();
+    const result = analyzeAccessibleNames(this.scope);
     console.log(`[A11yAnalyzer] Found ${result.entries.length} elements, ${result.issueCount} missing names, ${result.warningCount} warnings`);
     this.panel.updateAccNameResults(result);
   }
@@ -264,7 +270,7 @@ class A11yAnalyzer {
   public runAriaValidation() {
     clearOverlay(this.overlaySvg);
     console.log('[A11yAnalyzer] Validating ARIA usage...');
-    const result = validateAria();
+    const result = validateAria(this.scope);
     console.log(`[A11yAnalyzer] Found ${result.issues.length} ARIA issues (${result.errorCount} errors, ${result.warningCount} warnings)`);
     this.panel.updateAriaResults(result);
   }
@@ -272,19 +278,14 @@ class A11yAnalyzer {
   public runFormLabelsAudit() {
     clearOverlay(this.overlaySvg);
     console.log('[A11yAnalyzer] Auditing form labels...');
-    const result = analyzeFormLabels();
+    const result = analyzeFormLabels(this.scope);
     console.log(`[A11yAnalyzer] Found ${result.totalControls} controls, ${result.issues.length} issues`);
     this.panel.updateFormLabelsResults(result);
   }
 
   public runSrWalkthrough() {
     clearOverlay(this.overlaySvg);
-    // SR walk-through uses the W3C AccName spec (via dom-accessibility-api) to compute
-    // accessible names, descriptions, roles, and announcements directly from the DOM.
-    // This is the same algorithm browsers/screen readers use to derive their accessible
-    // tree from the DOM. The chrome.automation API was attempted but is restricted to
-    // whitelisted extensions only, so DOM-based AccName is the production path.
-    const result = analyzeForSrWalkthrough();
+    const result = analyzeForSrWalkthrough(this.scope);
     console.log(`[A11yAnalyzer] SR walk-through ready: ${result.entries.length} elements`);
     this.panel.startWalkthrough(result.entries);
   }
@@ -292,10 +293,43 @@ class A11yAnalyzer {
   public runReadingOrder() {
     clearOverlay(this.overlaySvg);
     console.log('[A11yAnalyzer] Computing reading order...');
-    const result = analyzeAccessibleNames();
+    const result = analyzeAccessibleNames(this.scope);
     drawReadingOrderMarkers(this.overlaySvg, result.entries);
     console.log(`[A11yAnalyzer] Reading order: ${result.entries.length} elements marked`);
     this.panel.showReadingOrder(result.entries);
+  }
+
+  public startScopePicker() {
+    this.panel.hide();
+    clearOverlay(this.overlaySvg);
+
+    this.cancelPicker = startElementPicker(
+      (el: Element) => {
+        this.cancelPicker = undefined;
+        const label = getElementDescription(el);
+        this.panel.setScopeElement(el, label);
+        this.panel.show();
+        this.overlaySvg.appendChild(drawHighlight(el, '#2563EB', 'Scope'));
+      },
+      () => {
+        this.cancelPicker = undefined;
+        this.panel.show();
+      }
+    );
+  }
+
+  public setScopeFromSelector(selector: string): boolean {
+    try {
+      const el = document.querySelector(selector);
+      if (!el) return false;
+      clearOverlay(this.overlaySvg);
+      const label = getElementDescription(el);
+      this.panel.setScopeElement(el, label);
+      this.overlaySvg.appendChild(drawHighlight(el, '#2563EB', 'Scope'));
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   public startPartialScan() {

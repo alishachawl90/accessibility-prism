@@ -20,10 +20,10 @@ function getFocusableInside(root: Element): Element[] {
   });
 }
 
-export function analyzeFocusManagement(): FocusManagementIssue[] {
+export function analyzeFocusManagement(root?: Element | Document): FocusManagementIssue[] {
   const issues: FocusManagementIssue[] = [];
 
-  const dialogs = Array.from(document.querySelectorAll(
+  const dialogs = Array.from((root ?? document).querySelectorAll(
     'dialog, [role="dialog"], [role="alertdialog"], [aria-modal="true"]'
   )).filter(el => !isExtension(el));
 

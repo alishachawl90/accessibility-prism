@@ -41,9 +41,9 @@ function hasExplicitLabel(el: Element): { found: boolean; method: string; text: 
   return { found: false, method: '', text: '' };
 }
 
-export function analyzeFormLabels(): FormLabelsResult {
+export function analyzeFormLabels(root?: Element | Document): FormLabelsResult {
   const issues: FormLabelIssue[] = [];
-  const controls = document.querySelectorAll('input, select, textarea');
+  const controls = (root ?? document).querySelectorAll('input, select, textarea');
   let totalControls = 0;
   let labeledControls = 0;
 

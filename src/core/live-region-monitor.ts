@@ -18,11 +18,12 @@ function isVisible(el: Element): boolean {
   return cs.display !== 'none' && cs.visibility !== 'hidden';
 }
 
-export function analyzeLiveRegions(): LiveRegionResult {
+export function analyzeLiveRegions(root?: Element | Document): LiveRegionResult {
   const regions: LiveRegionInfo[] = [];
   const issues: LiveRegionIssue[] = [];
+  const qsa = (root ?? document);
 
-  const explicitLive = Array.from(document.querySelectorAll('[aria-live]'))
+  const explicitLive = Array.from(qsa.querySelectorAll('[aria-live]'))
     .filter(el => !isExtension(el));
 
   explicitLive.forEach(el => {
@@ -51,7 +52,7 @@ export function analyzeLiveRegions(): LiveRegionResult {
     }
   });
 
-  const implicitRoleEls = Array.from(document.querySelectorAll(
+  const implicitRoleEls = Array.from(qsa.querySelectorAll(
     '[role="alert"], [role="status"], [role="log"], [role="progressbar"]'
   )).filter(el => !isExtension(el));
 
@@ -92,7 +93,7 @@ export function analyzeLiveRegions(): LiveRegionResult {
     }
   });
 
-  const ariaLiveElements = Array.from(document.querySelectorAll('[aria-live]:not([aria-live="off"])'))
+  const ariaLiveElements = Array.from(qsa.querySelectorAll('[aria-live]:not([aria-live="off"])'))
     .filter(el => !isExtension(el));
   ariaLiveElements.forEach(el => {
     if (!el.getAttribute('role') && !IMPLICIT_LIVE_ROLES[el.getAttribute('role') || '']) {

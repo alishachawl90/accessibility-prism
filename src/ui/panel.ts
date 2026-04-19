@@ -43,6 +43,8 @@ interface PanelCallbacks {
   onRunTouchTargets: () => void;
   onRunAltText: () => void;
   onPartialScan: () => void;
+  onScopePick: () => void;
+  onScopeSelector: (selector: string) => boolean;
   onRunAccNames: () => void;
   onRunAriaValidation: () => void;
   onRunFormLabels: () => void;
@@ -451,33 +453,33 @@ export class FloatingPanel {
   }
 
   private renderViewContent(): string {
-    const scopeBanner = this.renderScopeBanner();
+    const sb = this.renderScopeBanner();
     switch (this.currentView) {
-      case 'pre-screen': return renderPreScreen();
-      case 'axe-issue-list': return scopeBanner + renderAxeIssueList(this.getAxeListData());
+      case 'pre-screen': return renderPreScreen(this.scopeLabel || undefined);
+      case 'axe-issue-list': return sb + renderAxeIssueList(this.getAxeListData());
       case 'axe-issue-details':
-        if (!this.activeViolation) return scopeBanner + renderAxeIssueList(this.getAxeListData());
-        return scopeBanner + renderAxeIssueDetails(this.activeViolation);
-      case 'keyboard-issues': return renderKeyboardResults(this.getKbData());
+        if (!this.activeViolation) return sb + renderAxeIssueList(this.getAxeListData());
+        return sb + renderAxeIssueDetails(this.activeViolation);
+      case 'keyboard-issues': return sb + renderKeyboardResults(this.getKbData());
       case 'manual-tracking': return renderManualTracking(this.manualTrail);
-      case 'component-flow-list': return renderComponentFlowList(this.componentFlows);
+      case 'component-flow-list': return sb + renderComponentFlowList(this.componentFlows);
       case 'component-flow-detail': {
         const flow = this.componentFlows[this.activeFlowIdx];
-        if (!flow) return renderComponentFlowList(this.componentFlows);
-        return renderComponentFlowDetail(flow, this.activeInstanceIdx);
+        if (!flow) return sb + renderComponentFlowList(this.componentFlows);
+        return sb + renderComponentFlowDetail(flow, this.activeInstanceIdx);
       }
-      case 'heading-results': return renderHeadingResults(this.headingData);
-      case 'landmark-results': return renderLandmarkResults(this.landmarkData);
-      case 'contrast-results': return renderContrastResults(this.contrastIssues);
-      case 'focus-mgmt-results': return renderFocusMgmtResults(this.focusMgmtIssues);
-      case 'live-region-results': return renderLiveRegionResults({ result: this.liveRegionData, severityFilter: this.liveRegionSeverityFilter });
-      case 'touch-target-results': return renderTouchTargetResults(this.touchTargetIssues);
-      case 'alt-text-results': return renderAltTextResults(this.altTextIssues, this.altTextSeverityFilter);
-      case 'acc-name-results': return renderAccNameResults(this.getAccNameData());
-      case 'aria-validation-results': return renderAriaResults(this.ariaResult, this.ariaSeverityFilter);
-      case 'form-labels-results': return renderFormLabelsResults(this.formLabelsResult, this.formLabelsSeverityFilter);
-      case 'sr-walkthrough': return renderSrWalkthrough(this.getWalkthroughData());
-      case 'reading-order': return renderReadingOrderResults(this.readingOrderEntries);
+      case 'heading-results': return sb + renderHeadingResults(this.headingData);
+      case 'landmark-results': return sb + renderLandmarkResults(this.landmarkData);
+      case 'contrast-results': return sb + renderContrastResults(this.contrastIssues);
+      case 'focus-mgmt-results': return sb + renderFocusMgmtResults(this.focusMgmtIssues);
+      case 'live-region-results': return sb + renderLiveRegionResults({ result: this.liveRegionData, severityFilter: this.liveRegionSeverityFilter });
+      case 'touch-target-results': return sb + renderTouchTargetResults(this.touchTargetIssues);
+      case 'alt-text-results': return sb + renderAltTextResults(this.altTextIssues, this.altTextSeverityFilter);
+      case 'acc-name-results': return sb + renderAccNameResults(this.getAccNameData());
+      case 'aria-validation-results': return sb + renderAriaResults(this.ariaResult, this.ariaSeverityFilter);
+      case 'form-labels-results': return sb + renderFormLabelsResults(this.formLabelsResult, this.formLabelsSeverityFilter);
+      case 'sr-walkthrough': return sb + renderSrWalkthrough(this.getWalkthroughData());
+      case 'reading-order': return sb + renderReadingOrderResults(this.readingOrderEntries);
       case 'scorecard': return this.scorecardData ? renderScorecardResults(this.scorecardData) : renderPreScreen();
       default: return renderPreScreen();
     }
@@ -517,6 +519,13 @@ export class FloatingPanel {
           onRunTouchTargets: () => this.callbacks.onRunTouchTargets(),
           onRunAltText: () => this.callbacks.onRunAltText(),
           onPartialScan: () => this.callbacks.onPartialScan(),
+          onScopePick: () => this.callbacks.onScopePick(),
+          onScopeSelector: (sel: string) => {
+            const ok = this.callbacks.onScopeSelector(sel);
+            if (ok) this.render();
+            return ok;
+          },
+          onScopeClear: () => { this.clearScope(); this.callbacks.onViolationClick([]); this.render(); },
           onRunAccNames: () => this.callbacks.onRunAccNames(),
           onRunAriaValidation: () => this.callbacks.onRunAriaValidation(),
           onRunFormLabels: () => this.callbacks.onRunFormLabels(),

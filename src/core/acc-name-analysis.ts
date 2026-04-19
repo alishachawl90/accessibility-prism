@@ -195,7 +195,7 @@ function isSignificantForSr(el: Element): boolean {
  * includes plain text containers (p, li, etc.) in addition to the semantic/interactive
  * elements captured by analyzeAccessibleNames().
  */
-export function analyzeForSrWalkthrough(): AccNameResult {
+export function analyzeForSrWalkthrough(root?: Element | Document): AccNameResult {
   const entries: AccNameEntry[] = [];
   const selector = [
     'a, button, input, select, textarea, img, svg[role="img"]',
@@ -206,7 +206,7 @@ export function analyzeForSrWalkthrough(): AccNameResult {
     '[role], [tabindex], [aria-label], [aria-labelledby]',
   ].join(', ');
 
-  const elements = document.querySelectorAll(selector);
+  const elements = (root ?? document).querySelectorAll(selector);
   elements.forEach(el => {
     if (isExtension(el) || !isSignificantForSr(el)) return;
     if (!isVisible(el)) return;
@@ -243,11 +243,11 @@ export function analyzeForSrWalkthrough(): AccNameResult {
   return { entries, issueCount: issues, warningCount: warnings };
 }
 
-export function analyzeAccessibleNames(): AccNameResult {
+export function analyzeAccessibleNames(root?: Element | Document): AccNameResult {
   const entries: AccNameEntry[] = [];
   const selector = 'a, button, input, select, textarea, img, svg[role="img"], h1, h2, h3, h4, h5, h6, nav, main, header, footer, aside, form, section, table, dialog, details, summary, fieldset, iframe, object, embed, area, meter, progress, output, [role], [tabindex], [aria-label], [aria-labelledby]';
 
-  const elements = document.querySelectorAll(selector);
+  const elements = (root ?? document).querySelectorAll(selector);
   elements.forEach(el => {
     if (isExtension(el) || !isSignificant(el)) return;
     const visible = isVisible(el);

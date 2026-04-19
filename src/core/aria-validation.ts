@@ -53,9 +53,9 @@ function getFocusable(root: Element): Element[] {
   });
 }
 
-export function validateAria(): AriaValidationResult {
+export function validateAria(root?: Element | Document): AriaValidationResult {
   const issues: AriaIssue[] = [];
-  const all = document.querySelectorAll('[role], [aria-label], [aria-labelledby], [aria-describedby], [aria-controls], [aria-owns], [aria-expanded], [aria-checked], [aria-hidden], [aria-live], [aria-valuenow], [aria-required], [aria-invalid], [aria-haspopup], [aria-current], [aria-selected], [aria-pressed], [aria-disabled]');
+  const all = (root ?? document).querySelectorAll('[role], [aria-label], [aria-labelledby], [aria-describedby], [aria-controls], [aria-owns], [aria-expanded], [aria-checked], [aria-hidden], [aria-live], [aria-valuenow], [aria-required], [aria-invalid], [aria-haspopup], [aria-current], [aria-selected], [aria-pressed], [aria-disabled]');
 
   all.forEach(el => {
     if (isExtension(el)) return;

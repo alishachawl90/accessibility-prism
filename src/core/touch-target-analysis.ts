@@ -33,10 +33,10 @@ function isInlineTextLink(el: Element): boolean {
   return parentText.length > linkText.length + 10;
 }
 
-export function analyzeTouchTargets(): TouchTargetIssue[] {
+export function analyzeTouchTargets(root?: Element | Document): TouchTargetIssue[] {
   const issues: TouchTargetIssue[] = [];
 
-  const elements = Array.from(document.querySelectorAll(INTERACTIVE_SELECTOR))
+  const elements = Array.from((root ?? document).querySelectorAll(INTERACTIVE_SELECTOR))
     .filter(el => !isExtension(el) && isVisible(el));
 
   elements.forEach(el => {

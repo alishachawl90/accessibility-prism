@@ -13,10 +13,11 @@ function isExtension(el: Element): boolean {
   return !!el.closest('#a11y-analyzer-panel') || !!el.closest('#a11y-analyzer-overlay');
 }
 
-export function analyzeAltText(): AltTextIssue[] {
+export function analyzeAltText(root?: Element | Document): AltTextIssue[] {
   const issues: AltTextIssue[] = [];
+  const qsa = (root ?? document);
 
-  const images = Array.from(document.querySelectorAll('img'))
+  const images = Array.from(qsa.querySelectorAll('img'))
     .filter(el => !isExtension(el));
 
   images.forEach(img => {
@@ -95,7 +96,7 @@ export function analyzeAltText(): AltTextIssue[] {
     }
   });
 
-  const svgs = Array.from(document.querySelectorAll('svg[role="img"]'))
+  const svgs = Array.from(qsa.querySelectorAll('svg[role="img"]'))
     .filter(el => !isExtension(el));
 
   svgs.forEach(svg => {
@@ -114,7 +115,7 @@ export function analyzeAltText(): AltTextIssue[] {
     }
   });
 
-  const inputImages = Array.from(document.querySelectorAll('input[type="image"]'))
+  const inputImages = Array.from(qsa.querySelectorAll('input[type="image"]'))
     .filter(el => !isExtension(el)) as HTMLInputElement[];
 
   inputImages.forEach(input => {
@@ -130,7 +131,7 @@ export function analyzeAltText(): AltTextIssue[] {
     }
   });
 
-  const areaElements = Array.from(document.querySelectorAll('area[href]'))
+  const areaElements = Array.from(qsa.querySelectorAll('area[href]'))
     .filter(el => !isExtension(el));
 
   areaElements.forEach(area => {
