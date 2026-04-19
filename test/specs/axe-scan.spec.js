@@ -106,9 +106,11 @@ test.describe('Axe Full Page Scan', () => {
         { timeout: 15000 }
       );
       
-      // Clear scope should return to pre-screen
+      // Clear scope removes the banner but stays on results
       await panelPage.click('#btn-clear-scope');
-      await expect(panelPage.locator(SEL.btnAxe)).toBeVisible();
+      await expect(panelPage.locator('#btn-clear-scope')).not.toBeVisible();
+      // Scope input should now be visible (unscoped state on result view)
+      await expect(panelPage.locator('#scope-selector-input')).toBeVisible();
     });
   });
 });

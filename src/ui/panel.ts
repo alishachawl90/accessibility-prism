@@ -142,6 +142,7 @@ export class FloatingPanel {
   // Partial scan scope
   private scopeElement: Element | null = null;
   private scopeLabel = '';
+  private pendingRerunView: string | null = null;
 
   constructor(callbacks: PanelCallbacks) {
     this.callbacks = callbacks;
@@ -157,6 +158,11 @@ export class FloatingPanel {
   public setScopeElement(el: Element, label: string) {
     this.scopeElement = el;
     this.scopeLabel = label;
+    if (this.pendingRerunView) {
+      this.currentView = this.pendingRerunView as any;
+      this.pendingRerunView = null;
+      this.rerunCurrentAudit();
+    }
   }
 
   public clearScope() {
@@ -435,15 +441,29 @@ export class FloatingPanel {
   // === View rendering delegation ===
 
   private renderScopeBanner(): string {
-    if (!this.scopeElement) return '';
+    if (this.scopeElement) {
+      return `
+        <div style="padding: 6px 16px !important; background: #EFF6FF !important; border-bottom: 1px solid #BFDBFE !important; display: flex !important; align-items: center !important; gap: 8px !important; font-size: 12px !important; color: #1E40AF !important; box-sizing: border-box !important; margin: 0 !important; line-height: 1.4 !important;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2" style="flex-shrink: 0 !important;">
+            <circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <span style="font-weight: 600 !important; color: #1E40AF !important; font-size: 12px !important; line-height: 1.4 !important;">Scoped:</span>
+          <code style="background: #DBEAFE !important; padding: 1px 6px !important; border-radius: 4px !important; font-size: 11px !important; color: #1E3A8A !important; max-width: 180px !important; overflow: hidden !important; text-overflow: ellipsis !important; white-space: nowrap !important; font-family: ui-monospace, SFMono-Regular, Menlo, monospace !important; line-height: 1.4 !important; box-sizing: border-box !important; margin: 0 !important;">${this.escHtml(this.scopeLabel)}</code>
+          <button id="btn-clear-scope" style="margin-left: auto !important; background: none !important; border: 1px solid #93C5FD !important; border-radius: 4px !important; padding: 2px 8px !important; font-size: 11px !important; color: #1D4ED8 !important; cursor: pointer !important; font-weight: 600 !important; line-height: 1.4 !important; box-sizing: border-box !important; margin: 0 !important;">Clear</button>
+        </div>
+      `;
+    }
+
     return `
-      <div style="padding: 8px 16px !important; background: #EFF6FF !important; border-bottom: 1px solid #BFDBFE !important; display: flex !important; align-items: center !important; gap: 8px !important; font-size: 12px !important; color: #1E40AF !important;">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2" style="flex-shrink: 0 !important;">
-          <circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-        </svg>
-        <span style="font-weight: 600 !important; color: #1E40AF !important;">Scoped:</span>
-        <code style="background: #DBEAFE !important; padding: 1px 6px !important; border-radius: 4px !important; font-size: 11px !important; color: #1E3A8A !important; max-width: 240px !important; overflow: hidden !important; text-overflow: ellipsis !important; white-space: nowrap !important; font-family: ui-monospace, SFMono-Regular, Menlo, monospace !important;">${this.escHtml(this.scopeLabel)}</code>
-        <button id="btn-clear-scope" style="margin-left: auto !important; background: none !important; border: 1px solid #93C5FD !important; border-radius: 4px !important; padding: 3px 10px !important; font-size: 12px !important; color: #1D4ED8 !important; cursor: pointer !important; font-weight: 600 !important; line-height: 1.5 !important;">Clear</button>
+      <div style="padding: 6px 12px !important; background: #F9FAFB !important; border-bottom: 1px solid #E5E7EB !important; display: flex !important; align-items: center !important; gap: 6px !important; box-sizing: border-box !important; margin: 0 !important; line-height: 1.4 !important;">
+        <input id="scope-selector-input" type="text" placeholder="Scope to selector…"
+          style="flex: 1 !important; padding: 4px 8px !important; border: 1px solid #D1D5DB !important; border-radius: 6px !important; font-size: 11px !important; font-family: ui-monospace, SFMono-Regular, Menlo, monospace !important; background: white !important; color: #1F2937 !important; outline: none !important; box-sizing: border-box !important; height: 28px !important; margin: 0 !important; line-height: 1.4 !important; min-width: 0 !important;" />
+        <button id="btn-scope-apply" title="Apply selector scope"
+          style="padding: 4px 8px !important; background: #2563EB !important; color: white !important; border: none !important; border-radius: 6px !important; cursor: pointer !important; font-size: 11px !important; font-weight: 600 !important; white-space: nowrap !important; box-sizing: border-box !important; height: 28px !important; margin: 0 !important; line-height: 1.4 !important;">Scope</button>
+        <button id="btn-scope-pick" title="Pick element on page"
+          style="padding: 4px 6px !important; background: #F3F4F6 !important; border: 1px solid #D1D5DB !important; border-radius: 6px !important; cursor: pointer !important; display: flex !important; align-items: center !important; justify-content: center !important; box-sizing: border-box !important; height: 28px !important; width: 28px !important; margin: 0 !important; flex-shrink: 0 !important;">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#4B5563" stroke-width="2.5"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+        </button>
       </div>
     `;
   }
@@ -455,7 +475,7 @@ export class FloatingPanel {
   private renderViewContent(): string {
     const sb = this.renderScopeBanner();
     switch (this.currentView) {
-      case 'pre-screen': return renderPreScreen(this.scopeLabel || undefined);
+      case 'pre-screen': return renderPreScreen();
       case 'axe-issue-list': return sb + renderAxeIssueList(this.getAxeListData());
       case 'axe-issue-details':
         if (!this.activeViolation) return sb + renderAxeIssueList(this.getAxeListData());
@@ -485,6 +505,28 @@ export class FloatingPanel {
     }
   }
 
+  private rerunCurrentAudit() {
+    const viewToCallback: Record<string, (() => void) | undefined> = {
+      'axe-issue-list': () => this.callbacks.onRunAxe(),
+      'heading-results': () => this.callbacks.onRunHeadings(),
+      'landmark-results': () => this.callbacks.onRunLandmarks(),
+      'contrast-results': () => this.callbacks.onRunContrast(),
+      'alt-text-results': () => this.callbacks.onRunAltText(),
+      'form-labels-results': () => this.callbacks.onRunFormLabels(),
+      'acc-name-results': () => this.callbacks.onRunAccNames(),
+      'aria-validation-results': () => this.callbacks.onRunAriaValidation(),
+      'keyboard-issues': () => this.callbacks.onRunAutoKeyboard(),
+      'focus-mgmt-results': () => this.callbacks.onRunFocusMgmt(),
+      'touch-target-results': () => this.callbacks.onRunTouchTargets(),
+      'live-region-results': () => this.callbacks.onRunLiveRegions(),
+      'sr-walkthrough': () => this.callbacks.onRunSrWalkthrough(),
+      'reading-order': () => this.callbacks.onRunReadingOrder(),
+      'scorecard': () => this.callbacks.onRunScorecard(),
+    };
+    const cb = viewToCallback[this.currentView];
+    if (cb) cb();
+  }
+
   private attachViewListeners() {
     const backToHome = () => {
       this.preserveScrollOnNavigate = true;
@@ -493,17 +535,39 @@ export class FloatingPanel {
       this.callbacks.onViolationClick([]);
       this.render();
     };
-    // Filter out null elements (e.g. from AX-tree-sourced SR walkthrough entries)
     const highlight = (els: (Element | null)[]) =>
       this.callbacks.onViolationClick(els.filter((e): e is Element => e !== null));
 
+    // Scope banner listeners (present on every result view)
     this.container.querySelector('#btn-clear-scope')?.addEventListener('click', () => {
-      this.preserveScrollOnNavigate = true;
       this.clearScope();
-      this.currentView = 'pre-screen';
       this.callbacks.onViolationClick([]);
-      this.render();
+      this.rerunCurrentAudit();
     });
+    this.container.querySelector('#btn-scope-pick')?.addEventListener('click', () => {
+      this.pendingRerunView = this.currentView;
+      this.callbacks.onScopePick();
+    });
+    const scopeInput = this.container.querySelector('#scope-selector-input') as HTMLInputElement | null;
+    const scopeApplyBtn = this.container.querySelector('#btn-scope-apply');
+    const applyScope = () => {
+      if (!scopeInput) return;
+      const sel = scopeInput.value.trim();
+      if (!sel) return;
+      const ok = this.callbacks.onScopeSelector(sel);
+      if (ok) {
+        this.rerunCurrentAudit();
+      } else {
+        scopeInput.style.setProperty('border-color', '#EF4444', 'important');
+        scopeInput.style.setProperty('box-shadow', '0 0 0 2px rgba(239,68,68,0.15)', 'important');
+        setTimeout(() => {
+          scopeInput?.style.setProperty('border-color', '#D1D5DB', 'important');
+          scopeInput?.style.setProperty('box-shadow', 'none', 'important');
+        }, 1500);
+      }
+    };
+    scopeApplyBtn?.addEventListener('click', applyScope);
+    scopeInput?.addEventListener('keydown', (e) => { if (e.key === 'Enter') applyScope(); });
 
     switch (this.currentView) {
       case 'pre-screen':
@@ -519,13 +583,6 @@ export class FloatingPanel {
           onRunTouchTargets: () => this.callbacks.onRunTouchTargets(),
           onRunAltText: () => this.callbacks.onRunAltText(),
           onPartialScan: () => this.callbacks.onPartialScan(),
-          onScopePick: () => this.callbacks.onScopePick(),
-          onScopeSelector: (sel: string) => {
-            const ok = this.callbacks.onScopeSelector(sel);
-            if (ok) this.render();
-            return ok;
-          },
-          onScopeClear: () => { this.clearScope(); this.callbacks.onViolationClick([]); this.render(); },
           onRunAccNames: () => this.callbacks.onRunAccNames(),
           onRunAriaValidation: () => this.callbacks.onRunAriaValidation(),
           onRunFormLabels: () => this.callbacks.onRunFormLabels(),

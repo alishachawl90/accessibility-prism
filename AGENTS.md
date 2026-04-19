@@ -207,7 +207,7 @@ Shared UI components live in `results-template.ts`:
 ```bash
 npm run build          # tsc && vite build → dist/content.js
 npm run dev:watch      # vite build --watch (auto-rebuild on save)
-npm test               # Playwright: 117 tests, 12 spec files
+npm test               # Playwright: 144 tests, 12 spec files
 npm run test:headed    # Playwright with visible browser
 npm run test:ui        # Playwright interactive UI
 npm run test:report    # Open HTML test report

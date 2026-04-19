@@ -18,6 +18,7 @@ Run every analysis engine at once and get an A–F scored report across five cat
 ### Automated Scanning
 - **Full Page Scan** — axe-core analysis with violations, needs-review, best-practice, and 10 custom Prism rules (text spacing, focus indicators, scrollable keyboard access, link distinguishability, and more)
 - **Partial Page Scan** — pick any element to scope the scan to just that section
+- **Component Scoping** — every audit result view has a scope bar at the top: type a CSS selector or use the element picker to re-run any analysis against a specific component or section instead of the full page. Clear scope to return to full-page results
 - Multi-select result-type filters (Violation / Needs Review / Best Practice / Experimental), severity filters, WCAG level filter, and text search across all results
 - Group results by Rule, Page Region, or UI Component
 
@@ -136,7 +137,7 @@ src/
 - **axe-core** for automated WCAG testing
 - **dom-accessibility-api** for W3C AccName spec-compliant accessible name and description computation (powers the SR Walk-Through)
 - **Chrome Extension Manifest V3**
-- **Playwright** for automated UI testing (129 tests across 12 spec files)
+- **Playwright** for automated UI testing (144 tests across 12 spec files, including 17 visual regression snapshots)
 - No UI frameworks — vanilla TypeScript for minimal bundle size (~850 KB including axe-core)
 
 ## Permissions
@@ -156,7 +157,9 @@ No background scripts. No data collection. All analysis runs locally in the brow
 - **Cross-platform font consistency** — Explicit system UI font stack (`-apple-system, Segoe UI, Roboto, Ubuntu, Arial, sans-serif !important`) applied to the panel and all form controls, preventing host-page serif fallbacks from appearing on Windows/Linux
 - **Loading spinner** — Added visual loading state for slow audits (axe full-page scan, keyboard analysis, scorecard) so the panel never appears frozen
 - Added `dom-accessibility-api` dependency for W3C AccName spec compliance
-- 131 Playwright tests covering all features, including new SR walk-through paragraph/description assertions and aria-hidden / display:none pruning regression tests
+- **Component scoping for all audits** — every result view now has a scope bar (CSS selector input + element picker) that re-runs the current analysis against a specific component or section. All 15+ analysis engines accept an optional root element, enabling targeted component-level testing without full-page noise
+- **Visual regression testing** — expanded from 4 to 17 Playwright visual snapshots covering every view in the extension (pre-screen, axe results, scorecard, headings, landmarks, contrast, alt text, form labels, accessible names, ARIA validation, keyboard, focus management, touch targets, live regions, SR walkthrough, reading order, component flow)
+- 144 Playwright tests covering all features, including SR walk-through fidelity, aria-hidden / display:none pruning, scoped audit re-run, and 17 visual regression baselines
 
 ### v2.0.0
 - Initial release with 15+ accessibility checks, Accessibility Scorecard (A–F grading), axe-core integration, 10 custom Prism rules, all audit views, visual overlays, and HTML report export
