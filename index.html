@@ -94,6 +94,17 @@
         <button aria-hidden="true">Hidden focusable</button>
       </section>
 
+      <!-- ========== SR walkthrough exclusion fixtures ========== -->
+      <!-- Used by tests to verify that aria-hidden subtrees and CSS-hidden ancestors -->
+      <!-- are pruned from the SR walkthrough (matching real screen reader behaviour). -->
+      <div aria-hidden="true">
+        <button>SR walkthrough should skip me (inside aria-hidden ancestor)</button>
+        <p>SR walkthrough should skip this paragraph too</p>
+      </div>
+      <div style="display: none;">
+        <button>SR walkthrough should skip me (inside display:none ancestor)</button>
+      </div>
+
       <!-- ========== Live region ========== -->
       <div aria-live="polite" id="live-status">Status: idle</div>
       <div role="alert" id="alert-box"></div>

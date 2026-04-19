@@ -99,11 +99,42 @@ function isSignificant(el: Element): boolean {
   return false;
 }
 
+/**
+ * Mirrors browser AX-tree pruning: returns false if the element (or any ancestor)
+ * is hidden via display:none, visibility:hidden/collapse, the `hidden` attribute,
+ * or `inert`. Screen readers (JAWS, NVDA, VoiceOver, ChromeVox) all skip these
+ * because the browser excludes them from the accessibility tree.
+ *
+ * Intentionally allows opacity:0 and off-screen positioning (left:-9999px etc.)
+ * — these are the standard "visually-hidden / sr-only" patterns and remain in
+ * the AX tree, so screen readers do announce them.
+ */
 function isVisible(el: Element): boolean {
-  const style = getComputedStyle(el);
-  if (style.display === 'none' || style.visibility === 'hidden') return false;
-  const rect = el.getBoundingClientRect();
-  return rect.width > 0 || rect.height > 0;
+  // Prefer the native API when available — it implements the same pruning rules
+  // browsers use to build the accessibility tree, including ancestor checks.
+  const elAny = el as Element & {
+    checkVisibility?: (opts?: { checkOpacity?: boolean; checkVisibilityCSS?: boolean; visibilityProperty?: boolean; contentVisibilityAuto?: boolean }) => boolean;
+  };
+  if (typeof elAny.checkVisibility === 'function') {
+    return elAny.checkVisibility({
+      checkOpacity: false,
+      checkVisibilityCSS: true,
+      visibilityProperty: true,
+      contentVisibilityAuto: true,
+    });
+  }
+
+  // Fallback: walk up the ancestor chain checking display, visibility, hidden, inert.
+  let node: Element | null = el;
+  while (node && node.nodeType === 1) {
+    if ((node as HTMLElement).hasAttribute('hidden')) return false;
+    if ((node as HTMLElement).hasAttribute('inert')) return false;
+    const style = getComputedStyle(node);
+    if (style.display === 'none') return false;
+    if (style.visibility === 'hidden' || style.visibility === 'collapse') return false;
+    node = node.parentElement;
+  }
+  return true;
 }
 
 export type AccNameSeverity = 'error' | 'warning' | 'pass';
@@ -178,10 +209,14 @@ export function analyzeForSrWalkthrough(): AccNameResult {
   const elements = document.querySelectorAll(selector);
   elements.forEach(el => {
     if (isExtension(el) || !isSignificantForSr(el)) return;
-    const visible = isVisible(el);
-    const ariaHidden = el.getAttribute('aria-hidden') === 'true' || !!el.closest('[aria-hidden="true"]');
+    if (!isVisible(el)) return;
 
-    if (!visible && !ariaHidden) return;
+    // Real screen readers (JAWS, NVDA, VoiceOver, ChromeVox) skip aria-hidden subtrees
+    // because the browser excludes them from the accessibility tree. Mirror that here.
+    // (analyzeAccessibleNames() below intentionally keeps these so the audit can flag
+    // aria-hidden focusable elements as a violation — different use case.)
+    const ariaHidden = el.getAttribute('aria-hidden') === 'true' || !!el.closest('[aria-hidden="true"]');
+    if (ariaHidden) return;
 
     const role = computeRole(el);
     // W3C AccName algorithm returns empty for text-container elements like <p>, <li>, <blockquote>.
@@ -196,7 +231,7 @@ export function analyzeForSrWalkthrough(): AccNameResult {
     const description = computeAccessibleDescription(el);
     const states = getStates(el);
 
-    const entry: AccNameEntry = { element: el, role, name, description, states, ariaHidden };
+    const entry: AccNameEntry = { element: el, role, name, description, states, ariaHidden: false };
     entry.severity = evaluateEntry(entry);
     entry.announcement = buildAnnouncement(entry);
     entries.push(entry);

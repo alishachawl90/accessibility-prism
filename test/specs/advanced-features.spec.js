@@ -82,6 +82,40 @@ test.describe('Screen Reader Walkthrough', () => {
     }
   });
 
+  test('aria-hidden subtrees are pruned from the walkthrough', async ({ panelPage }) => {
+    // Real screen readers (JAWS, NVDA, VoiceOver, ChromeVox) skip aria-hidden subtrees
+    // because the browser excludes them from the accessibility tree. The walkthrough
+    // must do the same. The fixture page contains:
+    //   <button aria-hidden="true">Hidden focusable</button>
+    //   <div aria-hidden="true"><button>SR walkthrough should skip me...</button></div>
+    await navigateToView(panelPage, SEL.btnSrWalkthrough);
+    await panelPage.waitForFunction(() =>
+      Array.isArray(window['__a11y_sr_announcements']) && window['__a11y_sr_announcements'].length > 0,
+      { timeout: 5000 }
+    );
+    const announcements = await getAllWalkthroughAnnouncements(panelPage);
+    const ariaHiddenLeaks = announcements.filter(a =>
+      /hidden focusable/i.test(a) ||
+      /skip me \(inside aria-hidden ancestor\)/i.test(a) ||
+      /skip this paragraph too/i.test(a)
+    );
+    expect(ariaHiddenLeaks).toEqual([]);
+  });
+
+  test('CSS-hidden subtrees are pruned from the walkthrough', async ({ panelPage }) => {
+    // display:none ancestors must be pruned (matches accessibility tree behaviour).
+    // The fixture page contains:
+    //   <div style="display: none;"><button>SR walkthrough should skip me (inside display:none ancestor)</button></div>
+    await navigateToView(panelPage, SEL.btnSrWalkthrough);
+    await panelPage.waitForFunction(() =>
+      Array.isArray(window['__a11y_sr_announcements']) && window['__a11y_sr_announcements'].length > 0,
+      { timeout: 5000 }
+    );
+    const announcements = await getAllWalkthroughAnnouncements(panelPage);
+    const displayNoneLeaks = announcements.filter(a => /skip me \(inside display:none ancestor\)/i.test(a));
+    expect(displayNoneLeaks).toEqual([]);
+  });
+
   test('paragraph immediately follows its parent heading in walkthrough order', async ({ panelPage }) => {
     // The fixture page has <h4>Product A</h4><p>Description of product A</p> in sequence.
     // The walkthrough must preserve DOM order so assistive technology consumers

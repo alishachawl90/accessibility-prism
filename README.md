@@ -40,7 +40,7 @@ Run every analysis engine at once and get an A–F scored report across five cat
 - **Accessible Name Inspector** — computed name, role, and state for every significant element; grouped by status (Error / Warning / Pass)
 - **ARIA Validation** — broken references, invalid roles, forbidden patterns, missing required props; per-issue WCAG fix guidance
 - **Form Labels Audit** — unlabeled controls, placeholder-only inputs, missing fieldset legends; per-issue WCAG fix guidance
-- **Announcement Walk-Through** — step through elements hearing what a screen reader would announce. Uses Chrome's native Accessibility Tree (`chrome.automation` API, the same data source as ChromeVox) for high-fidelity results including prose elements (`<p>`, `<li>`, `aria-describedby` descriptions, and accurate computed names). Falls back to W3C AccName spec DOM computation when running outside the extension context
+- **Announcement Walk-Through** — step through elements hearing what a screen reader would announce. Uses the W3C Accessible Name and Description Computation spec (via `dom-accessibility-api`) — the same algorithm browsers use to derive their accessibility tree from the DOM. Includes prose elements (`<p>`, `<li>`), `aria-describedby` descriptions, and accurate computed names/roles/states
 - **Reading Order** — numbered DOM-order markers drawn directly on the page
 
 ### Monitoring
@@ -118,12 +118,7 @@ src/
 │   ├── issue-knowledge.ts # Centralised WCAG criterion / impact / fix / link database
 │   ├── fix-suggestions.ts # Element-specific code fix generators
 │   └── html-report.ts, scorecard-report.ts, wcag-map.ts, escape.ts
-└── main.ts            # Entry point — A11yAnalyzer class, chrome.automation message bridge
-
-public/
-└── background.js      # MV3 service worker — receives get-ax-tree messages from the
-                       # content script, calls chrome.automation.getTree(), serializes
-                       # and returns the AX node list for the SR Walk-Through
+└── main.ts            # Entry point — A11yAnalyzer class
 ```
 
 ### Key Design Decisions
@@ -131,7 +126,7 @@ public/
 - **On-demand injection** — The extension only injects when activated via popup or floating button, using Manifest V3 `chrome.scripting.executeScript`
 - **Zero remote code** — Everything is bundled locally (axe-core included), fully Chrome/Edge Web Store compliant
 - **Host CSS isolation** — Every panel style uses `!important` scoped under `#a11y-analyzer-panel` (specificity 1,1,0+) and all programmatic style assignments use `element.style.setProperty(prop, value, 'important')`, so host-page `!important` rules — even ID-based ones — cannot alter the panel's layout, fonts, or colours across any browser or OS
-- **Accessibility Tree for SR simulation** — The Announcement Walk-Through sends a message to the background service worker which calls `chrome.automation.getTree()` (the same AX tree ChromeVox reads). Announcements reflect actual computed role, name, and description. Falls back to DOM-based W3C AccName spec computation in non-extension contexts (e.g. Playwright tests)
+- **W3C AccName spec for SR simulation** — The Announcement Walk-Through computes accessible names, descriptions, roles, and states using the W3C Accessible Name and Description Computation spec (via `dom-accessibility-api`). This is the same algorithm browsers use to build their accessibility tree from the DOM, so announcements reflect what assistive technology would actually expose. (Earlier exploration of `chrome.automation` confirmed it is a restricted API limited to whitelisted Google extensions like ChromeVox, so the DOM-based spec implementation is the production path.)
 - **Centralised WCAG knowledge** — `utils/issue-knowledge.ts` is the single source of truth for all per-issue-type WCAG criteria, user impact statements, fix suggestions, and learn-more links used across all views
 - **Instant navigation** — Clicking any issue scrolls instantly to the element and draws the highlight after the scroll completes for accurate positioning
 
@@ -139,7 +134,7 @@ public/
 
 - **TypeScript** + **Vite** for fast builds
 - **axe-core** for automated WCAG testing
-- **dom-accessibility-api** for W3C AccName spec-compliant accessible name and description computation (DOM fallback path)
+- **dom-accessibility-api** for W3C AccName spec-compliant accessible name and description computation (powers the SR Walk-Through)
 - **Chrome Extension Manifest V3**
 - **Playwright** for automated UI testing (129 tests across 12 spec files)
 - No UI frameworks — vanilla TypeScript for minimal bundle size (~850 KB including axe-core)
@@ -148,21 +143,20 @@ public/
 
 - `activeTab` — Access the current tab when the user activates the extension
 - `scripting` — Inject the analyzer content script on demand
-- `automation` — Read the browser's native Accessibility Tree for the Screen Reader Walk-Through (same API used by ChromeVox). The extension falls back gracefully to DOM-based analysis when the AX tree is unavailable
 
-No data collection. All analysis runs locally in the browser tab. No external requests.
+No background scripts. No data collection. All analysis runs locally in the browser tab. No external requests.
 
 ## Changelog
 
 ### v2.1.0
-- **Screen Reader Walk-Through — AX tree upgrade** — Now uses `chrome.automation` (Chrome's native Accessibility Tree, the same source as ChromeVox) via a background service worker. Fixes a long-standing bug where card descriptions (`aria-describedby`), prose elements (`<p>`, `<li>`, etc.), and correct role/name pairs were missing from the walkthrough. W3C AccName spec DOM fallback added for non-extension contexts
+- **Screen Reader Walk-Through — W3C AccName spec rewrite** — Now uses the W3C Accessible Name and Description Computation spec (via `dom-accessibility-api`) instead of bespoke heuristics. Fixes a long-standing bug where card descriptions (`aria-describedby`), prose elements (`<p>`, `<li>`, etc.), and correct role/name pairs were missing from the walkthrough. The spec implementation is the same algorithm browsers use to build their accessibility tree
+- **Screen Reader Walk-Through — accessibility tree fidelity** — The walkthrough now mirrors what real screen readers (JAWS, NVDA, VoiceOver, ChromeVox) actually traverse. Elements inside `display:none`, `visibility:hidden`, `hidden`, or `inert` ancestors are pruned via the native `Element.checkVisibility()` API (with an ancestor-walking fallback for older browsers). `aria-hidden="true"` subtrees are also pruned. Visually-hidden / sr-only patterns (`opacity:0`, off-screen positioning) are preserved because real screen readers do announce them. Eliminates noise from Storybook chrome, hidden modals, error boundaries, and inactive tab panels
 - **WCAG Knowledge blocks** — Added inline knowledge blocks to expanded issue cards across Keyboard Analysis, Form Labels, ARIA Validation, and Color Contrast views. Each block shows the WCAG success criterion, plain-English user impact, fix guidance, and a learn-more link
 - **CSS isolation hardening** — Deep audit of every styled surface. All class rules prefixed with `#a11y-analyzer-panel` for specificity (1,1,0+); all JS style assignments converted to `setProperty(..., 'important')`. Covers the activation button, overlay SVG, accordion toggles, all view inline styles, and the panel-styles.ts utility classes. Eliminates layout breakage on host pages with aggressive CSS
 - **Cross-platform font consistency** — Explicit system UI font stack (`-apple-system, Segoe UI, Roboto, Ubuntu, Arial, sans-serif !important`) applied to the panel and all form controls, preventing host-page serif fallbacks from appearing on Windows/Linux
 - **Loading spinner** — Added visual loading state for slow audits (axe full-page scan, keyboard analysis, scorecard) so the panel never appears frozen
-- Added `dom-accessibility-api` dependency for W3C AccName spec compliance in the DOM fallback path
-- Added `automation` permission; added MV3 background service worker (`public/background.js`)
-- 129 Playwright tests covering all features, including new SR walk-through paragraph/description assertions
+- Added `dom-accessibility-api` dependency for W3C AccName spec compliance
+- 131 Playwright tests covering all features, including new SR walk-through paragraph/description assertions and aria-hidden / display:none pruning regression tests
 
 ### v2.0.0
 - Initial release with 15+ accessibility checks, Accessibility Scorecard (A–F grading), axe-core integration, 10 custom Prism rules, all audit views, visual overlays, and HTML report export
