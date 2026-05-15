@@ -473,7 +473,11 @@ export class FloatingPanel {
     }
 
     this.container.innerHTML = html;
-    this.container.style.setProperty('max-height', this.collapsed ? 'auto' : '85vh', 'important');
+    // In standalone (injected) mode cap the panel to 85 vh so it doesn't overflow the host page.
+    // In popup window mode the container is already sized to fill the OS window — leave it alone.
+    if (!this.callbacks.isPopupWindow) {
+      this.container.style.setProperty('max-height', this.collapsed ? 'auto' : '85vh', 'important');
+    }
 
     this.attachHeaderListeners();
     if (!this.collapsed) {

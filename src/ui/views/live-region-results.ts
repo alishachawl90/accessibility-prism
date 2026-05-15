@@ -125,8 +125,9 @@ export function renderLiveRegionResults(data: LrViewData): string {
         const idx = flatIssues.length;
         flatIssues.push(issue);
         const sev = SEV[issue.severity as SeverityKey];
-        const role = issue.element.getAttribute('role') || issue.element.tagName.toLowerCase();
-        const ariaLive = issue.element.getAttribute('aria-live') || '';
+        const elTag = (issue.element as any)?.tagName?.toLowerCase() ?? '';
+        const role = (issue.element as any)?.getAttribute?.('role') || elTag;
+        const ariaLive = (issue.element as any)?.getAttribute?.('aria-live') || '';
         const descParts: string[] = [];
         if (role) descParts.push(`role="${escHtml(role)}"`);
         if (ariaLive) descParts.push(`aria-live="${escHtml(ariaLive)}"`);
@@ -134,7 +135,7 @@ export function renderLiveRegionResults(data: LrViewData): string {
           idx,
           borderColor: sev?.badge || '#E5E7EB',
           badgeHtml: renderSeverityBadge(issue.severity),
-          titleHtml: `<span style="font-size: 12px !important; color: #374151 !important;">${escHtml(issue.element.tagName.toLowerCase())}</span>` +
+          titleHtml: `<span style="font-size: 12px !important; color: #374151 !important;">${escHtml(elTag)}</span>` +
             (descParts.length > 0 ? ` <span style="font-size: 11px !important; color: #6B7280 !important;">${descParts.join(' · ')}</span>` : ''),
           descriptionHtml: escHtml(issue.description),
           selector: getCssSelector(issue.element),

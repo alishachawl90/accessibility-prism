@@ -21,7 +21,7 @@ function renderLandmarkCards(landmarks: LandmarkAnalysisResult['landmarks'], sta
     const labelLine = lm.label
       ? escHtml(lm.label)
       : `<span style="color: #6B7280 !important; font-style: italic !important;">no label</span>`;
-    const tagSnippet = `&lt;${escHtml(lm.element.tagName.toLowerCase())}&gt;`;
+    const tagSnippet = `&lt;${escHtml((lm.element as any)?.tagName?.toLowerCase() ?? lm.role)}&gt;`;
 
     return renderIssueCard({
       idx,

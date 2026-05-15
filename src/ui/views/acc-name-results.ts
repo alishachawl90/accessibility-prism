@@ -43,7 +43,7 @@ function getFilteredAccNameEntries(data: AccNameData): AccNameEntry[] {
         e.role.toLowerCase().includes(q) ||
         e.name.toLowerCase().includes(q) ||
         (e.announcement || '').toLowerCase().includes(q) ||
-        (e.element?.tagName ?? '').toLowerCase().includes(q)
+        ((e.element as any)?.tagName?.toLowerCase() ?? '').includes(q)
     );
   }
   return entries;
@@ -88,7 +88,7 @@ function renderAccNameExtra(entry: AccNameEntry): string {
 
 function renderEntryCard(entry: AccNameEntry, idx: number): string {
   const sev = entrySeverity(entry);
-  const tag = entry.element?.tagName.toLowerCase() ?? entry.role ?? 'element';
+  const tag = (entry.element as any)?.tagName?.toLowerCase() ?? entry.role ?? 'element';
   const roleOrTag = entry.role || tag;
   const titleHtml = `<span style="font-family: ui-monospace, SFMono-Regular, Menlo, monospace !important;"><code style="font-size: 11px !important; color: #6366F1 !important; background: #EEF2FF !important; padding: 1px 6px !important; border-radius: 3px !important;">${escHtml(roleOrTag)}</code> <code style="font-size: 11px !important; color: #6B7280 !important;">&lt;${escHtml(tag)}&gt;</code></span>`;
   const desc = entry.name.length > 120 ? entry.name.substring(0, 120) + '…' : entry.name;
