@@ -343,6 +343,7 @@ class PopupWindowUI {
 
   constructor() {
     this.panel = new FloatingPanel({
+      isPopupWindow: true,
       onRunAxe: () => this.cmd({ type: 'RUN_AXE' }),
       onRunAutoKeyboard: () => this.cmd({ type: 'RUN_AUTO_KEYBOARD' }),
       onStartManualKeyboard: () => this.cmd({ type: 'START_MANUAL' }),
@@ -376,8 +377,20 @@ class PopupWindowUI {
       onCancelTabWalk: () => this.cmd({ type: 'CANCEL_TAB_WALK' }),
     });
 
-    this.port = chrome.runtime.connect({ name: PORT_NAME });
+    // chrome.runtime.connect() reaches the background service worker, NOT content scripts.
+    // Use chrome.tabs.connect(tabId) so the connection lands in the content script
+    // running in the inspected tab. The tabId is passed via URL param by background.js.
+    const params = new URLSearchParams(window.location.search);
+    const tabId = parseInt(params.get('tabId') ?? '0', 10);
+    if (!tabId) {
+      console.error('[Prism] No tabId in URL — cannot connect to content script');
+      return;
+    }
+    this.port = chrome.tabs.connect(tabId, { name: PORT_NAME });
     this.port.onMessage.addListener((msg: ResultMessage) => this.handleResult(msg));
+    this.port.onDisconnect.addListener(() => {
+      console.warn('[Prism] Content script disconnected');
+    });
     this.port.postMessage({ type: 'PANEL_READY' } as CommandMessage);
   }
 
@@ -456,6 +469,9 @@ class PopupWindowUI {
         break;
       case 'SCOPE_PICK_STARTED':
         this.panel.showLoading('Click an element on the page to select scope…');
+        break;
+      case 'CONTENT_READY':
+        this.panel.setPageInfo(msg.url, msg.title);
         break;
     }
   }

@@ -36,8 +36,9 @@ chrome.action.onClicked.addListener(async (tab) => {
     }
   }
 
-  // Open the detached popup window
-  const panelUrl = chrome.runtime.getURL(PANEL_URL_SUFFIX);
+  // Open the detached popup window, passing the active tab ID so the popup
+  // can call chrome.tabs.connect(tabId) to reach the content script directly.
+  const panelUrl = chrome.runtime.getURL(PANEL_URL_SUFFIX) + `?tabId=${tab.id}`;
   const win = await chrome.windows.create({
     url: panelUrl,
     type: 'popup',

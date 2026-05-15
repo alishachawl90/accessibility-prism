@@ -55,6 +55,8 @@ interface PanelCallbacks {
   onExportScorecard: () => void;
   onClose: () => void;
   onCancelTabWalk?: () => void;
+  /** True when running as the detached popup window (vs. the injected standalone fixture). */
+  isPopupWindow?: boolean;
 }
 
 type ViewName =
@@ -145,6 +147,10 @@ export class FloatingPanel {
   // Scorecard
   private scorecardData: ScorecardResult | null = null;
 
+  // Page info (populated from CONTENT_READY in popup mode)
+  private pageUrl = '';
+  private pageTitle = '';
+
   // Partial scan scope
   private scopeElement: Element | null = null;
   private scopeLabel = '';
@@ -162,6 +168,12 @@ export class FloatingPanel {
   // In popup window mode the panel is always full-viewport; closing the popup destroys it.
   public hide() { this.container.style.setProperty('display', 'none', 'important'); }
   public show() { this.container.style.setProperty('display', 'flex', 'important'); }
+
+  public setPageInfo(url: string, title: string) {
+    this.pageUrl = url;
+    this.pageTitle = title;
+    this.render();
+  }
 
   public setScopeElement(el: Element, label: string) {
     this.scopeElement = el;
@@ -412,14 +424,19 @@ export class FloatingPanel {
       document.body.appendChild(this.container);
       this.injectScopedStyles();
     } else {
-      // Popup window mode — fill the entire popup window (panel.html provides the styles)
+      // Popup window mode — fill the entire popup window exactly (panel.html provides body reset)
       this.container.style.cssText = `
         width: 100%;
         min-width: 320px;
-        height: 100vh;
+        height: 100%;
         display: flex;
         flex-direction: column;
         overflow: hidden;
+        border-radius: 0;
+        background: #fff;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        font-size: 14px;
+        color: #1F2937;
       `;
       document.body.appendChild(this.container);
     }
@@ -480,11 +497,53 @@ export class FloatingPanel {
   }
 
   private renderHeader(): string {
+    const isPopup = this.callbacks.isPopupWindow ?? false;
+
+    // === Popup window header — flat, no close/minimize, page URL strip ===
+    if (isPopup) {
+      const displayUrl = this.pageUrl
+        ? (this.pageUrl.length > 52 ? this.pageUrl.slice(0, 50) + '…' : this.pageUrl)
+        : '';
+      const displayTitle = this.pageTitle || '';
+      const pageStrip = displayUrl
+        ? `<div style="background: rgba(0,0,0,0.25) !important; padding: 6px 16px !important; display: flex !important; align-items: center !important; gap: 8px !important; border-top: 1px solid rgba(255,255,255,0.1) !important;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.7)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0 !important;"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><polyline points="13 2 13 9 20 9"></polyline></svg>
+            <span style="display:flex !important; flex-direction:column !important; min-width:0 !important; gap:1px !important;">
+              ${displayTitle ? `<span style="font-size:11px !important; font-weight:600 !important; color:rgba(255,255,255,0.95) !important; white-space:nowrap !important; overflow:hidden !important; text-overflow:ellipsis !important; line-height:1.3 !important;">${displayTitle}</span>` : ''}
+              <span style="font-size:10px !important; color:rgba(255,255,255,0.65) !important; white-space:nowrap !important; overflow:hidden !important; text-overflow:ellipsis !important; line-height:1.3 !important; font-family:monospace !important;">${displayUrl}</span>
+            </span>
+           </div>`
+        : '';
+
+      return `
+        <div id="panel-header" style="background: ${HEADER_BG} !important; color: white !important; user-select: none !important; flex-shrink: 0 !important;">
+          <div style="padding: 12px 16px !important; display: flex !important; align-items: center !important; justify-content: space-between !important;">
+            <div style="display: flex !important; align-items: center !important; gap: 9px !important;">
+              <svg width="22" height="22" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0 !important;">
+                <circle cx="18" cy="18" r="18" fill="white" fill-opacity="0.15"/>
+                <path d="M18 8 L28 13 L28 23 L18 28 L8 23 L8 13 Z" stroke="white" stroke-width="1.5" fill="none"/>
+                <circle cx="18" cy="18" r="4" fill="white"/>
+              </svg>
+              <span style="font-size:14px !important; font-weight:700 !important; color:white !important; letter-spacing:-0.01em !important;">Accessibility Prism</span>
+            </div>
+            <button id="btn-export" title="Download accessibility report"
+              style="background:transparent !important; border:none !important; padding:6px !important; display:flex !important; align-items:center !important; justify-content:center !important; cursor:pointer !important; color:rgba(255,255,255,0.8) !important; border-radius:4px !important; transition:background 0.15s !important;"
+              onmouseover="this.style.setProperty('background','rgba(255,255,255,0.15)','important');"
+              onmouseout="this.style.setProperty('background','transparent','important');">
+              ${icons.ICON_EXPORT}
+            </button>
+          </div>
+          ${pageStrip}
+        </div>
+      `;
+    }
+
+    // === Standalone / test fixture header — keeps collapse + close ===
     return `
       <div id="panel-header" style="padding: 14px 16px !important; background: ${HEADER_BG} !important; color: white !important; display: flex !important; align-items: center !important; justify-content: space-between !important; cursor: pointer !important; border-radius: ${this.collapsed ? '12px' : '12px 12px 0 0'} !important; user-select: none !important;">
         <div style="display: flex !important; align-items: center !important; gap: 8px !important;">
           <span class="a11y-panel-title">Accessibility Prism</span>
-          <span style="background: rgba(255,255,255,0.25) !important; padding: 2px 8px !important; border-radius: 4px !important; font-size: 11px !important; font-weight: 700 !important; color: white !important; line-height: 1.5 !important;">v2</span>
+          <span style="background: rgba(255,255,255,0.25) !important; padding: 2px 8px !important; border-radius: 4px !important; font-size: 11px !important; font-weight: 700 !important; color: white !important; line-height: 1.5 !important;">v3</span>
         </div>
         <div style="display: flex !important; align-items: center !important; gap: 8px !important;">
           <button id="btn-export" title="Download accessibility report" style="background: rgba(255,255,255,0.1) !important; border: 1px solid rgba(255,255,255,0.2) !important; border-radius: 6px !important; width: 30px !important; height: 30px !important; display: flex !important; align-items: center !important; justify-content: center !important; cursor: pointer !important; color: rgba(255,255,255,0.85) !important; transition: all 0.15s !important;"
@@ -511,25 +570,27 @@ export class FloatingPanel {
   }
 
   private attachHeaderListeners() {
-    const header = this.container.querySelector('#panel-header') as HTMLElement;
-    if (header) {
-      header.addEventListener('click', (e) => {
-        const target = e.target as HTMLElement;
-        if (target.closest('#btn-export') || target.closest('#btn-close-panel')) return;
-        this.collapsed = !this.collapsed;
-        this.render();
-      });
-    }
-
     this.container.querySelector('#btn-export')?.addEventListener('click', (e) => {
       e.stopPropagation();
       this.callbacks.onExportReport();
     });
 
-    this.container.querySelector('#btn-close-panel')?.addEventListener('click', (e) => {
-      e.stopPropagation();
-      this.callbacks.onClose();
-    });
+    // Standalone fixture only: collapse toggle + close button
+    if (!this.callbacks.isPopupWindow) {
+      const header = this.container.querySelector('#panel-header') as HTMLElement;
+      if (header) {
+        header.addEventListener('click', (e) => {
+          const target = e.target as HTMLElement;
+          if (target.closest('#btn-export') || target.closest('#btn-close-panel')) return;
+          this.collapsed = !this.collapsed;
+          this.render();
+        });
+      }
+      this.container.querySelector('#btn-close-panel')?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.callbacks.onClose();
+      });
+    }
   }
 
   // === View rendering delegation ===

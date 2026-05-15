@@ -73,7 +73,7 @@ class A11yContent {
     chrome.runtime.onConnect.addListener((port) => {
       if (port.name !== PORT_NAME) return;
       this.port = port;
-      this.send({ type: 'CONTENT_READY' });
+      this.send({ type: 'CONTENT_READY', url: window.location.href, title: document.title });
 
       port.onMessage.addListener((msg: CommandMessage) => this.handleCommand(msg));
       port.onDisconnect.addListener(() => this.handleDisconnect());

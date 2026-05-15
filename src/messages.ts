@@ -74,7 +74,7 @@ export type ResultMessage =
   | { type: 'SCOPE_SET'; label: string }
   | { type: 'SCOPE_PICK_STARTED' }
   | { type: 'SCOPE_SET_FROM_SELECTOR_FAILED' }
-  | { type: 'CONTENT_READY' }
+  | { type: 'CONTENT_READY'; url: string; title: string }
   // ── Animated tab walk ──────────────────────────────────────────────────
   | { type: 'TAB_WALK_START'; total: number }
   | { type: 'TAB_WALK_STEP'; index: number; total: number; element: SerializedTrailEntry; focusReceived: boolean }
