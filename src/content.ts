@@ -227,8 +227,12 @@ class A11yContent {
     this.stopManualKeyboard();
     this.tabWalkCancelled = false;
     clearOverlay(this.overlaySvg);
+    // Always walk the full page (not the current scope) — a scoped alt-text or
+    // axe audit should not silently constrain the keyboard tab walk.
+    // Scroll to the very top first so the animation is visible from the start.
+    window.scrollTo({ top: 0, behavior: 'instant' });
     await new Promise(r => requestAnimationFrame(r));
-    await this.animatedTabWalk();
+    await this.animatedTabWalk(undefined);
   }
 
   /**
@@ -246,11 +250,22 @@ class A11yContent {
    * SerializedTrailEntry[] in TAB_WALK_COMPLETE.missedElements so the panel can
    * show them as an experimental finding.
    */
-  private async animatedTabWalk(stepDelayMs = 300) {
-    const tabOrder = getTabOrder(this.scope);
+  /**
+   * @param walkScope  Pass `undefined` to walk the full page regardless of `this.scope`.
+   *                   Callers can pass `this.scope` if they explicitly want a scoped walk.
+   */
+  private async animatedTabWalk(walkScope: Element | undefined, stepDelayMs = 300) {
+    const effectiveScope = walkScope;   // undefined = full page
+    const tabOrder = getTabOrder(effectiveScope);
     const total = tabOrder.length;
 
     this.send({ type: 'TAB_WALK_START', total });
+
+    // If there are no focusable elements, resolve immediately.
+    if (total === 0) {
+      this.send({ type: 'TAB_WALK_COMPLETE', issues: [], flows: [], missedElements: [] });
+      return;
+    }
 
     const missedElements: SerializedTrailEntry[] = [];
     let prevCenter: { x: number; y: number } | null = null;
@@ -298,10 +313,17 @@ class A11yContent {
     // Blur any focused element so we don't leave the host page in a focused state
     (document.activeElement as HTMLElement | null)?.blur?.();
 
-    // Run static analysis (reuses existing tab order — fast, no re-traversal)
-    this.components = detectComponents();
-    this.keyboardIssues = analyzeKeyboardFlow(this.scope);
-    this.componentFlows = analyzeComponentTabFlows(this.components, tabOrder, this.keyboardIssues);
+    // Run static analysis — wrapped in try/catch so a failure never leaves the
+    // popup stuck in the "Animated Tab Walk" loading state.
+    try {
+      this.components = detectComponents();
+      this.keyboardIssues = analyzeKeyboardFlow(effectiveScope);
+      this.componentFlows = analyzeComponentTabFlows(this.components, tabOrder, this.keyboardIssues);
+    } catch (err) {
+      console.error('[Prism] Tab walk post-analysis error:', err);
+      this.keyboardIssues = [];
+      this.componentFlows = [];
+    }
 
     this.send({
       type: 'TAB_WALK_COMPLETE',

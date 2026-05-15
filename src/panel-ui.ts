@@ -451,6 +451,8 @@ class PopupWindowUI {
         break;
       case 'TAB_WALK_COMPLETE':
         this.panel.updateKeyboardResults(msg.issues, msg.flows, msg.missedElements);
+        // Walk finished — bring the results popup back into focus.
+        this.focusPopup();
         break;
       case 'HEADING_RESULTS':
         this.panel.updateHeadingResults(msg.result);
