@@ -3,7 +3,7 @@
   "name": "Accessibility Prism",
   "version": "3.0.0",
   "description": "All-in-one accessibility testing: axe scanning, 10 custom rules, keyboard & ARIA analysis, screen reader simulation, and more.",
-  "permissions": ["activeTab", "scripting", "tabs"],
+  "permissions": ["activeTab", "scripting", "tabs", "windows"],
   "icons": {
     "16": "icons/icon-16.png",
     "32": "icons/icon-32.png",

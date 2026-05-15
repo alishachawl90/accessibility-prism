@@ -340,13 +340,41 @@ class StandaloneA11yUI {
 class PopupWindowUI {
   private panel!: FloatingPanel;
   private port!: chrome.runtime.Port;
+  private tabId = 0;
+
+  // ── Tab focus helpers ────────────────────────────────────────────────────
+
+  /** Switch focus to the page being inspected so the user can interact with it. */
+  private focusInspectedTab() {
+    if (!this.tabId) return;
+    chrome.tabs.get(this.tabId, (tab) => {
+      if (chrome.runtime.lastError || !tab) return;
+      // Activate the tab inside its window, then focus that window.
+      chrome.tabs.update(this.tabId, { active: true }, () => {
+        if (tab.windowId) chrome.windows.update(tab.windowId, { focused: true });
+      });
+    });
+  }
+
+  /** Return focus to this popup window after page interaction is done. */
+  private focusPopup() {
+    chrome.windows.getCurrent({}, (win) => {
+      if (win?.id != null) chrome.windows.update(win.id, { focused: true });
+    });
+  }
+
+  // ── Constructor ──────────────────────────────────────────────────────────
 
   constructor() {
     this.panel = new FloatingPanel({
       isPopupWindow: true,
       onRunAxe: () => this.cmd({ type: 'RUN_AXE' }),
       onRunAutoKeyboard: () => this.cmd({ type: 'RUN_AUTO_KEYBOARD' }),
-      onStartManualKeyboard: () => this.cmd({ type: 'START_MANUAL' }),
+      onStartManualKeyboard: () => {
+        this.cmd({ type: 'START_MANUAL' });
+        // Focus the page so the user can immediately start tabbing through it.
+        this.focusInspectedTab();
+      },
       onStopManualKeyboard: () => this.cmd({ type: 'STOP_MANUAL' }),
       onResetManualTrail: () => this.cmd({ type: 'RESET_MANUAL' }),
       onExportReport: () => this.cmd({ type: 'EXPORT_REPORT' }),
@@ -364,7 +392,11 @@ class PopupWindowUI {
       onRunTouchTargets: () => this.cmd({ type: 'RUN_TOUCH_TARGETS' }),
       onRunAltText: () => this.cmd({ type: 'RUN_ALT_TEXT' }),
       onPartialScan: () => this.cmd({ type: 'START_PARTIAL_SCAN' }),
-      onScopePick: () => this.cmd({ type: 'START_SCOPE_PICK' }),
+      onScopePick: () => {
+        this.cmd({ type: 'START_SCOPE_PICK' });
+        // Focus the page so the user can click the element they want to scope.
+        this.focusInspectedTab();
+      },
       onScopeSelector: (sel: string) => { this.cmd({ type: 'SET_SCOPE_SELECTOR', selector: sel }); return true; },
       onRunAccNames: () => this.cmd({ type: 'RUN_ACC_NAMES' }),
       onRunAriaValidation: () => this.cmd({ type: 'RUN_ARIA' }),
@@ -381,12 +413,12 @@ class PopupWindowUI {
     // Use chrome.tabs.connect(tabId) so the connection lands in the content script
     // running in the inspected tab. The tabId is passed via URL param by background.js.
     const params = new URLSearchParams(window.location.search);
-    const tabId = parseInt(params.get('tabId') ?? '0', 10);
-    if (!tabId) {
+    this.tabId = parseInt(params.get('tabId') ?? '0', 10);
+    if (!this.tabId) {
       console.error('[Prism] No tabId in URL — cannot connect to content script');
       return;
     }
-    this.port = chrome.tabs.connect(tabId, { name: PORT_NAME });
+    this.port = chrome.tabs.connect(this.tabId, { name: PORT_NAME });
     this.port.onMessage.addListener((msg: ResultMessage) => this.handleResult(msg));
     this.port.onDisconnect.addListener(() => {
       console.warn('[Prism] Content script disconnected');
@@ -460,14 +492,22 @@ class PopupWindowUI {
         this.panel.updateScorecardResults(msg.result);
         break;
       case 'TRAIL_UPDATE':
+        this.panel.updateSerializedTrail(msg.trail);
+        break;
       case 'TRAIL_COMPLETE':
         this.panel.updateSerializedTrail(msg.trail);
+        // Manual keyboard recording finished — bring the popup back to the front.
+        this.focusPopup();
         break;
       case 'SCOPE_SET':
         if (msg.label) this.panel.setScopeLabel(msg.label);
         else this.panel.clearScope();
+        // Element was picked (or scope cleared) — return focus to the popup.
+        this.focusPopup();
         break;
       case 'SCOPE_PICK_STARTED':
+        // Content script is ready for the pick — page focus was already requested
+        // in onScopePick; just update the panel loading label.
         this.panel.showLoading('Click an element on the page to select scope…');
         break;
       case 'CONTENT_READY':
