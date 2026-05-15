@@ -1,10 +1,9 @@
 import type { FocusManagementIssue } from '../../core/types';
+import { getCssSelector, getSnippet } from '../../utils/dom-utils';
 import { escHtml } from '../../utils/escape';
 import { SEV, type SeverityKey } from '../tokens';
 import {
   attachResultsPageListeners,
-  getCssSelector,
-  getSnippet,
   renderIssueCard,
   renderResultsPage,
   renderSeverityBadge,

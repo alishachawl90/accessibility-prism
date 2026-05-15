@@ -1,4 +1,5 @@
 import type { LiveRegionResult, LiveRegionIssue, LiveRegionIssueType, LiveRegionInfo } from '../../core/types';
+import { getCssSelector, getSnippet } from '../../utils/dom-utils';
 import { LR_TYPE_LABELS } from '../../core/types';
 import { escHtml } from '../../utils/escape';
 import { SEV, type SeverityKey } from '../tokens';
@@ -7,8 +8,6 @@ import {
   renderResultsPage,
   renderIssueCard,
   renderSeverityBadge,
-  getCssSelector,
-  getSnippet,
   attachResultsPageListeners,
 } from './results-template';
 import { renderCountBadge } from './helpers';

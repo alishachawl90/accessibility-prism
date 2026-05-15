@@ -1,4 +1,5 @@
 import type { AccNameEntry, AccNameResult } from '../../core/types';
+import { getCssSelector, getSnippet } from '../../utils/dom-utils';
 import { escHtml } from '../../utils/escape';
 import { SEV, type SeverityKey } from '../tokens';
 import { ICON_CHEVRON_RIGHT } from '../icons';
@@ -7,8 +8,6 @@ import {
   renderResultsPage,
   renderIssueCard,
   renderSeverityBadge,
-  getCssSelector,
-  getSnippet,
   attachResultsPageListeners,
 } from './results-template';
 

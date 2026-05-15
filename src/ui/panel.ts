@@ -8,7 +8,8 @@ import { renderPreScreen, attachPreScreenListeners } from './views/pre-screen';
 import { renderAxeIssueList, attachAxeListListeners, type GroupMode, type AxeListData } from './views/axe-issue-list';
 import { renderAxeIssueDetails, attachAxeDetailsListeners } from './views/axe-issue-details';
 import { renderKeyboardResults, attachKeyboardListeners, type KbGroupMode, type KbData } from './views/keyboard-results';
-import { renderManualTracking, attachManualListeners, updateManualTrailLog } from './views/manual-tracking';
+import { renderManualTracking, attachManualListeners, updateManualTrailLog, type TrailEntry } from './views/manual-tracking';
+import type { SerializedTrailEntry } from '../messages';
 import { renderComponentFlowList, attachFlowListListeners } from './views/component-flow-list';
 import { renderComponentFlowDetail, attachFlowDetailListeners } from './views/component-flow-detail';
 import { renderHeadingResults, attachHeadingListeners } from './views/heading-results';
@@ -53,6 +54,7 @@ interface PanelCallbacks {
   onRunScorecard: () => void;
   onExportScorecard: () => void;
   onClose: () => void;
+  onCancelTabWalk?: () => void;
 }
 
 type ViewName =
@@ -105,13 +107,17 @@ export class FloatingPanel {
   private componentFlows: ComponentTabFlow[] = [];
   private kbGroupMode: KbGroupMode = 'type';
   private kbSeverityFilter = new Set<'error' | 'warning' | 'info'>(['error', 'warning', 'info']);
+  // Animated tab walk progress (null when idle)
+  private tabWalkProgress: { index: number; total: number } | null = null;
+  // Missed focus stops from Phase 7B
+  private missedTabStops: import('../messages').SerializedTrailEntry[] = [];
 
   // Component flow state
   private activeFlowIdx = 0;
   private activeInstanceIdx = 0;
 
-  // Manual tracking state
-  private manualTrail: Element[] = [];
+  // Manual tracking state — accepts both live Elements (standalone) and serialized entries (popup)
+  private manualTrail: TrailEntry[] = [];
 
   // New analysis states
   private headingData: HeadingAnalysisResult = { headings: [], issues: [] };
@@ -152,6 +158,8 @@ export class FloatingPanel {
 
   // === Public API ===
 
+  // hide()/show() are kept for the standalone test fixture (index.html mode).
+  // In popup window mode the panel is always full-viewport; closing the popup destroys it.
   public hide() { this.container.style.setProperty('display', 'none', 'important'); }
   public show() { this.container.style.setProperty('display', 'flex', 'important'); }
 
@@ -192,11 +200,60 @@ export class FloatingPanel {
     this.render();
   }
 
-  public updateKeyboardResults(issues: KeyboardIssue[], componentFlows: ComponentTabFlow[]) {
+  public updateKeyboardResults(issues: KeyboardIssue[], componentFlows: ComponentTabFlow[], missedStops?: import('../messages').SerializedTrailEntry[]) {
+    this.tabWalkProgress = null;
     this.keyboardIssues = issues;
     this.componentFlows = componentFlows;
+    this.missedTabStops = missedStops ?? [];
     this.currentView = 'keyboard-issues';
     this.render();
+  }
+
+  /** Phase 7A: show live tab-walk progress bar in the loading area */
+  public startTabWalk(total: number) {
+    this.tabWalkProgress = { index: 0, total };
+    this.currentView = 'keyboard-issues';
+    this.renderTabWalkProgress();
+  }
+
+  public updateTabWalkStep(index: number, total: number) {
+    this.tabWalkProgress = { index, total };
+    this.renderTabWalkProgress();
+  }
+
+  private renderTabWalkProgress() {
+    const prog = this.tabWalkProgress;
+    if (!prog) return;
+    const scrollArea = this.container.querySelector('#scroll-area');
+    if (!scrollArea) return;
+    const pct = Math.round((prog.index / Math.max(prog.total, 1)) * 100);
+    scrollArea.innerHTML = `
+      <div style="display:flex !important;flex-direction:column !important;align-items:center !important;
+                  justify-content:center !important;padding:60px 24px !important;gap:20px !important;">
+        <div class="a11y-spinner"></div>
+        <div style="font-size:15px !important;font-weight:600 !important;color:#1F2937 !important;">
+          Animated Tab Walk
+        </div>
+        <div style="font-size:13px !important;color:#6B7280 !important;text-align:center !important;">
+          Visiting element ${prog.index} of ${prog.total}…<br>
+          Watch the page to see focus moving in real time
+        </div>
+        <div style="width:100% !important;max-width:280px !important;background:#E5E7EB !important;
+                    border-radius:999px !important;height:8px !important;overflow:hidden !important;">
+          <div style="width:${pct}% !important;height:100% !important;background:#5C6BC0 !important;
+                      border-radius:999px !important;transition:width 0.2s !important;"></div>
+        </div>
+        <div style="font-size:12px !important;color:#9CA3AF !important;">${pct}% complete</div>
+        <button id="btn-cancel-walk"
+          style="margin-top:8px !important;padding:8px 20px !important;background:#FEE2E2 !important;
+                 color:#B91C1C !important;border:1px solid #FECACA !important;border-radius:8px !important;
+                 font-size:13px !important;font-weight:600 !important;cursor:pointer !important;">
+          Cancel
+        </button>
+      </div>
+    `;
+    const btn = scrollArea.querySelector('#btn-cancel-walk');
+    btn?.addEventListener('click', () => this.callbacks.onCancelTabWalk?.(), { once: true });
   }
 
   public updateManualTrail(trail: Element[]) {
@@ -205,6 +262,29 @@ export class FloatingPanel {
       updateManualTrailLog(trail);
     } else {
       this.currentView = 'manual-tracking';
+      this.render();
+    }
+  }
+
+  /** Called by popup-window mode when receiving TRAIL_UPDATE/TRAIL_COMPLETE messages. */
+  public updateSerializedTrail(trail: SerializedTrailEntry[]) {
+    this.manualTrail = trail;
+    if (this.currentView === 'manual-tracking') {
+      updateManualTrailLog(trail);
+    } else {
+      this.currentView = 'manual-tracking';
+      this.render();
+    }
+  }
+
+  /** Called by popup-window mode when scope is picked on the host page (no live Element available). */
+  public setScopeLabel(label: string) {
+    this.scopeLabel = label;
+    if (this.pendingRerunView) {
+      this.currentView = this.pendingRerunView as any;
+      this.pendingRerunView = null;
+      this.rerunCurrentAudit();
+    } else {
       this.render();
     }
   }
@@ -307,28 +387,42 @@ export class FloatingPanel {
     this.container.id = 'a11y-analyzer-panel';
     this.container.setAttribute('data-a11y-extension', 'true');
 
-    this.container.setAttribute('style', `
-      position: fixed !important;
-      bottom: 16px !important;
-      right: 16px !important;
-      width: 440px !important;
-      max-height: 85vh !important;
-      background: #FFFFFF !important;
-      border: 1px solid ${BORDER} !important;
-      border-radius: 14px !important;
-      box-shadow: 0 12px 48px rgba(0,0,0,0.12), 0 4px 16px rgba(0,0,0,0.06) !important;
-      z-index: 999999 !important;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
-      font-size: 14px !important;
-      display: flex !important;
-      flex-direction: column !important;
-      overflow: hidden !important;
-      color-scheme: light !important;
-      color: #1F2937 !important;
-    `.replace(/\n\s*/g, ' '));
-
-    document.body.appendChild(this.container);
-    this.injectScopedStyles();
+    if ((window as any).__A11Y_STANDALONE__) {
+      // Standalone test fixture mode (index.html) — inject as fixed overlay on the host page
+      this.container.setAttribute('style', `
+        position: fixed !important;
+        bottom: 16px !important;
+        right: 16px !important;
+        width: 440px !important;
+        min-width: 320px !important;
+        max-height: 85vh !important;
+        background: #FFFFFF !important;
+        border: 1px solid ${BORDER} !important;
+        border-radius: 14px !important;
+        box-shadow: 0 12px 48px rgba(0,0,0,0.12), 0 4px 16px rgba(0,0,0,0.06) !important;
+        z-index: 999999 !important;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+        font-size: 14px !important;
+        display: flex !important;
+        flex-direction: column !important;
+        overflow: hidden !important;
+        color-scheme: light !important;
+        color: #1F2937 !important;
+      `.replace(/\n\s*/g, ' '));
+      document.body.appendChild(this.container);
+      this.injectScopedStyles();
+    } else {
+      // Popup window mode — fill the entire popup window (panel.html provides the styles)
+      this.container.style.cssText = `
+        width: 100%;
+        min-width: 320px;
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      `;
+      document.body.appendChild(this.container);
+    }
   }
 
   private injectScopedStyles() {
@@ -640,6 +734,10 @@ export class FloatingPanel {
           onReset: () => this.callbacks.onResetManualTrail(),
           onStop: () => this.callbacks.onStopManualKeyboard(),
           onBack: () => { this.callbacks.onStopManualKeyboard(); backToHome(); },
+          onHighlightTrailEntry: (selector) => {
+            // highlight() resolves the element — works in both standalone (selector → DOM) and popup modes
+            highlight([document.querySelector(selector)]);
+          },
         });
         break;
 
@@ -817,6 +915,7 @@ export class FloatingPanel {
     return {
       issues: this.keyboardIssues, componentFlows: this.componentFlows, components: this.components,
       groupMode: this.kbGroupMode, severityFilter: this.kbSeverityFilter,
+      missedStops: this.missedTabStops,
     };
   }
 

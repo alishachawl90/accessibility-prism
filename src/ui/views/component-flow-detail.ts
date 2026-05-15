@@ -1,4 +1,5 @@
 import type { ComponentTabFlow, KeyboardIssue } from '../../core/types';
+import { getCssSelector, getSnippet } from '../../utils/dom-utils';
 import { KB_TYPE_LABELS } from '../../core/types';
 import { escHtml } from '../../utils/escape';
 import { getElementContext } from '../../utils/wcag-map';
@@ -7,8 +8,6 @@ import {
   renderResultsPage,
   renderIssueCard,
   renderSeverityBadge,
-  getCssSelector,
-  getSnippet,
   attachResultsPageListeners,
 } from './results-template';
 import { renderPriorityBadge } from './helpers';

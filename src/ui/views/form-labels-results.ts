@@ -1,4 +1,5 @@
 import type { FormLabelsResult } from '../../core/types';
+import { getCssSelector, getSnippet } from '../../utils/dom-utils';
 import { escHtml } from '../../utils/escape';
 import { FORM_LABEL_KNOWLEDGE, renderKnowledgeBlock } from '../../utils/issue-knowledge';
 import { SEV } from '../tokens';
@@ -6,8 +7,6 @@ import {
   renderResultsPage,
   renderIssueCard,
   renderSeverityBadge,
-  getCssSelector,
-  getSnippet,
   attachResultsPageListeners,
   type ResultsPageConfig,
 } from './results-template';

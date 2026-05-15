@@ -1,4 +1,6 @@
 import type { KeyboardIssue, KeyboardIssueType, KeyboardPriority, ComponentCluster, ComponentTabFlow } from '../../core/types';
+import type { SerializedTrailEntry } from '../../messages';
+import { getCssSelector, getSnippet } from '../../utils/dom-utils';
 import { KB_TYPE_LABELS, KB_TYPE_PRIORITY, KB_PRIORITY_LABELS } from '../../core/types';
 import { findRegionForElement } from '../../core/region-detection';
 import { escHtml } from '../../utils/escape';
@@ -10,8 +12,6 @@ import {
   renderResultsPage,
   renderIssueCard,
   renderSeverityBadge,
-  getCssSelector,
-  getSnippet,
   attachResultsPageListeners,
 } from './results-template';
 import { renderCountBadge } from './helpers';
@@ -24,6 +24,8 @@ export interface KbData {
   components: Map<string, ComponentCluster>;
   groupMode: KbGroupMode;
   severityFilter: Set<'error' | 'warning' | 'info'>;
+  /** Phase 7B: elements that didn't receive focus during the animated walk (experimental) */
+  missedStops?: SerializedTrailEntry[];
 }
 
 interface KbSection {
@@ -182,7 +184,7 @@ export function renderKeyboardResults(data: KbData): string {
 
   const sections = getKeyboardSections(data, filtered);
   const flatIssues: KeyboardIssue[] = [];
-  const bodyHtml = sections
+  const sectionsHtml = sections
     .map((sec, i) => renderSectionAccordion(
       `kb-sec-${i}`,
       sec.title,
@@ -190,6 +192,30 @@ export function renderKeyboardResults(data: KbData): string {
       renderIssueCardsForIssues(sec.issues, flatIssues),
     ))
     .join('');
+
+  // Phase 7B — missed focus banner (experimental)
+  const missedBanner = (data.missedStops && data.missedStops.length > 0)
+    ? `<div style="margin:0 0 12px 0 !important;padding:12px 16px !important;background:#FFF7ED !important;
+                   border:1px solid #FED7AA !important;border-radius:10px !important;">
+         <div style="display:flex !important;align-items:center !important;gap:8px !important;margin-bottom:6px !important;">
+           <span style="font-size:13px !important;font-weight:700 !important;color:#C2410C !important;">
+             ⚠ Experimental: ${data.missedStops.length} potentially missed focus stop${data.missedStops.length !== 1 ? 's' : ''}
+           </span>
+         </div>
+         <div style="font-size:12px !important;color:#9A3412 !important;margin-bottom:8px !important;line-height:1.5 !important;">
+           These elements were in the DOM tab order but did not receive focus when programmatically visited.
+           They may be hidden at runtime, disabled, or intercepted by a focus trap.
+         </div>
+         ${data.missedStops.map(s => `
+           <div style="padding:6px 8px !important;background:white !important;border-radius:6px !important;
+                       margin-bottom:4px !important;font-size:11px !important;font-family:ui-monospace,monospace !important;
+                       color:#374151 !important;overflow:hidden !important;text-overflow:ellipsis !important;white-space:nowrap !important;">
+             #${s.index} ${escHtml(s.snippet)}
+           </div>`).join('')}
+       </div>`
+    : '';
+
+  const bodyHtml = missedBanner + sectionsHtml;
 
   const toolbarHtml =
     data.componentFlows.length > 0

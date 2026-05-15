@@ -1,11 +1,10 @@
 import type { AccNameEntry } from '../../core/types';
+import { getCssSelector, getSnippet } from '../../utils/dom-utils';
 import { escHtml } from '../../utils/escape';
 import {
   renderResultsPage,
   renderIssueCard,
   attachResultsPageListeners,
-  getCssSelector,
-  getSnippet,
 } from './results-template';
 
 export function renderReadingOrderResults(entries: AccNameEntry[]): string {

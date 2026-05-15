@@ -1,4 +1,5 @@
 import type { AriaValidationResult, AriaIssue } from '../../core/types';
+import { getCssSelector, getSnippet } from '../../utils/dom-utils';
 import { escHtml } from '../../utils/escape';
 import { ARIA_KNOWLEDGE, renderKnowledgeBlock } from '../../utils/issue-knowledge';
 import { SEV, type SeverityKey } from '../tokens';
@@ -6,8 +7,6 @@ import {
   renderResultsPage,
   renderIssueCard,
   renderSeverityBadge,
-  getCssSelector,
-  getSnippet,
   attachResultsPageListeners,
 } from './results-template';
 

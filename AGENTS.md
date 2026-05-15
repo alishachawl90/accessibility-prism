@@ -1,40 +1,116 @@
 # Accessibility Prism — Agent Handoff Documentation
 
-**Version:** 2.1.0  
-**Type:** Chrome Extension (content script + optional side panel)  
+**Version:** 3.0.0  
+**Type:** Chrome Extension (detached popup window)  
 **Stack:** TypeScript, Vite, axe-core, Playwright
 
 ---
 
 ## What This Is
 
-A Chrome extension that injects a floating panel into any web page to run accessibility audits: axe-core violations, heading structure, landmarks, contrast, alt text, form labels, ARIA validation, keyboard analysis, focus management, touch targets, live regions, screen reader walkthrough, reading order, and an aggregated scorecard. Includes 10 custom "Prism" rules that extend axe-core and are classified as `experimental` (not violations).
+A Chrome extension that runs accessibility audits in a **detached popup window** (completely isolated from the host page). Click the extension icon in the browser toolbar → a separate popup window opens. The UI has no interaction with the host page's DOM or CSS, eliminating layout conflicts and enabling testing at any viewport size.
+
+Audits covered: axe-core violations, heading structure, landmarks, contrast, alt text, form labels, ARIA validation, keyboard analysis, focus management, touch targets, live regions, screen reader walkthrough, reading order, and an aggregated scorecard. Includes 10 custom "Prism" rules that extend axe-core.
 
 ---
 
-## Architecture
+## Architecture (v3.0 — Popup Window)
 
 ```
-index.html ──loads──▶ dist/content.js ──creates──▶ Activation Button
-                                                         │ click
-                                                         ▼
-                                                   FloatingPanel
-                                                   (panel.ts)
-                                                    │
-                          ┌─────────────────────────┼─────────────────────────┐
-                          ▼                         ▼                         ▼
-                    pre-screen.ts            core/*-analysis.ts        views/*-results.ts
-                    (audit buttons)          (run audits)              (render results)
+Browser toolbar icon click
+        │
+        ▼
+public/background.js (service worker)
+        │
+        ├─ chrome.scripting.executeScript(content.js) → injects into active tab
+        │
+        └─ chrome.windows.create({ url: panel.html, type: 'popup' })
+                │
+                ▼
+        public/panel.html → dist/panel.js (popup window)
+                │
+                ▼
+         FloatingPanel (panel.ts) ◄──────────────────────────────────┐
+                │                                                      │
+         PanelCallbacks                                                │
+          dispatch commands ──► chrome.runtime.connect (PORT_NAME)    │
+                                        │                             │
+                                        ▼                             │
+                               dist/content.js (content script)       │
+                               A11yContent class                       │
+                                        │                             │
+                          ┌────────────┴─────────────────┐            │
+                          ▼                               ▼            │
+                  core/*-analysis.ts              overlay.ts           │
+                  (run audits)                    (draw highlights)    │
+                          │                                            │
+                   ResultMessage  ───────────────────────────────────►│
+                   (serialized)    port.postMessage
+```
+
+### Two Execution Contexts
+
+| Context | File | DOM access | Chrome APIs |
+|---------|------|-----------|-------------|
+| **Content script** | `src/content.ts` → `dist/content.js` | Yes (host page) | `chrome.runtime.onConnect` |
+| **Popup window** | `src/panel-ui.ts` → `dist/panel.js` | Popup only | `chrome.runtime.connect` |
+| **Service worker** | `public/background.js` | None | `chrome.action`, `chrome.scripting`, `chrome.windows` |
+
+### Element Serialization Pattern
+
+DOM `Element` references **cannot cross context boundaries**. The content script serializes every element reference before sending:
+
+```typescript
+// In src/utils/dom-utils.ts
+type SerializedElement = { selector: string; snippet: string };
+
+serializeElement(el: Element): SerializedElement  // content script → popup
+serializeResult<T>(result: T): T                   // deep-clone, replacing Elements
+
+// Both getCssSelector() and getSnippet() accept Element | SerializedElement
+getCssSelector(el: Element | SerializedElement): string
+getSnippet(el: Element | SerializedElement, max?: number): string
+```
+
+### Message Protocol
+
+All cross-context communication goes through `src/messages.ts`:
+
+```typescript
+// Popup → Content Script (commands)
+type CommandMessage =
+  | { type: 'PANEL_READY' }
+  | { type: 'RUN_AXE' }
+  | { type: 'RUN_AUTO_KEYBOARD' }
+  | { type: 'START_MANUAL' }
+  | { type: 'STOP_MANUAL' }
+  | { type: 'HIGHLIGHT'; auditType: AuditType; index: number }
+  | { type: 'HIGHLIGHT_BY_SELECTOR'; selector: string; color?: string; label?: string }
+  | { type: 'SET_SCOPE_SELECTOR'; selector: string }
+  // ... more commands
+
+// Content Script → Popup (results)
+type ResultMessage =
+  | { type: 'LOADING'; label: string }
+  | { type: 'AXE_RESULTS'; violations: any; components: any; dedupedIssues: any; regions: any }
+  | { type: 'KEYBOARD_RESULTS'; issues: any; flows: any }
+  | { type: 'TRAIL_UPDATE'; trail: SerializedTrailEntry[] }
+  | { type: 'TRAIL_COMPLETE'; trail: SerializedTrailEntry[] }
+  | { type: 'SCOPE_SET'; label?: string }
+  // ... more results
+
+export const PORT_NAME = 'prism-panel';
 ```
 
 ### Rendering Cycle
 
-1. User clicks an audit button on `pre-screen`
-2. `panel.ts` runs the corresponding `core/*-analysis.ts` function
-3. `panel.ts` sets `currentView` and calls `render()`
-4. `render()` calls the view's `render*()` function → returns HTML string
-5. `panel.ts` sets `container.innerHTML = html`
-6. `panel.ts` calls the view's `attach*Listeners()` function → wires event delegation
+1. User clicks an audit button on `pre-screen` (in popup window)
+2. `panel-ui.ts` sends a `CommandMessage` to content script via port
+3. Content script runs `core/*-analysis.ts` and serializes results
+4. Content script sends `ResultMessage` back via port
+5. `panel-ui.ts` calls `panel.update*()` → `panel.ts` sets `currentView` + calls `render()`
+6. `render()` calls the view's `render*()` → returns HTML string → set `container.innerHTML`
+7. `panel.ts` calls the view's `attach*Listeners()` → wires event delegation
 
 ### Event Listener Pattern
 
@@ -51,7 +127,10 @@ container.addEventListener('click', handler, { signal });
 
 ```
 src/
-├── main.ts                          Entry point — creates activation button + panel
+├── content.ts                       Content script entry — A11yContent class, runs in host page
+├── panel-ui.ts                      Popup window entry — mounts FloatingPanel, message dispatch
+├── messages.ts                      Typed CommandMessage / ResultMessage protocol
+├── main.ts                          Legacy entry (kept for reference, not used by extension)
 ├── core/
 │   ├── types.ts                     Shared TypeScript types
 │   ├── axe-runner.ts                Runs axe-core + registers Prism rules
@@ -113,12 +192,18 @@ src/
 │       ├── component-flow-list.ts   Component instance picker
 │       └── component-flow-detail.ts Single component tab order
 └── utils/
+    ├── dom-utils.ts                 getCssSelector, getSnippet, serializeElement, serializeResult
     ├── escape.ts                    HTML escaping
     ├── wcag-map.ts                  Rule → WCAG criterion mapping
-    ├── html-report.ts              Downloadable HTML report
-    ├── scorecard-report.ts         Scorecard HTML export
-    ├── issue-knowledge.ts          Centralized WCAG/fix/impact knowledge per issue type
-    └── fix-suggestions.ts          Element-specific code fix generators
+    ├── html-report.ts               Downloadable HTML report
+    ├── scorecard-report.ts          Scorecard HTML export
+    ├── issue-knowledge.ts           Centralized WCAG/fix/impact knowledge per issue type
+    └── fix-suggestions.ts           Element-specific code fix generators
+
+public/
+├── background.js                    Service worker — launches popup window on icon click
+├── panel.html                       Popup window HTML (inline base CSS, loads panel.js)
+└── manifest.json                    Extension manifest v3
 ```
 
 ---
@@ -205,20 +290,29 @@ Shared UI components live in `results-template.ts`:
 ## Build & Test
 
 ```bash
-npm run build          # tsc && vite build → dist/content.js
-npm run dev:watch      # vite build --watch (auto-rebuild on save)
+npm run build          # tsc + build:content + build:panel → dist/content.js + dist/panel.js
+npm run build:content  # Build content script only
+npm run build:panel    # Build popup UI only
+npm run dev:watch      # Watch mode — rebuilds both on save
 npm test               # Playwright: 144 tests, 12 spec files
 npm run test:headed    # Playwright with visible browser
 npm run test:ui        # Playwright interactive UI
 npm run test:report    # Open HTML test report
 ```
 
-### Local Testing (without Chrome extension)
+### Loading the Extension
+
+1. `npm run build`
+2. Open `chrome://extensions` → Enable Developer mode → Load unpacked → select project root
+3. Click the Prism icon in the browser toolbar → popup window opens
+
+### Local Testing (Standalone / Playwright fixture mode)
 
 1. `npm run build` (or `npm run dev:watch`)
 2. Open `index.html` via a local server (the test server at port 9333 works)
-3. The page loads `dist/content.js` directly via `<script>` tag
-4. Click the floating activation button → panel opens
+3. `index.html` sets `window.__A11Y_STANDALONE__ = true` and loads `dist/panel.js`
+4. `panel.js` detects standalone mode → creates `StandaloneA11yUI` → renders activation button
+5. Click the floating activation button → panel opens as an injected overlay (no chrome.runtime)
 
 ---
 
@@ -312,16 +406,17 @@ test.describe('My Audit', () => {
 
 ## Known Patterns & Gotchas
 
-1. **All inline styles use `!important`** — the extension injects into arbitrary pages, so styles must override host page CSS.
-2. **AbortController for listeners** — `attachResultsPageListeners` returns an `AbortSignal`. Any extra container-level `addEventListener` must pass `{ signal }` to prevent accumulation across view navigations.
-3. **Custom rules are experimental** — Prism rules are classified as `resultType: 'experimental'` (not violations). They appear under a separate chip in the axe results list.
-4. **Scroll position restore** uses double `requestAnimationFrame` in `panel.ts` to wait for DOM layout before setting `scrollTop`.
-5. **`index.html` is a deliberate "bad a11y" fixture page** — it has missing alt text, bad contrast, unlabeled forms, ARIA misuse, small touch targets, etc. for comprehensive test coverage.
-6. **All views unified (Phase 2)** — every view now uses `renderResultsPage` + `renderIssueCard` + `attachResultsPageListeners`. Views with custom navigation (component-flow prev/next, sr-walkthrough) use `toolbarHtml` + `onToolbarAction`. No more hand-built HTML or per-element listeners in any view file.
-7. **Only `axe-issue-list.ts` and `axe-issue-details.ts` remain specialized** — they have unique rule-card grouping and occurrence-level detail that doesn't fit the generic template.
-8. **Keyboard results use collapsible accordions (Phase 3)** — sections in all three group modes (By Type, By Region, By Component) are wrapped in `.kb-acc-header` / `.kb-acc-body` accordion elements. The expand/collapse listener uses the `AbortSignal` from `attachResultsPageListeners`.
-9. **Component flow detail merges steps + issues (Phase 3)** — no separate "Issues" section. Each tab stop card shows its matching issues inline via `extraBodyHtml` using `renderInlineIssue()`.
-10. **Live Regions view redesign** — issues grouped by type in collapsible accordions (`lr-acc-header`/`lr-acc-body`), severity filter chips, breakdown bar (assertive/polite/empty/healthy counts), healthy regions in collapsed accordion. Uses `LrViewData` wrapper with `severityFilter` state managed in `panel.ts`.
-11. **Accessible Names view redesign** — entries grouped by status (Error/Warning/Pass) in collapsible section accordions (`an-acc-header`/`an-acc-body`). "Pass" chip defaults to OFF. Section borders color-coded by severity.
-12. **Issue Knowledge blocks** — `utils/issue-knowledge.ts` provides centralized WCAG criterion mapping, plain-English user impact statements, fix suggestions, and "learn more" URLs for non-axe audits (Keyboard, Form Labels, ARIA, Contrast). Rendered via `renderKnowledgeBlock()` in expanded card `extraBodyHtml`.
-13. **Axe group mode filters** — "By Region" and "By Component" tabs now correctly apply result type chips, search query, and WCAG severity filters. Previously these tabs showed all unfiltered results.
+1. **Popup window mode vs standalone mode** — `panel-ui.ts` checks `window.__A11Y_STANDALONE__`. In standalone mode (test fixture / `index.html`) it creates `StandaloneA11yUI` which runs analysis directly in the same page. In popup mode (extension) it creates `PopupWindowUI` which communicates with the content script via `chrome.runtime.connect`.
+2. **All inline styles use `!important`** in standalone mode — the panel is injected into arbitrary pages, so styles must override host page CSS. In popup mode (`panel.html`), `!important` is not needed since the popup has its own isolated DOM.
+3. **AbortController for listeners** — `attachResultsPageListeners` returns an `AbortSignal`. Any extra container-level `addEventListener` must pass `{ signal }` to prevent accumulation across view navigations.
+4. **Custom rules are experimental** — Prism rules are classified as `resultType: 'experimental'` (not violations). They appear under a separate chip in the axe results list.
+5. **Scroll position restore** uses double `requestAnimationFrame` in `panel.ts` to wait for DOM layout before setting `scrollTop`.
+6. **`index.html` is a deliberate "bad a11y" fixture page** — it has missing alt text, bad contrast, unlabeled forms, ARIA misuse, small touch targets, etc. for comprehensive test coverage.
+7. **All views unified (Phase 2)** — every view now uses `renderResultsPage` + `renderIssueCard` + `attachResultsPageListeners`. Views with custom navigation (component-flow prev/next, sr-walkthrough) use `toolbarHtml` + `onToolbarAction`. No more hand-built HTML or per-element listeners in any view file.
+8. **Only `axe-issue-list.ts` and `axe-issue-details.ts` remain specialized** — they have unique rule-card grouping and occurrence-level detail that doesn't fit the generic template.
+9. **Keyboard results use collapsible accordions (Phase 3)** — sections in all three group modes (By Type, By Region, By Component) are wrapped in `.kb-acc-header` / `.kb-acc-body` accordion elements. The expand/collapse listener uses the `AbortSignal` from `attachResultsPageListeners`.
+10. **Component flow detail merges steps + issues (Phase 3)** — no separate "Issues" section. Each tab stop card shows its matching issues inline via `extraBodyHtml` using `renderInlineIssue()`.
+11. **Live Regions view redesign** — issues grouped by type in collapsible accordions (`lr-acc-header`/`lr-acc-body`), severity filter chips, breakdown bar (assertive/polite/empty/healthy counts), healthy regions in collapsed accordion. Uses `LrViewData` wrapper with `severityFilter` state managed in `panel.ts`.
+12. **Accessible Names view redesign** — entries grouped by status (Error/Warning/Pass) in collapsible section accordions (`an-acc-header`/`an-acc-body`). "Pass" chip defaults to OFF. Section borders color-coded by severity.
+13. **Issue Knowledge blocks** — `utils/issue-knowledge.ts` provides centralized WCAG criterion mapping, plain-English user impact statements, fix suggestions, and "learn more" URLs for non-axe audits (Keyboard, Form Labels, ARIA, Contrast). Rendered via `renderKnowledgeBlock()` in expanded card `extraBodyHtml`.
+14. **Axe group mode filters** — "By Region" and "By Component" tabs now correctly apply result type chips, search query, and WCAG severity filters. Previously these tabs showed all unfiltered results.

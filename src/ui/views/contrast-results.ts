@@ -1,11 +1,10 @@
 import type { ContrastIssue } from '../../core/types';
+import { getCssSelector, getSnippet } from '../../utils/dom-utils';
 import { escHtml } from '../../utils/escape';
 import { CONTRAST_KNOWLEDGE, renderKnowledgeBlock } from '../../utils/issue-knowledge';
 import {
   renderResultsPage,
   renderIssueCard,
-  getCssSelector,
-  getSnippet,
   attachResultsPageListeners,
 } from './results-template';
 

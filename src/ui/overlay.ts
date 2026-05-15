@@ -60,13 +60,12 @@ export function drawKeyboardFlowBox(el: Element, index: number): SVGGElement {
 }
 
 /**
- * Draws taba11y-style numbered badges on each element and connecting arrows
- * showing the tab navigation order.
+ * Ensures the arrowhead marker definition is present in the SVG.
+ * Idempotent — safe to call multiple times.
  */
-export function drawTabOrderOverlay(svg: SVGSVGElement, elements: Element[]) {
-  const ns = "http://www.w3.org/2000/svg";
-
-  // Add arrowhead marker definition
+function ensureArrowMarker(svg: SVGSVGElement) {
+  const ns = 'http://www.w3.org/2000/svg';
+  if (svg.querySelector('marker#arrowhead')) return;
   let defs = svg.querySelector('defs');
   if (!defs) {
     defs = document.createElementNS(ns, 'defs');
@@ -84,73 +83,96 @@ export function drawTabOrderOverlay(svg: SVGSVGElement, elements: Element[]) {
   arrowPath.setAttribute('fill', '#5C6BC0');
   marker.appendChild(arrowPath);
   defs.appendChild(marker);
+}
 
+/**
+ * Draws a single numbered tab-stop badge for `el` at position `index` (1-based).
+ * Returns the center {x, y} so callers can draw arrows between consecutive stops.
+ */
+export function drawTabStopBadge(svg: SVGSVGElement, el: Element, index: number): { x: number; y: number } {
+  const ns = 'http://www.w3.org/2000/svg';
+  ensureArrowMarker(svg);
+
+  const coords = getAbsoluteCoords(el);
+  const cx = coords.x + coords.w / 2;
+  const cy = coords.y + coords.h / 2;
+
+  const g = document.createElementNS(ns, 'g');
+  g.setAttribute('data-tab-stop', index.toString());
+  g.style.setProperty('pointer-events', 'none', 'important');
+
+  const rect = document.createElementNS(ns, 'rect');
+  rect.setAttribute('x', coords.x.toString());
+  rect.setAttribute('y', coords.y.toString());
+  rect.setAttribute('width', coords.w.toString());
+  rect.setAttribute('height', coords.h.toString());
+  rect.setAttribute('fill', 'none');
+  rect.setAttribute('stroke', '#5C6BC0');
+  rect.setAttribute('stroke-width', '2');
+  rect.setAttribute('stroke-dasharray', '4,2');
+  rect.setAttribute('rx', '3');
+  g.appendChild(rect);
+
+  const badgeX = coords.x - 10;
+  const badgeY = coords.y - 10;
+
+  const circle = document.createElementNS(ns, 'circle');
+  circle.setAttribute('cx', badgeX.toString());
+  circle.setAttribute('cy', badgeY.toString());
+  circle.setAttribute('r', '12');
+  circle.setAttribute('fill', '#5C6BC0');
+  circle.setAttribute('stroke', 'white');
+  circle.setAttribute('stroke-width', '2');
+  g.appendChild(circle);
+
+  const numText = document.createElementNS(ns, 'text');
+  numText.setAttribute('x', badgeX.toString());
+  numText.setAttribute('y', (badgeY + 4).toString());
+  numText.setAttribute('fill', 'white');
+  numText.setAttribute('font-size', '11');
+  numText.setAttribute('font-family', 'Inter, system-ui, sans-serif');
+  numText.setAttribute('font-weight', '700');
+  numText.setAttribute('text-anchor', 'middle');
+  numText.textContent = index.toString();
+  g.appendChild(numText);
+
+  svg.appendChild(g);
+  return { x: cx, y: cy };
+}
+
+/**
+ * Draws an animated connecting arrow from `from` center to `to` center.
+ */
+export function drawTabStopArrow(svg: SVGSVGElement, from: { x: number; y: number }, to: { x: number; y: number }) {
+  const ns = 'http://www.w3.org/2000/svg';
+  ensureArrowMarker(svg);
+
+  const line = document.createElementNS(ns, 'line');
+  line.setAttribute('x1', from.x.toString());
+  line.setAttribute('y1', from.y.toString());
+  line.setAttribute('x2', to.x.toString());
+  line.setAttribute('y2', to.y.toString());
+  line.setAttribute('stroke', '#5C6BC0');
+  line.setAttribute('stroke-width', '1.5');
+  line.setAttribute('stroke-opacity', '0.5');
+  line.setAttribute('stroke-dasharray', '6,3');
+  line.setAttribute('marker-end', 'url(#arrowhead)');
+  line.style.setProperty('pointer-events', 'none', 'important');
+  svg.appendChild(line);
+}
+
+/**
+ * Draws taba11y-style numbered badges on each element and connecting arrows
+ * showing the tab navigation order.
+ */
+export function drawTabOrderOverlay(svg: SVGSVGElement, elements: Element[]) {
   const centers: { x: number; y: number }[] = [];
-
   elements.forEach((el, idx) => {
-    const coords = getAbsoluteCoords(el);
-    const cx = coords.x + coords.w / 2;
-    const cy = coords.y + coords.h / 2;
-    centers.push({ x: cx, y: cy });
-
-    const g = document.createElementNS(ns, 'g');
-    g.style.setProperty("pointer-events", "none", "important");
-
-    const rect = document.createElementNS(ns, 'rect');
-    rect.setAttribute('x', coords.x.toString());
-    rect.setAttribute('y', coords.y.toString());
-    rect.setAttribute('width', coords.w.toString());
-    rect.setAttribute('height', coords.h.toString());
-    rect.setAttribute('fill', 'none');
-    rect.setAttribute('stroke', '#5C6BC0');
-    rect.setAttribute('stroke-width', '2');
-    rect.setAttribute('stroke-dasharray', '4,2');
-    rect.setAttribute('rx', '3');
-    g.appendChild(rect);
-
-    const badgeX = coords.x - 10;
-    const badgeY = coords.y - 10;
-
-    const circle = document.createElementNS(ns, 'circle');
-    circle.setAttribute('cx', badgeX.toString());
-    circle.setAttribute('cy', badgeY.toString());
-    circle.setAttribute('r', '12');
-    circle.setAttribute('fill', '#5C6BC0');
-    circle.setAttribute('stroke', 'white');
-    circle.setAttribute('stroke-width', '2');
-    g.appendChild(circle);
-
-    const numText = document.createElementNS(ns, 'text');
-    numText.setAttribute('x', badgeX.toString());
-    numText.setAttribute('y', (badgeY + 4).toString());
-    numText.setAttribute('fill', 'white');
-    numText.setAttribute('font-size', '11');
-    numText.setAttribute('font-family', 'Inter, system-ui, sans-serif');
-    numText.setAttribute('font-weight', '700');
-    numText.setAttribute('text-anchor', 'middle');
-    numText.textContent = (idx + 1).toString();
-    g.appendChild(numText);
-
-    svg.appendChild(g);
+    const center = drawTabStopBadge(svg, el, idx + 1);
+    centers.push(center);
   });
-
-  // Draw connecting arrows between consecutive elements
   for (let i = 0; i < centers.length - 1; i++) {
-    const from = centers[i];
-    const to = centers[i + 1];
-
-    const line = document.createElementNS(ns, 'line');
-    line.setAttribute('x1', from.x.toString());
-    line.setAttribute('y1', from.y.toString());
-    line.setAttribute('x2', to.x.toString());
-    line.setAttribute('y2', to.y.toString());
-    line.setAttribute('stroke', '#5C6BC0');
-    line.setAttribute('stroke-width', '1.5');
-    line.setAttribute('stroke-opacity', '0.5');
-    line.setAttribute('stroke-dasharray', '6,3');
-    line.setAttribute('marker-end', 'url(#arrowhead)');
-    line.style.setProperty("pointer-events", "none", "important");
-    svg.appendChild(line);
+    drawTabStopArrow(svg, centers[i], centers[i + 1]);
   }
 }
 

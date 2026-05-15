@@ -1,7 +1,30 @@
 import { escHtml } from '../../utils/escape';
 import { renderNavBar } from './helpers';
 
-export function renderManualTracking(trail: Element[]): string {
+/** Unified trail entry type — supports both live Elements (standalone mode) and serialized refs (popup mode). */
+export type TrailEntry = Element | { tag: string; label: string; selector: string; snippet: string; index: number };
+
+function trailEntryTag(entry: TrailEntry): string {
+  if (entry instanceof Element) return entry.tagName.toLowerCase();
+  return entry.tag;
+}
+
+function trailEntryLabel(entry: TrailEntry): string {
+  if (entry instanceof Element) {
+    return (entry.getAttribute('aria-label') || entry.textContent?.trim().substring(0, 40) || entry.tagName.toLowerCase());
+  }
+  return entry.label;
+}
+
+function trailEntrySelector(entry: TrailEntry): string {
+  if (entry instanceof Element) {
+    if (entry.id) return `#${entry.id}`;
+    return entry.tagName.toLowerCase();
+  }
+  return entry.selector;
+}
+
+export function renderManualTracking(trail: TrailEntry[]): string {
   let html = renderNavBar('Manual Keyboard Test', true, 'Back');
 
   html += `
@@ -29,17 +52,16 @@ export function renderManualTracking(trail: Element[]): string {
   return html;
 }
 
-export function buildTrailLogHtml(trail: Element[]): string {
+export function buildTrailLogHtml(trail: TrailEntry[]): string {
   if (trail.length === 0) {
     return `<div style="text-align: center !important; padding: 20px !important; color: #6B7280 !important; font-size: 13px !important;">Start pressing Tab to record your navigation trail...</div>`;
   }
 
   let html = '';
-  trail.forEach((el, idx) => {
-    const tag = el.tagName.toLowerCase();
-    const text = el.textContent?.trim().substring(0, 40) || '';
-    const ariaLabel = el.getAttribute('aria-label');
-    const label = ariaLabel || text || tag;
+  trail.forEach((entry, idx) => {
+    const tag = trailEntryTag(entry);
+    const label = trailEntryLabel(entry);
+    const selector = trailEntrySelector(entry);
 
     html += `
       <div style="display: flex !important; align-items: center !important; gap: 10px !important; padding: 6px 0 !important; border-bottom: 1px solid #F3F4F6 !important; font-size: 12px !important;">
@@ -47,16 +69,22 @@ export function buildTrailLogHtml(trail: Element[]): string {
           ${idx + 1}
         </span>
         <span style="color: #374151 !important; overflow: hidden !important; text-overflow: ellipsis !important; white-space: nowrap !important; flex: 1 !important;">
-          <code style="background: #F3F4F6 !important; padding: 1px 4px !important; border-radius: 3px !important; font-size: 11px !important;">${tag}</code>
+          <code style="background: #F3F4F6 !important; padding: 1px 4px !important; border-radius: 3px !important; font-size: 11px !important;">${escHtml(tag)}</code>
           ${escHtml(label.substring(0, 50))}
         </span>
+        <button
+          class="a11y-highlight-btn"
+          data-trail-selector="${escHtml(selector)}"
+          style="padding: 3px 8px !important; font-size: 11px !important;"
+          title="Highlight this element on the page"
+        >Highlight</button>
       </div>
     `;
   });
   return html;
 }
 
-export function updateManualTrailLog(trail: Element[]): void {
+export function updateManualTrailLog(trail: TrailEntry[]): void {
   const counter = document.getElementById('manual-counter');
   if (counter) counter.textContent = `${trail.length} steps`;
 
@@ -71,6 +99,7 @@ export function attachManualListeners(container: HTMLElement, actions: {
   onReset: () => void;
   onStop: () => void;
   onBack: () => void;
+  onHighlightTrailEntry?: (selector: string) => void;
 }): void {
   container.querySelector('#btn-back')?.addEventListener('click', () => actions.onBack());
   container.querySelector('#btn-reset-trail')?.addEventListener('click', () => actions.onReset());
@@ -83,4 +112,15 @@ export function attachManualListeners(container: HTMLElement, actions: {
       btn.style.setProperty('cursor', 'default', 'important');
     }
   });
+
+  // Highlight button delegation — present on each trail row (tab-stop-highlight feature)
+  if (actions.onHighlightTrailEntry) {
+    const onHL = actions.onHighlightTrailEntry;
+    container.addEventListener('click', (e) => {
+      const btn = (e.target as HTMLElement).closest('[data-trail-selector]') as HTMLElement | null;
+      if (!btn) return;
+      const sel = btn.getAttribute('data-trail-selector');
+      if (sel) onHL(sel);
+    });
+  }
 }

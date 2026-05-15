@@ -47,45 +47,9 @@ export interface ResultsPageActions {
 // Shared utilities
 // ---------------------------------------------------------------------------
 
-export function getCssSelector(el: Element): string {
-  if (el.id) return `#${el.id}`;
-  const parts: string[] = [];
-  let current: Element | null = el;
-  while (current && current !== document.documentElement) {
-    let selector = current.tagName.toLowerCase();
-    if (current.id) {
-      parts.unshift(`#${current.id}`);
-      break;
-    }
-    if (current.className && typeof current.className === 'string') {
-      const meaningful = current.className
-        .split(/\s+/)
-        .filter(c => c && !/^(flex|grid|w-|h-|p-|m-|bg-|text-|border-|rounded|hidden|block|inline|relative|absolute|fixed)/.test(c))
-        .slice(0, 2);
-      if (meaningful.length) selector += '.' + meaningful.join('.');
-    }
-    const parent = current.parentElement;
-    if (parent) {
-      const siblings = Array.from(parent.children).filter(c => c.tagName === current!.tagName);
-      if (siblings.length > 1) {
-        const idx = siblings.indexOf(current) + 1;
-        selector += `:nth-of-type(${idx})`;
-      }
-    }
-    parts.unshift(selector);
-    current = current.parentElement;
-    if (parts.length >= 4) break;
-  }
-  return parts.join(' > ');
-}
-
-export function getSnippet(el: Element, max = 120): string {
-  const html = el.outerHTML;
-  if (html.length <= max) return html;
-  const tagEnd = html.indexOf('>');
-  if (tagEnd >= 0 && tagEnd < max) return html.substring(0, max) + '…';
-  return html.substring(0, max) + '…';
-}
+// getCssSelector and getSnippet have moved to src/utils/dom-utils.ts
+// Re-exported here so existing imports still compile during the migration.
+export { getCssSelector, getSnippet } from '../../utils/dom-utils';
 
 export function renderSeverityBadge(sev: string, labelOverride?: string): string {
   const s = SEV[sev as SeverityKey];
