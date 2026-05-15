@@ -45,6 +45,7 @@ export const SEL = {
   btnTouch: `${PANEL} #btn-touch`,
   btnAutoKey: `${PANEL} #btn-auto-key`,
   btnManualKey: `${PANEL} #btn-manual-key`,
+  btnStartRecording: `${PANEL} #btn-start-recording`,
   btnFocusMgmt: `${PANEL} #btn-focus-mgmt`,
   btnLiveRegions: `${PANEL} #btn-live-regions`,
   btnReadingOrder: `${PANEL} #btn-reading-order`,

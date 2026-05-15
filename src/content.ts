@@ -57,6 +57,7 @@ class A11yContent {
   private latestScorecard: ScorecardResult | null = null;
 
   private manualFocusListener?: (e: FocusEvent) => void;
+  private manualEscListener?: (e: KeyboardEvent) => void;
   private cancelPicker?: () => void;
   private scopeElement: Element | null = null;
   private port: chrome.runtime.Port | null = null;
@@ -351,6 +352,15 @@ class A11yContent {
     };
 
     document.addEventListener('focusin', this.manualFocusListener);
+
+    // Pressing Esc on the host page stops recording and returns focus to the popup.
+    this.manualEscListener = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.stopPropagation();
+        this.stopManualKeyboard();
+      }
+    };
+    document.addEventListener('keydown', this.manualEscListener, { capture: true });
   }
 
   private resetManualTrail() {
@@ -360,6 +370,10 @@ class A11yContent {
   }
 
   private stopManualKeyboard() {
+    if (this.manualEscListener) {
+      document.removeEventListener('keydown', this.manualEscListener, { capture: true });
+      this.manualEscListener = undefined;
+    }
     if (this.manualFocusListener) {
       document.removeEventListener('focusin', this.manualFocusListener);
       // Finalize trail

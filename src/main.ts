@@ -45,7 +45,8 @@ class A11yAnalyzer {
     this.panel = new FloatingPanel({
       onRunAxe: () => this.runAutomatedAxe(),
       onRunAutoKeyboard: () => this.runAutoKeyboard(),
-      onStartManualKeyboard: () => this.startManualKeyboard(),
+      onStartManualKeyboard: () => {},        // navigation only — panel.ts handles it
+      onBeginManualRecording: () => this.startManualKeyboard(),
       onStopManualKeyboard: () => this.stopManualKeyboard(),
       onResetManualTrail: () => this.resetManualTrail(),
       onExportReport: () => this.exportReport(),

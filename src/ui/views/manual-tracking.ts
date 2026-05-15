@@ -24,13 +24,47 @@ function trailEntrySelector(entry: TrailEntry): string {
   return entry.selector;
 }
 
-export function renderManualTracking(trail: TrailEntry[]): string {
+export function renderManualTracking(trail: TrailEntry[], started: boolean): string {
   let html = renderNavBar('Manual Keyboard Test', true, 'Back');
+
+  if (!started) {
+    html += `
+      <div style="display:flex !important;flex-direction:column !important;align-items:center !important;
+                  justify-content:center !important;padding:32px 24px !important;gap:16px !important;
+                  text-align:center !important;flex:1 !important;">
+        <div style="width:56px !important;height:56px !important;background:#EEF2FF !important;
+                    border-radius:50% !important;display:flex !important;align-items:center !important;
+                    justify-content:center !important;font-size:26px !important;">⌨️</div>
+        <div style="font-size:16px !important;font-weight:700 !important;color:#1F2937 !important;">
+          Manual Keyboard Testing
+        </div>
+        <div style="font-size:13px !important;color:#6B7280 !important;max-width:280px !important;line-height:1.6 !important;">
+          Click <strong>Start Recording</strong>, then use the <strong>Tab</strong> key to navigate the page.
+          Numbered arrows show your focus order in real time.
+        </div>
+        <ul style="list-style:none !important;margin:0 !important;padding:0 !important;
+                   text-align:left !important;font-size:12px !important;color:#6B7280 !important;
+                   display:flex !important;flex-direction:column !important;gap:6px !important;">
+          <li>🔵 &nbsp;Tab moves focus forward</li>
+          <li>🔵 &nbsp;Shift+Tab moves focus backward</li>
+          <li>🔴 &nbsp;Press <strong>Esc</strong> or click Stop to finish</li>
+        </ul>
+        <button id="btn-start-recording"
+          style="margin-top:8px !important;padding:10px 28px !important;background:#4F46E5 !important;
+                 color:white !important;border:none !important;border-radius:8px !important;
+                 font-size:14px !important;font-weight:600 !important;cursor:pointer !important;">
+          Start Recording
+        </button>
+      </div>
+    `;
+    return html;
+  }
 
   html += `
     <div style="padding: 16px !important; background: white !important; border-bottom: 1px solid #E5E7EB !important; text-align: center !important;">
       <p style="color: #6B7280 !important; font-size: 13px !important; margin: 0 0 12px 0 !important;">
-        Press <strong>Tab</strong> to navigate. Numbered arrows show your focus order in real time.
+        Press <strong>Tab</strong> to navigate. Numbered arrows show your focus order in real time.<br>
+        <span style="font-size:11px !important;color:#9CA3AF !important;">Press <strong>Esc</strong> on the page to stop and return here.</span>
       </p>
       <div style="display: flex !important; gap: 8px !important; justify-content: center !important;">
         <span id="manual-counter" style="background: #EEF2FF !important; color: #6366F1 !important; padding: 4px 12px !important; border-radius: 12px !important; font-size: 13px !important; font-weight: 600 !important;">
@@ -96,12 +130,14 @@ export function updateManualTrailLog(trail: TrailEntry[]): void {
 }
 
 export function attachManualListeners(container: HTMLElement, actions: {
+  onBeginRecording?: () => void;
   onReset: () => void;
   onStop: () => void;
   onBack: () => void;
   onHighlightTrailEntry?: (selector: string) => void;
 }): void {
   container.querySelector('#btn-back')?.addEventListener('click', () => actions.onBack());
+  container.querySelector('#btn-start-recording')?.addEventListener('click', () => actions.onBeginRecording?.());
   container.querySelector('#btn-reset-trail')?.addEventListener('click', () => actions.onReset());
   container.querySelector('#btn-stop-manual')?.addEventListener('click', () => {
     actions.onStop();

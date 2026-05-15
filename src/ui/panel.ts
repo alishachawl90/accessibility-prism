@@ -31,8 +31,10 @@ interface PanelCallbacks {
   onRunAxe: () => void;
   onRunAutoKeyboard: () => void;
   onStartManualKeyboard: () => void;
+  onBeginManualRecording: () => void;
   onStopManualKeyboard: () => void;
   onResetManualTrail: () => void;
+  onHighlightBySelector?: (selector: string) => void;
   onExportReport: () => void;
   onViolationClick: (nodes: Element[]) => void;
   onShowComponentFlow: (flow: ComponentTabFlow, instanceIdx: number) => void;
@@ -120,6 +122,7 @@ export class FloatingPanel {
 
   // Manual tracking state — accepts both live Elements (standalone) and serialized entries (popup)
   private manualTrail: TrailEntry[] = [];
+  private manualRecordingStarted = false;
 
   // New analysis states
   private headingData: HeadingAnalysisResult = { headings: [], issues: [] };
@@ -270,6 +273,7 @@ export class FloatingPanel {
 
   public updateManualTrail(trail: Element[]) {
     this.manualTrail = trail;
+    this.manualRecordingStarted = true;
     if (this.currentView === 'manual-tracking') {
       updateManualTrailLog(trail);
     } else {
@@ -281,6 +285,7 @@ export class FloatingPanel {
   /** Called by popup-window mode when receiving TRAIL_UPDATE/TRAIL_COMPLETE messages. */
   public updateSerializedTrail(trail: SerializedTrailEntry[]) {
     this.manualTrail = trail;
+    this.manualRecordingStarted = true;
     if (this.currentView === 'manual-tracking') {
       updateManualTrailLog(trail);
     } else {
@@ -640,7 +645,7 @@ export class FloatingPanel {
         if (!this.activeViolation) return sb + renderAxeIssueList(this.getAxeListData());
         return sb + renderAxeIssueDetails(this.activeViolation);
       case 'keyboard-issues': return sb + renderKeyboardResults(this.getKbData());
-      case 'manual-tracking': return renderManualTracking(this.manualTrail);
+      case 'manual-tracking': return renderManualTracking(this.manualTrail, this.manualRecordingStarted);
       case 'component-flow-list': return sb + renderComponentFlowList(this.componentFlows);
       case 'component-flow-detail': {
         const flow = this.componentFlows[this.activeFlowIdx];
@@ -733,7 +738,7 @@ export class FloatingPanel {
         attachPreScreenListeners(this.container, {
           onRunAxe: () => this.callbacks.onRunAxe(),
           onRunAutoKeyboard: () => this.callbacks.onRunAutoKeyboard(),
-          onStartManual: () => { this.callbacks.onStartManualKeyboard(); this.currentView = 'manual-tracking'; this.render(); },
+          onStartManual: () => { this.manualRecordingStarted = false; this.currentView = 'manual-tracking'; this.render(); },
           onRunHeadings: () => this.callbacks.onRunHeadings(),
           onRunLandmarks: () => this.callbacks.onRunLandmarks(),
           onRunContrast: () => this.callbacks.onRunContrast(),
@@ -796,12 +801,22 @@ export class FloatingPanel {
 
       case 'manual-tracking':
         attachManualListeners(this.container, {
+          onBeginRecording: () => {
+            this.manualRecordingStarted = true;
+            this.callbacks.onBeginManualRecording();
+            this.render();
+          },
           onReset: () => this.callbacks.onResetManualTrail(),
           onStop: () => this.callbacks.onStopManualKeyboard(),
-          onBack: () => { this.callbacks.onStopManualKeyboard(); backToHome(); },
+          onBack: () => { this.callbacks.onStopManualKeyboard(); this.manualRecordingStarted = false; backToHome(); },
           onHighlightTrailEntry: (selector) => {
-            // highlight() resolves the element — works in both standalone (selector → DOM) and popup modes
-            highlight([document.querySelector(selector)]);
+            if (this.callbacks.onHighlightBySelector) {
+              // Popup mode: delegate to content script via message
+              this.callbacks.onHighlightBySelector(selector);
+            } else {
+              // Standalone mode: query the injected-page DOM directly
+              highlight([document.querySelector(selector)]);
+            }
           },
         });
         break;

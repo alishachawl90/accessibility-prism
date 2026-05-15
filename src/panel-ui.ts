@@ -65,7 +65,8 @@ class StandaloneA11yUI {
     this.panel = new FloatingPanel({
       onRunAxe: () => this.runAutomatedAxe(),
       onRunAutoKeyboard: () => this.runAutoKeyboard(),
-      onStartManualKeyboard: () => this.startManualKeyboard(),
+      onStartManualKeyboard: () => {},        // navigation only — panel.ts handles it
+      onBeginManualRecording: () => this.startManualKeyboard(),
       onStopManualKeyboard: () => this.stopManualKeyboard(),
       onResetManualTrail: () => this.resetManualTrail(),
       onExportReport: () => this.exportReport(),
@@ -370,13 +371,17 @@ class PopupWindowUI {
       isPopupWindow: true,
       onRunAxe: () => this.cmd({ type: 'RUN_AXE' }),
       onRunAutoKeyboard: () => this.cmd({ type: 'RUN_AUTO_KEYBOARD' }),
-      onStartManualKeyboard: () => {
+      // Clicking "Manual Keyboard Test" in the pre-screen just navigates to the
+      // ready screen — the panel handles this internally, no command needed yet.
+      onStartManualKeyboard: () => {},
+      onBeginManualRecording: () => {
+        // User clicked "Start Recording" — start listening and switch to the page.
         this.cmd({ type: 'START_MANUAL' });
-        // Focus the page so the user can immediately start tabbing through it.
         this.focusInspectedTab();
       },
       onStopManualKeyboard: () => this.cmd({ type: 'STOP_MANUAL' }),
       onResetManualTrail: () => this.cmd({ type: 'RESET_MANUAL' }),
+      onHighlightBySelector: (sel: string) => this.cmd({ type: 'HIGHLIGHT_BY_SELECTOR', selector: sel }),
       onExportReport: () => this.cmd({ type: 'EXPORT_REPORT' }),
       onViolationClick: (nodes) => {
         // nodes here are serialized { selector, snippet } objects (not real Elements)

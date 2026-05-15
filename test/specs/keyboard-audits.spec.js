@@ -90,10 +90,14 @@ test.describe('Focus Management', () => {
 
 test.describe('Manual Keyboard Trail', () => {
   test('focusing elements on page adds entries to the trail log', async ({ panelPage }) => {
-    // 1. Navigate to manual mode
+    // 1. Navigate to manual mode — shows the "Start Recording" ready screen first
     await navigateToView(panelPage, SEL.btnManualKey);
-    
-    // 2. Initial state: 0 steps
+    await expect(panelPage.locator(SEL.btnStartRecording)).toBeVisible();
+
+    // 2. Click Start Recording to begin the trail
+    await panelPage.click(SEL.btnStartRecording);
+
+    // 3. Initial state: 0 steps
     const counter = panelPage.locator(`${SEL.panel} #manual-counter`);
     await expect(counter).toHaveText('0 steps');
     
