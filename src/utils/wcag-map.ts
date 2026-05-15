@@ -114,6 +114,13 @@ export function parseWcagInfo(tags: string[]): WcagInfo {
 export function getElementContext(el: Element | null): string {
   if (!el) return 'Element not found';
 
+  // In the popup window context, element references are serialized plain objects
+  // { selector, snippet } — not live DOM nodes. Return the pre-computed snippet.
+  if (!(el instanceof Element)) {
+    const se = el as unknown as { snippet?: string; selector?: string };
+    return se.snippet || se.selector || 'Element';
+  }
+
   const tag = el.tagName.toLowerCase();
 
   if (tag === 'img') {

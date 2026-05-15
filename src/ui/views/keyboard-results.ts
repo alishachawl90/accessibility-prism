@@ -55,6 +55,12 @@ function getKeyboardSections(data: KbData, filtered: KeyboardIssue[]): KbSection
   }
 
   if (data.groupMode === 'region') {
+    // findRegionForElement requires live DOM Elements — not available in popup context
+    // where issue.element is a serialized plain object. Fall back to type grouping.
+    const firstEl = filtered[0]?.element;
+    if (firstEl && !(firstEl instanceof Element)) {
+      return getKeyboardSections({ ...data, groupMode: 'type' }, filtered);
+    }
     const regionGroups = new Map<string, { name: string; issues: KeyboardIssue[] }>();
     filtered.forEach(issue => {
       const info = findRegionForElement(issue.element);
@@ -73,7 +79,8 @@ function getKeyboardSections(data: KbData, filtered: KeyboardIssue[]): KbSection
     let matched = false;
     data.components.forEach(cluster => {
       for (const root of cluster.elements) {
-        if (root.contains(issue.element)) {
+        // root.contains requires a live Element — guard for popup's serialized context
+        if (root instanceof Element && root.contains(issue.element)) {
           if (!compGroups.has(cluster.id)) compGroups.set(cluster.id, { name: cluster.name, issues: [] });
           compGroups.get(cluster.id)!.issues.push(issue);
           matched = true;
