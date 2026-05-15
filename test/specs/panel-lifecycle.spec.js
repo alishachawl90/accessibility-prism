@@ -58,7 +58,7 @@ test.describe('Panel Lifecycle', () => {
 
   test('footer displays version and attribution', async ({ panelPage }) => {
     const footer = await panelPage.textContent(SEL.panel);
-    expect(footer).toContain('v2.1.0');
+    expect(footer).toContain('v3.0.0');
     expect(footer).toContain('Madhur Batra');
   });
 });

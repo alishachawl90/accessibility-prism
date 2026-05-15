@@ -1,6 +1,6 @@
 # Accessibility Prism
 
-**Current version: v2.1.0** | [Changelog](#changelog)
+**Current version: v3.0.0** | [Changelog](#changelog)
 
 A comprehensive, all-in-one accessibility testing Chrome extension that goes far beyond automated scanning. Accessibility Prism combines axe-core engine analysis with manual testing tools, visual overlays, and plain-English scored reports — giving developers, QA engineers, and accessibility specialists everything they need in a single panel.
 
@@ -84,82 +84,102 @@ npm run build
 Then in Edge/Chrome:
 1. Open `edge://extensions/` (or `chrome://extensions/`)
 2. Enable **Developer mode**
-3. Click **Load unpacked** → select the `dist/` folder
+3. Click **Load unpacked** → select the **project root** (not `dist/`)
 
 ## Usage
 
-1. Click the **Accessibility Prism** icon in the browser toolbar
-2. Click **Activate on this page** to inject the analyzer panel
-3. Select any analysis — Scorecard, Full Page Scan, Heading Structure, SR Walk-Through, etc.
-4. Results appear in the floating panel with visual overlays on the page
-5. Click any issue card to expand it: see the HTML snippet, CSS selector, WCAG criterion, fix guidance, and a Highlight button
+1. Click the **Accessibility Prism** icon in the browser toolbar — a detached popup window opens
+2. Select any analysis — Scorecard, Full Page Scan, Heading Structure, SR Walk-Through, etc.
+3. Results appear in the popup panel; visual overlays are drawn directly on the page behind it
+4. Click any issue card to expand it: see the HTML snippet, CSS selector, WCAG criterion, fix guidance, and a Highlight button
+5. Use the **Scope** bar at the top of any result view to narrow analysis to a CSS selector or a picked element; click **Clear** to return to full-page results
 6. Export HTML reports from the panel header download button
 
 ## Architecture
 
+The extension uses two separate execution contexts connected by a typed message protocol:
+
+```
+Browser icon click
+      │
+      ▼
+background.js (service worker)
+      ├─ chrome.scripting.executeScript → dist/content.js (runs in host page)
+      └─ chrome.windows.create → public/panel.html → dist/panel.js (detached popup)
+                                          │
+                                chrome.tabs.connect(tabId)
+                                          │
+                              ◄──── ResultMessages (serialized) ────
+                              ────► CommandMessages ────────────────►
+```
+
 ```
 src/
-├── core/              # Analysis engines
-│   ├── axe-runner.ts      # Runs axe-core + registers Prism rules
-│   ├── acc-name-analysis.ts  # W3C AccName spec + SR walk-through analysis
-│   ├── keyboard-analysis.ts, focus-management.ts, ...
-│   ├── scorecard.ts       # Aggregated A–F scoring engine
-│   └── custom-rules/      # 10 custom Prism rules extending axe-core
-│       # (text-spacing, target-spacing, focus-obscured, link-distinguishable,
-│       #  scrollable-keyboard, focus-indicator, presentational-children,
-│       #  text-clipping, aria-nesting, contrast-layered)
+├── content.ts         # Runs in the host page — analysis engines, overlay, message handler
+├── panel-ui.ts        # Popup window entry — mounts FloatingPanel, sends commands, receives results
+├── messages.ts        # Typed CommandMessage / ResultMessage protocol + SerializedElement
+├── main.ts            # Standalone entry — used by index.html for Playwright tests
+├── core/              # Analysis engines (same code called by content.ts and main.ts)
+│   ├── axe-runner.ts, keyboard-analysis.ts, focus-management.ts, ...
+│   ├── scorecard.ts
+│   └── custom-rules/  # 10 custom Prism rules extending axe-core
 ├── ui/
-│   ├── panel.ts           # Main floating panel — state, routing, render cycle
-│   ├── overlay.ts         # SVG overlay (highlights, heading/landmark markers, tab arrows)
-│   ├── views/             # One renderer per view + shared results-template.ts
-│   ├── tokens.ts          # Design tokens (severity colours, WCAG level colours, etc.)
-│   ├── panel-styles.ts    # All CSS scoped to #a11y-analyzer-panel with !important
-│   └── icons.ts           # SVG icon constants
-├── utils/
-│   ├── issue-knowledge.ts # Centralised WCAG criterion / impact / fix / link database
-│   ├── fix-suggestions.ts # Element-specific code fix generators
-│   └── html-report.ts, scorecard-report.ts, wcag-map.ts, escape.ts
-└── main.ts            # Entry point — A11yAnalyzer class
+│   ├── panel.ts       # FloatingPanel — state, routing, render cycle (shared between modes)
+│   ├── views/         # One renderer per view + shared results-template.ts
+│   ├── tokens.ts, panel-styles.ts, icons.ts, overlay.ts
+└── utils/
+    ├── dom-utils.ts   # getCssSelector, getSnippet, serializeElement, serializeResult
+    ├── issue-knowledge.ts, fix-suggestions.ts, wcag-map.ts, ...
+public/
+├── background.js, panel.html, manifest.json
 ```
 
 ### Key Design Decisions
 
-- **On-demand injection** — The extension only injects when activated via popup or floating button, using Manifest V3 `chrome.scripting.executeScript`
+- **Detached popup window** — The panel runs in a completely separate browser window, eliminating host-page CSS conflicts and enabling testing at any viewport size, including responsive/mobile simulation
+- **Element serialization boundary** — DOM `Element` references cannot cross contexts. Every element is serialized to `{selector, snippet}` before sending via the Chrome port. `getCssSelector()`, `getSnippet()`, and `getElementContext()` all accept `Element | SerializedElement` so rendering code works in both contexts
+- **Scope cleared on navigation** — An `onClearScope` callback sends `CLEAR_SCOPE` to the content script whenever the user navigates back to the home screen, preventing scope bleed-over between different audit types
 - **Zero remote code** — Everything is bundled locally (axe-core included), fully Chrome/Edge Web Store compliant
-- **Host CSS isolation** — Every panel style uses `!important` scoped under `#a11y-analyzer-panel` (specificity 1,1,0+) and all programmatic style assignments use `element.style.setProperty(prop, value, 'important')`, so host-page `!important` rules — even ID-based ones — cannot alter the panel's layout, fonts, or colours across any browser or OS
-- **W3C AccName spec for SR simulation** — The Announcement Walk-Through computes accessible names, descriptions, roles, and states using the W3C Accessible Name and Description Computation spec (via `dom-accessibility-api`). This is the same algorithm browsers use to build their accessibility tree from the DOM, so announcements reflect what assistive technology would actually expose. (Earlier exploration of `chrome.automation` confirmed it is a restricted API limited to whitelisted Google extensions like ChromeVox, so the DOM-based spec implementation is the production path.)
-- **Centralised WCAG knowledge** — `utils/issue-knowledge.ts` is the single source of truth for all per-issue-type WCAG criteria, user impact statements, fix suggestions, and learn-more links used across all views
-- **Instant navigation** — Clicking any issue scrolls instantly to the element and draws the highlight after the scroll completes for accurate positioning
+- **W3C AccName spec for SR simulation** — The Announcement Walk-Through uses `dom-accessibility-api` (same algorithm as browsers) for accurate accessible name/role/state computation
+- **Centralised WCAG knowledge** — `utils/issue-knowledge.ts` is the single source of truth for all per-issue-type WCAG criteria, user impact statements, fix suggestions, and learn-more links
 
 ## Tech Stack
 
-- **TypeScript** + **Vite** for fast builds
+- **TypeScript** + **Vite** for fast builds (two separate bundles: `content.js` + `panel.js`)
 - **axe-core** for automated WCAG testing
 - **dom-accessibility-api** for W3C AccName spec-compliant accessible name and description computation (powers the SR Walk-Through)
 - **Chrome Extension Manifest V3**
-- **Playwright** for automated UI testing (144 tests across 12 spec files, including 17 visual regression snapshots)
-- No UI frameworks — vanilla TypeScript for minimal bundle size (~850 KB including axe-core)
+- **Playwright** for automated UI testing (144 tests across 12 spec files)
+- No UI frameworks — vanilla TypeScript for minimal bundle size (~870 KB including axe-core)
 
 ## Permissions
 
 - `activeTab` — Access the current tab when the user activates the extension
 - `scripting` — Inject the analyzer content script on demand
+- `tabs` — Read the active tab ID to connect the popup window to the correct content script
+- `windows` — Create and focus the detached popup window; return focus after interactive flows
 
-No background scripts. No data collection. All analysis runs locally in the browser tab. No external requests.
+No data collection. All analysis runs locally in the browser tab. No external requests.
 
 ## Changelog
 
+### v3.0.0
+- **Detached popup window architecture** — Panel moved from an injected `<div>` into a standalone `chrome.windows.create({ type: 'popup' })` window. Eliminates all host-page CSS conflicts and enables testing at any viewport size including responsive/mobile. The popup connects directly to the content script via `chrome.tabs.connect(tabId)` using a typed message protocol
+- **Animated tab walk** — Auto keyboard analysis now visits each focusable element in real time with a progress bar and numbered badge overlays drawn on the page, instead of a static one-shot analysis. The walk respects the current scope if set, and always starts from the top of the page
+- **Missed focus detection (experimental)** — After the animated walk, elements that were in the static tab order but did not actually receive focus (e.g. hidden at runtime, intercepted by a focus trap) are flagged in a dedicated experimental section on the keyboard results view
+- **Manual keyboard test — start screen + ESC stop** — The manual tab trail now shows an instruction screen before recording begins. Pressing ESC during recording stops the trail and returns focus to the popup
+- **Scope-to-selector fixes** — The scope bar now correctly shows the "Scoped:" banner in popup mode (previously only showed when a live DOM `Element` was available). Text input scope re-runs the audit only after the content script confirms the selector matched. `CLEAR_SCOPE` is sent to the content script on every back-navigation, preventing scope bleed-over between audit types
+- **Content Security Policy compliance** — All `onmouseover`/`onmouseout` inline event handlers replaced with CSS `:hover` rules (inline handlers are blocked by Chrome extension CSP in Manifest V3)
+- **Serialized element safety** — All popup-side rendering functions (`getElementContext`, keyboard group-mode grouping) now guard against receiving serialized plain objects `{selector, snippet}` instead of live DOM `Element` references, preventing `TypeError: Cannot read properties of undefined (reading 'toLowerCase')` crashes that previously kept the keyboard results view frozen after a tab walk
+- **Auto focus switching** — Interactive flows (scope picker, manual keyboard) automatically switch browser focus to the inspected tab and return it to the popup when done, via `chrome.tabs.update` and `chrome.windows.update`
+- **Flat popup header** — Removed minimize/close buttons; added extension logo, name, page title/URL strip, and download report icon. Matches the Siteimprove-style detached panel UX
+
 ### v2.1.0
-- **Screen Reader Walk-Through — W3C AccName spec rewrite** — Now uses the W3C Accessible Name and Description Computation spec (via `dom-accessibility-api`) instead of bespoke heuristics. Fixes a long-standing bug where card descriptions (`aria-describedby`), prose elements (`<p>`, `<li>`, etc.), and correct role/name pairs were missing from the walkthrough. The spec implementation is the same algorithm browsers use to build their accessibility tree
-- **Screen Reader Walk-Through — accessibility tree fidelity** — The walkthrough now mirrors what real screen readers (JAWS, NVDA, VoiceOver, ChromeVox) actually traverse. Elements inside `display:none`, `visibility:hidden`, `hidden`, or `inert` ancestors are pruned via the native `Element.checkVisibility()` API (with an ancestor-walking fallback for older browsers). `aria-hidden="true"` subtrees are also pruned. Visually-hidden / sr-only patterns (`opacity:0`, off-screen positioning) are preserved because real screen readers do announce them. Eliminates noise from Storybook chrome, hidden modals, error boundaries, and inactive tab panels
-- **WCAG Knowledge blocks** — Added inline knowledge blocks to expanded issue cards across Keyboard Analysis, Form Labels, ARIA Validation, and Color Contrast views. Each block shows the WCAG success criterion, plain-English user impact, fix guidance, and a learn-more link
-- **CSS isolation hardening** — Deep audit of every styled surface. All class rules prefixed with `#a11y-analyzer-panel` for specificity (1,1,0+); all JS style assignments converted to `setProperty(..., 'important')`. Covers the activation button, overlay SVG, accordion toggles, all view inline styles, and the panel-styles.ts utility classes. Eliminates layout breakage on host pages with aggressive CSS
-- **Cross-platform font consistency** — Explicit system UI font stack (`-apple-system, Segoe UI, Roboto, Ubuntu, Arial, sans-serif !important`) applied to the panel and all form controls, preventing host-page serif fallbacks from appearing on Windows/Linux
-- **Loading spinner** — Added visual loading state for slow audits (axe full-page scan, keyboard analysis, scorecard) so the panel never appears frozen
-- Added `dom-accessibility-api` dependency for W3C AccName spec compliance
-- **Component scoping for all audits** — every result view now has a scope bar (CSS selector input + element picker) that re-runs the current analysis against a specific component or section. All 15+ analysis engines accept an optional root element, enabling targeted component-level testing without full-page noise
-- **Visual regression testing** — expanded from 4 to 17 Playwright visual snapshots covering every view in the extension (pre-screen, axe results, scorecard, headings, landmarks, contrast, alt text, form labels, accessible names, ARIA validation, keyboard, focus management, touch targets, live regions, SR walkthrough, reading order, component flow)
-- 144 Playwright tests covering all features, including SR walk-through fidelity, aria-hidden / display:none pruning, scoped audit re-run, and 17 visual regression baselines
+- **Screen Reader Walk-Through — W3C AccName spec rewrite** — Now uses `dom-accessibility-api` (same algorithm as browsers) for accurate accessible name/role/state computation
+- **WCAG Knowledge blocks** — Inline knowledge blocks across Keyboard, Form Labels, ARIA Validation, and Color Contrast views
+- **CSS isolation hardening** — All panel styles use `!important` with ID-based specificity
+- **Component scoping** — Every result view has a scope bar (CSS selector input + element picker)
+- 144 Playwright tests
 
 ### v2.0.0
 - Initial release with 15+ accessibility checks, Accessibility Scorecard (A–F grading), axe-core integration, 10 custom Prism rules, all audit views, visual overlays, and HTML report export
