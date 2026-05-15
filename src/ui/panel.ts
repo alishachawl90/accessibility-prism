@@ -268,7 +268,13 @@ export class FloatingPanel {
       </div>
     `;
     const btn = scrollArea.querySelector('#btn-cancel-walk');
-    btn?.addEventListener('click', () => this.callbacks.onCancelTabWalk?.(), { once: true });
+    btn?.addEventListener('click', () => {
+      // Tell the content script to stop the walk
+      this.callbacks.onCancelTabWalk?.();
+      // Immediately clear the progress UI — don't wait for a content-script reply
+      this.tabWalkProgress = null;
+      this.render();
+    }, { once: true });
   }
 
   public updateManualTrail(trail: Element[]) {
@@ -536,9 +542,8 @@ export class FloatingPanel {
               <span style="font-size:14px !important; font-weight:700 !important; color:white !important; letter-spacing:-0.01em !important;">Accessibility Prism</span>
             </div>
             <button id="btn-export" title="Download accessibility report"
-              style="background:transparent !important; border:none !important; padding:6px !important; display:flex !important; align-items:center !important; justify-content:center !important; cursor:pointer !important; color:rgba(255,255,255,0.8) !important; border-radius:4px !important; transition:background 0.15s !important;"
-              onmouseover="this.style.setProperty('background','rgba(255,255,255,0.15)','important');"
-              onmouseout="this.style.setProperty('background','transparent','important');">
+              class="a11y-hdr-btn-export-popup"
+              style="background:transparent !important; border:none !important; padding:6px !important; display:flex !important; align-items:center !important; justify-content:center !important; cursor:pointer !important; color:rgba(255,255,255,0.8) !important; border-radius:4px !important; transition:background 0.15s !important;">
               ${icons.ICON_EXPORT}
             </button>
           </div>
@@ -555,14 +560,14 @@ export class FloatingPanel {
           <span style="background: rgba(255,255,255,0.25) !important; padding: 2px 8px !important; border-radius: 4px !important; font-size: 11px !important; font-weight: 700 !important; color: white !important; line-height: 1.5 !important;">v3</span>
         </div>
         <div style="display: flex !important; align-items: center !important; gap: 8px !important;">
-          <button id="btn-export" title="Download accessibility report" style="background: rgba(255,255,255,0.1) !important; border: 1px solid rgba(255,255,255,0.2) !important; border-radius: 6px !important; width: 30px !important; height: 30px !important; display: flex !important; align-items: center !important; justify-content: center !important; cursor: pointer !important; color: rgba(255,255,255,0.85) !important; transition: all 0.15s !important;"
-            onmouseover="this.style.setProperty('background','rgba(255,255,255,0.2)','important');this.style.setProperty('color','white','important');"
-            onmouseout="this.style.setProperty('background','rgba(255,255,255,0.1)','important');this.style.setProperty('color','rgba(255,255,255,0.85)','important');">
+          <button id="btn-export" title="Download accessibility report"
+            class="a11y-hdr-btn"
+            style="background: rgba(255,255,255,0.1) !important; border: 1px solid rgba(255,255,255,0.2) !important; border-radius: 6px !important; width: 30px !important; height: 30px !important; display: flex !important; align-items: center !important; justify-content: center !important; cursor: pointer !important; color: rgba(255,255,255,0.85) !important; transition: all 0.15s !important;">
             ${icons.ICON_EXPORT}
           </button>
-          <button id="btn-close-panel" title="Close Accessibility Prism" style="background: rgba(255,255,255,0.1) !important; border: 1px solid rgba(255,255,255,0.2) !important; border-radius: 6px !important; width: 30px !important; height: 30px !important; display: flex !important; align-items: center !important; justify-content: center !important; cursor: pointer !important; color: rgba(255,255,255,0.85) !important; transition: all 0.15s !important;"
-            onmouseover="this.style.setProperty('background','rgba(239,68,68,0.3)','important');this.style.setProperty('color','white','important');"
-            onmouseout="this.style.setProperty('background','rgba(255,255,255,0.1)','important');this.style.setProperty('color','rgba(255,255,255,0.85)','important');">
+          <button id="btn-close-panel" title="Close Accessibility Prism"
+            class="a11y-hdr-btn a11y-hdr-btn-close"
+            style="background: rgba(255,255,255,0.1) !important; border: 1px solid rgba(255,255,255,0.2) !important; border-radius: 6px !important; width: 30px !important; height: 30px !important; display: flex !important; align-items: center !important; justify-content: center !important; cursor: pointer !important; color: rgba(255,255,255,0.85) !important; transition: all 0.15s !important;">
             ${icons.ICON_CLOSE}
           </button>
           <span id="collapse-icon" style="display: flex !important; align-items: center !important; color: rgba(255,255,255,0.85) !important; margin-left: 4px !important;">

@@ -309,7 +309,13 @@ class A11yContent {
       await new Promise<void>(resolve => setTimeout(resolve, stepDelayMs));
     }
 
-    if (this.tabWalkCancelled) return;
+    if (this.tabWalkCancelled) {
+      // Walk was cancelled — still resolve the popup so it doesn't stay stuck.
+      // Skip the heavy static analysis and just report partial results.
+      (document.activeElement as HTMLElement | null)?.blur?.();
+      this.send({ type: 'TAB_WALK_COMPLETE', issues: [], flows: [], missedElements });
+      return;
+    }
 
     // Blur any focused element so we don't leave the host page in a focused state
     (document.activeElement as HTMLElement | null)?.blur?.();

@@ -281,4 +281,28 @@ export const PANEL_CSS = `
     color: #6B7280 !important;
     word-break: break-all !important;
   }
+
+  /* Header icon buttons (export / close) — replaces inline onmouseover/onmouseout */
+  #a11y-analyzer-panel .a11y-hdr-btn:hover {
+    background: rgba(255,255,255,0.2) !important;
+    color: white !important;
+  }
+  #a11y-analyzer-panel .a11y-hdr-btn-close:hover {
+    background: rgba(239,68,68,0.35) !important;
+    color: white !important;
+  }
+  #a11y-analyzer-panel .a11y-hdr-btn-export-popup:hover {
+    background: rgba(255,255,255,0.15) !important;
+  }
+
+  /* Pre-screen audit buttons — dynamic hover color via CSS custom property */
+  #a11y-analyzer-panel .a11y-audit-btn:hover {
+    border-color: var(--audit-btn-hover, #6366F1) !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.12) !important;
+  }
+
+  /* Scorecard export button */
+  #a11y-analyzer-panel .a11y-export-scorecard-btn:hover {
+    background: #1D4ED8 !important;
+  }
 `;

@@ -89,9 +89,8 @@ export function renderScorecardResults(data: ScorecardResult): string {
 
   html += `
     <div style="padding: 12px 0 8px 0 !important; text-align: center !important;">
-      <button id="btn-export-scorecard" style="padding: 10px 24px !important; background: #2563EB !important; color: white !important; border: none !important; border-radius: 8px !important; font-size: 13px !important; font-weight: 600 !important; cursor: pointer !important; transition: background 0.15s !important;"
-        onmouseover="this.style.background='#1D4ED8'"
-        onmouseout="this.style.background='#2563EB'">
+      <button id="btn-export-scorecard" class="a11y-export-scorecard-btn"
+        style="padding: 10px 24px !important; background: #2563EB !important; color: white !important; border: none !important; border-radius: 8px !important; font-size: 13px !important; font-weight: 600 !important; cursor: pointer !important; transition: background 0.15s !important;">
         Export Full Report
       </button>
     </div>

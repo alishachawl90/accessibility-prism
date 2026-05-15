@@ -15,9 +15,7 @@ const SECTION_STYLE = `font-size: 11px !important; font-weight: 700 !important; 
 function renderButton(btn: PreScreenButton): string {
   const base = `padding: 14px !important; background: white !important; border: 1px solid #E5E7EB !important; border-radius: 10px !important; cursor: pointer !important; text-align: left !important; font-size: 14px !important; box-shadow: 0 1px 2px rgba(0,0,0,0.04) !important; transition: border-color 0.15s, box-shadow 0.15s !important; display: flex !important; align-items: center !important; gap: 14px !important; width: 100% !important;`;
   return `
-    <button id="${btn.id}" style="${base}"
-      onmouseover="this.style.setProperty('border-color','${btn.hoverColor}','important');this.style.setProperty('box-shadow','0 2px 8px ${btn.hoverColor}20','important');"
-      onmouseout="this.style.setProperty('border-color','#E5E7EB','important');this.style.setProperty('box-shadow','0 1px 2px rgba(0,0,0,0.04)','important');">
+    <button id="${btn.id}" class="a11y-audit-btn" style="${base}; --audit-btn-hover: ${btn.hoverColor};">
       <span style="width: 34px !important; height: 34px !important; border-radius: 8px !important; background: ${btn.iconBg} !important; display: flex !important; align-items: center !important; justify-content: center !important; flex-shrink: 0 !important;">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="${btn.iconStroke}" stroke-width="2">${btn.icon}</svg>
       </span>

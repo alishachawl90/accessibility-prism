@@ -207,6 +207,20 @@
     }
     .a11y-highlight-btn:hover { background: #E0E7FF; }
 
+    /* Header icon buttons — replaces blocked inline onmouseover/onmouseout */
+    .a11y-hdr-btn:hover { background: rgba(255,255,255,0.2) !important; color: white !important; }
+    .a11y-hdr-btn-close:hover { background: rgba(239,68,68,0.35) !important; color: white !important; }
+    .a11y-hdr-btn-export-popup:hover { background: rgba(255,255,255,0.15) !important; }
+
+    /* Pre-screen audit card buttons — dynamic hover via CSS custom property */
+    .a11y-audit-btn:hover {
+      border-color: var(--audit-btn-hover, #6366F1) !important;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.12) !important;
+    }
+
+    /* Scorecard export button */
+    .a11y-export-scorecard-btn:hover { background: #1D4ED8 !important; }
+
     .a11y-stats-strip {
       padding: 10px 16px;
       background: white;
