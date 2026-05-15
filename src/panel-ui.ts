@@ -82,6 +82,7 @@ class StandaloneA11yUI {
       onPartialScan: () => this.startPartialScan(),
       onScopePick: () => this.startScopePicker(),
       onScopeSelector: (sel: string) => this.setScopeFromSelector(sel),
+      onClearScope: () => { /* scope is a getter from panel.getScopeElement() — no extra cleanup needed */ },
       onRunAccNames: () => this.runAccNameInspector(),
       onRunAriaValidation: () => this.runAriaValidation(),
       onRunFormLabels: () => this.runFormLabelsAudit(),
@@ -402,7 +403,13 @@ class PopupWindowUI {
         // Focus the page so the user can click the element they want to scope.
         this.focusInspectedTab();
       },
-      onScopeSelector: (sel: string) => { this.cmd({ type: 'SET_SCOPE_SELECTOR', selector: sel }); return true; },
+      onScopeSelector: (sel: string) => {
+        // Set up deferred re-run so SCOPE_SET reply triggers the audit (not here).
+        this.panel.prepareScopePickRerun();
+        this.cmd({ type: 'SET_SCOPE_SELECTOR', selector: sel });
+        return false; // prevent applyScope() from re-running immediately
+      },
+      onClearScope: () => this.cmd({ type: 'CLEAR_SCOPE' }),
       onRunAccNames: () => this.cmd({ type: 'RUN_ACC_NAMES' }),
       onRunAriaValidation: () => this.cmd({ type: 'RUN_ARIA' }),
       onRunFormLabels: () => this.cmd({ type: 'RUN_FORM_LABELS' }),
@@ -511,6 +518,10 @@ class PopupWindowUI {
         else this.panel.clearScope();
         // Element was picked (or scope cleared) — return focus to the popup.
         this.focusPopup();
+        break;
+      case 'SCOPE_SET_FROM_SELECTOR_FAILED':
+        // Selector didn't match anything — cancel the deferred re-run.
+        this.panel.cancelPendingRerun();
         break;
       case 'SCOPE_PICK_STARTED':
         // Content script is ready for the pick — page focus was already requested

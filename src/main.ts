@@ -62,6 +62,7 @@ class A11yAnalyzer {
       onPartialScan: () => this.startPartialScan(),
       onScopePick: () => this.startScopePicker(),
       onScopeSelector: (sel: string) => this.setScopeFromSelector(sel),
+      onClearScope: () => { /* scope is a getter from panel.getScopeElement() — no extra cleanup needed */ },
       onRunAccNames: () => this.runAccNameInspector(),
       onRunAriaValidation: () => this.runAriaValidation(),
       onRunFormLabels: () => this.runFormLabelsAudit(),

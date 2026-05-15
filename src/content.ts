@@ -228,12 +228,12 @@ class A11yContent {
     this.stopManualKeyboard();
     this.tabWalkCancelled = false;
     clearOverlay(this.overlaySvg);
-    // Always walk the full page (not the current scope) — a scoped alt-text or
-    // axe audit should not silently constrain the keyboard tab walk.
-    // Scroll to the very top first so the animation is visible from the start.
+    // Use the current scope if the user explicitly set one, otherwise walk the
+    // full page. Scope is always cleared when Back is pressed (CLEAR_SCOPE),
+    // so a leftover alt-text or axe scope can no longer bleed through here.
     window.scrollTo({ top: 0, behavior: 'instant' });
     await new Promise(r => requestAnimationFrame(r));
-    await this.animatedTabWalk(undefined);
+    await this.animatedTabWalk(this.scopeElement ?? undefined);
   }
 
   /**

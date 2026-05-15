@@ -48,6 +48,7 @@ interface PanelCallbacks {
   onPartialScan: () => void;
   onScopePick: () => void;
   onScopeSelector: (selector: string) => boolean;
+  onClearScope: () => void;
   onRunAccNames: () => void;
   onRunAriaValidation: () => void;
   onRunFormLabels: () => void;
@@ -191,6 +192,17 @@ export class FloatingPanel {
   public clearScope() {
     this.scopeElement = null;
     this.scopeLabel = '';
+    this.callbacks.onClearScope();
+  }
+
+  /** Allow popup-mode callbacks to set up a deferred re-run tied to the current view. */
+  public prepareScopePickRerun() {
+    this.pendingRerunView = this.currentView;
+  }
+
+  /** Cancel any pending deferred re-run (e.g. when selector was not found). */
+  public cancelPendingRerun() {
+    this.pendingRerunView = null;
   }
 
   public getScopeElement(): Element | null { return this.scopeElement; }
@@ -610,7 +622,7 @@ export class FloatingPanel {
   // === View rendering delegation ===
 
   private renderScopeBanner(): string {
-    if (this.scopeElement) {
+    if (this.scopeElement || this.scopeLabel) {
       return `
         <div style="padding: 6px 16px !important; background: #EFF6FF !important; border-bottom: 1px solid #BFDBFE !important; display: flex !important; align-items: center !important; gap: 8px !important; font-size: 12px !important; color: #1E40AF !important; box-sizing: border-box !important; margin: 0 !important; line-height: 1.4 !important;">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2" style="flex-shrink: 0 !important;">
