@@ -3,6 +3,7 @@ import { getCssSelector, getSnippet } from '../../utils/dom-utils';
 import { escHtml } from '../../utils/escape';
 import { FORM_LABEL_KNOWLEDGE, renderKnowledgeBlock } from '../../utils/issue-knowledge';
 import { SEV } from '../tokens';
+import { renderDevToolsButton } from './devtools-button';
 import {
   renderResultsPage,
   renderIssueCard,
@@ -56,7 +57,7 @@ export function renderFormLabelsResults(result: FormLabelsResult, activeSevs: Se
           descriptionHtml: escHtml(short),
           selector: getCssSelector(issue.element),
           snippet: getSnippet(issue.element),
-          extraBodyHtml: k ? renderKnowledgeBlock(k) : '',
+          extraBodyHtml: (k ? renderKnowledgeBlock(k) : '') + renderDevToolsButton(idx),
         });
       }).join('');
   return renderResultsPage({ title: 'Form Labels Audit', stats, chips: levels.length ? { levels, active: activeSevs } : undefined, bodyHtml });
@@ -65,13 +66,20 @@ export function renderFormLabelsResults(result: FormLabelsResult, activeSevs: Se
 export function attachFormLabelsListeners(
   container: HTMLElement,
   result: FormLabelsResult,
-  actions: { onBack: () => void; onHighlight: (els: Element[]) => void; onSeverityChange?: (next: Set<string>) => void },
+  actions: {
+    onBack: () => void;
+    onHighlight: (els: Element[]) => void;
+    onShowInDevTools?: (idx: number) => void;
+    onSeverityChange?: (next: Set<string>) => void;
+  },
   activeSevs: Set<string>,
 ): void {
   const filtered = vis(result.issues, activeSevs);
   attachResultsPageListeners(container, {
     onBack: actions.onBack,
     onHighlight: (idx) => { const i = filtered[idx]; if (i) actions.onHighlight([i.element]); },
+    onShowInDevTools: actions.onShowInDevTools,
     onSeverityChange: actions.onSeverityChange,
+    autoHighlightOnExpand: true,
   }, { active: activeSevs });
 }

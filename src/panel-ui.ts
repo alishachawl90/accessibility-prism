@@ -419,6 +419,8 @@ class PopupWindowUI {
       onExportScorecard: () => this.cmd({ type: 'EXPORT_SCORECARD' }),
       onClose: () => window.close(),
       onCancelTabWalk: () => this.cmd({ type: 'CANCEL_TAB_WALK' }),
+      onShowInDevTools: (auditType, index) =>
+        this.cmd({ type: 'PREPARE_DEVTOOLS_INSPECT', auditType, index }),
     });
 
     // chrome.runtime.connect() reaches the background service worker, NOT content scripts.
@@ -530,6 +532,11 @@ class PopupWindowUI {
         break;
       case 'CONTENT_READY':
         this.panel.setPageInfo(msg.url, msg.title);
+        break;
+      case 'DEVTOOLS_INSPECT_READY':
+        // Forward the resolved CSS selector to devtools.js so it can call
+        // chrome.devtools.inspectedWindow.eval('inspect(...)').
+        chrome.runtime.sendMessage({ type: 'DEVTOOLS_INSPECT', selector: msg.tempId });
         break;
     }
   }

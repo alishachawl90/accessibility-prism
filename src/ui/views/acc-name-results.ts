@@ -4,6 +4,7 @@ import { escHtml } from '../../utils/escape';
 import { SEV, type SeverityKey } from '../tokens';
 import { ICON_CHEVRON_RIGHT } from '../icons';
 import { renderCountBadge } from './helpers';
+import { renderDevToolsButton } from './devtools-button';
 import {
   renderResultsPage,
   renderIssueCard,
@@ -67,7 +68,7 @@ const SEV_SECTION_LABELS: Record<AccSev, string> = {
   pass: 'Passing',
 };
 
-function renderAccNameExtra(entry: AccNameEntry): string {
+function renderAccNameExtra(entry: AccNameEntry, idx: number): string {
   const parts: string[] = [];
   parts.push(
     `<div style="font-size: 12px !important; color: #1F2937 !important; margin-bottom: 6px !important;"><span style="color: #6B7280 !important;">Accessible name:</span> <span style="font-weight: 500 !important;">${escHtml(entry.name)}</span></div>`
@@ -83,6 +84,7 @@ function renderAccNameExtra(entry: AccNameEntry): string {
   if (entry.ariaHidden) {
     parts.push(`<div style="font-size: 11px !important; color: #DC2626 !important;">aria-hidden="true"</div>`);
   }
+  parts.push(renderDevToolsButton(idx));
   return parts.join('');
 }
 
@@ -101,7 +103,7 @@ function renderEntryCard(entry: AccNameEntry, idx: number): string {
     descriptionHtml,
     selector: entry.element ? getCssSelector(entry.element) : '',
     snippet: entry.element ? getSnippet(entry.element) : '',
-    extraBodyHtml: renderAccNameExtra(entry),
+    extraBodyHtml: renderAccNameExtra(entry, idx),
   });
 }
 
@@ -217,6 +219,7 @@ export function attachAccNameListeners(
   actions: {
     onBack: () => void;
     onHighlight: (els: Element[]) => void;
+    onShowInDevTools?: (idx: number) => void;
     onSeverityChange?: (next: Set<string>) => void;
     onSearchInput?: (value: string) => void;
   }
@@ -230,8 +233,10 @@ export function attachAccNameListeners(
         const entry = filtered[idx];
         if (entry?.element) actions.onHighlight([entry.element]);
       },
+      onShowInDevTools: actions.onShowInDevTools,
       onSeverityChange: actions.onSeverityChange,
       onSearchInput: actions.onSearchInput,
+      autoHighlightOnExpand: true,
     },
     { active: data.activeSeverities }
   );

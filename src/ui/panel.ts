@@ -58,6 +58,7 @@ interface PanelCallbacks {
   onExportScorecard: () => void;
   onClose: () => void;
   onCancelTabWalk?: () => void;
+  onShowInDevTools?: (auditType: 'acc-names' | 'aria' | 'form-labels', index: number) => void;
   /** True when running as the detached popup window (vs. the injected standalone fixture). */
   isPopupWindow?: boolean;
 }
@@ -966,6 +967,9 @@ export class FloatingPanel {
         attachAccNameListeners(this.container, this.getAccNameData(), {
           onBack: backToHome,
           onHighlight: highlight,
+          onShowInDevTools: this.callbacks.onShowInDevTools
+            ? (idx) => this.callbacks.onShowInDevTools!('acc-names', idx)
+            : undefined,
           onSeverityChange: next => {
             this.accNameSeverityFilter = next;
             this.render();
@@ -992,6 +996,9 @@ export class FloatingPanel {
           {
             onBack: backToHome,
             onHighlight: highlight,
+            onShowInDevTools: this.callbacks.onShowInDevTools
+              ? (idx) => this.callbacks.onShowInDevTools!('aria', idx)
+              : undefined,
             onSeverityChange: next => {
               this.ariaSeverityFilter = next;
               this.render();
@@ -1008,6 +1015,9 @@ export class FloatingPanel {
           {
             onBack: backToHome,
             onHighlight: highlight,
+            onShowInDevTools: this.callbacks.onShowInDevTools
+              ? (idx) => this.callbacks.onShowInDevTools!('form-labels', idx)
+              : undefined,
             onSeverityChange: next => {
               this.formLabelsSeverityFilter = next;
               this.render();

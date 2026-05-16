@@ -40,7 +40,9 @@ export interface ResultsPageActions {
   onSearchInput?: (value: string) => void;
   onGroupChange?: (mode: string) => void;
   onHighlight: (idx: number) => void;
+  onShowInDevTools?: (idx: number) => void;
   onToolbarAction?: (action: string) => void;
+  autoHighlightOnExpand?: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -227,12 +229,29 @@ export function attachResultsPageListeners(
       const body = card?.querySelector('.a11y-card-body') as HTMLElement;
       const chevron = card?.querySelector('.a11y-card-chevron') as HTMLElement;
       if (body) {
-        const isOpen = body.style.display !== 'none' && body.style.display !== '';
-        body.style.setProperty('display', isOpen ? 'none' : 'block', 'important');
-        if (chevron) chevron.style.transform = isOpen ? '' : 'rotate(180deg)';
-        if (!isOpen) card?.classList.add('is-expanded');
-        else card?.classList.remove('is-expanded');
+        const wasExpanded = body.style.display !== 'none' && body.style.display !== '';
+        body.style.setProperty('display', wasExpanded ? 'none' : 'block', 'important');
+        if (chevron) chevron.style.transform = wasExpanded ? '' : 'rotate(180deg)';
+        if (!wasExpanded) {
+          card?.classList.add('is-expanded');
+          // Auto-highlight on expand if enabled
+          if (actions.autoHighlightOnExpand) {
+            const idx = parseInt(card?.getAttribute('data-idx') || '0', 10);
+            actions.onHighlight(idx);
+          }
+        } else {
+          card?.classList.remove('is-expanded');
+        }
       }
+    }
+
+    // Show in developer tools button
+    const devtoolsBtn = target.closest('.a11y-devtools-btn') as HTMLElement;
+    if (devtoolsBtn && actions.onShowInDevTools) {
+      e.stopPropagation();
+      const idx = parseInt(devtoolsBtn.getAttribute('data-idx') || '0', 10);
+      actions.onShowInDevTools(idx);
+      return;
     }
   }, { signal });
 

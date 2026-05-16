@@ -43,6 +43,7 @@ export type CommandMessage =
   | { type: 'EXPORT_SCORECARD' }
   | { type: 'HIGHLIGHT'; auditType: AuditType; index: number }
   | { type: 'HIGHLIGHT_BY_SELECTOR'; selector: string; color?: string; label?: string }
+  | { type: 'PREPARE_DEVTOOLS_INSPECT'; auditType: AuditType; index: number }
   | { type: 'SHOW_COMPONENT_FLOW'; componentName: string; instanceIdx: number }
   | { type: 'CANCEL_TAB_WALK' };
 
@@ -74,6 +75,7 @@ export type ResultMessage =
   | { type: 'SCOPE_SET'; label: string }
   | { type: 'SCOPE_PICK_STARTED' }
   | { type: 'SCOPE_SET_FROM_SELECTOR_FAILED' }
+  | { type: 'DEVTOOLS_INSPECT_READY'; tempId: string }
   | { type: 'CONTENT_READY'; url: string; title: string }
   // ── Animated tab walk ──────────────────────────────────────────────────
   | { type: 'TAB_WALK_START'; total: number }

@@ -3,6 +3,7 @@ import { getCssSelector, getSnippet } from '../../utils/dom-utils';
 import { escHtml } from '../../utils/escape';
 import { ARIA_KNOWLEDGE, renderKnowledgeBlock } from '../../utils/issue-knowledge';
 import { SEV, type SeverityKey } from '../tokens';
+import { renderDevToolsButton } from './devtools-button';
 import {
   renderResultsPage,
   renderIssueCard,
@@ -84,7 +85,7 @@ export function renderAriaResults(result: AriaValidationResult, activeSevs: Set<
             descriptionHtml: escHtml(issue.description),
             selector: getCssSelector(issue.element),
             snippet: getSnippet(issue.element),
-            extraBodyHtml: k ? renderKnowledgeBlock(k) : '',
+            extraBodyHtml: (k ? renderKnowledgeBlock(k) : '') + renderDevToolsButton(idx),
           });
         })
         .join('');
@@ -108,6 +109,7 @@ export function attachAriaListeners(
   actions: {
     onBack: () => void;
     onHighlight: (els: Element[]) => void;
+    onShowInDevTools?: (idx: number) => void;
     onSeverityChange?: (next: Set<string>) => void;
   },
   activeSevs: Set<string>,
@@ -121,7 +123,9 @@ export function attachAriaListeners(
         const issue = filtered[idx];
         if (issue) actions.onHighlight([issue.element]);
       },
+      onShowInDevTools: actions.onShowInDevTools,
       onSeverityChange: actions.onSeverityChange,
+      autoHighlightOnExpand: true,
     },
     { active: activeSevs },
   );
