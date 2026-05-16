@@ -58,7 +58,7 @@ interface PanelCallbacks {
   onExportScorecard: () => void;
   onClose: () => void;
   onCancelTabWalk?: () => void;
-  onShowInDevTools?: (auditType: 'acc-names' | 'aria' | 'form-labels', index: number) => void;
+  onShowInDevTools?: (auditType: 'acc-names' | 'aria' | 'form-labels', index: number, selector: string) => void;
   /** True when running as the detached popup window (vs. the injected standalone fixture). */
   isPopupWindow?: boolean;
 }
@@ -968,7 +968,7 @@ export class FloatingPanel {
           onBack: backToHome,
           onHighlight: highlight,
           onShowInDevTools: this.callbacks.onShowInDevTools
-            ? (idx) => this.callbacks.onShowInDevTools!('acc-names', idx)
+            ? (idx, sel) => this.callbacks.onShowInDevTools!('acc-names', idx, sel)
             : undefined,
           onSeverityChange: next => {
             this.accNameSeverityFilter = next;
@@ -997,7 +997,7 @@ export class FloatingPanel {
             onBack: backToHome,
             onHighlight: highlight,
             onShowInDevTools: this.callbacks.onShowInDevTools
-              ? (idx) => this.callbacks.onShowInDevTools!('aria', idx)
+              ? (idx, sel) => this.callbacks.onShowInDevTools!('aria', idx, sel)
               : undefined,
             onSeverityChange: next => {
               this.ariaSeverityFilter = next;
@@ -1016,7 +1016,7 @@ export class FloatingPanel {
             onBack: backToHome,
             onHighlight: highlight,
             onShowInDevTools: this.callbacks.onShowInDevTools
-              ? (idx) => this.callbacks.onShowInDevTools!('form-labels', idx)
+              ? (idx, sel) => this.callbacks.onShowInDevTools!('form-labels', idx, sel)
               : undefined,
             onSeverityChange: next => {
               this.formLabelsSeverityFilter = next;

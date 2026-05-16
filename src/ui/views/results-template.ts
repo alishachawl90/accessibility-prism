@@ -40,7 +40,7 @@ export interface ResultsPageActions {
   onSearchInput?: (value: string) => void;
   onGroupChange?: (mode: string) => void;
   onHighlight: (idx: number) => void;
-  onShowInDevTools?: (idx: number) => void;
+  onShowInDevTools?: (idx: number, selector: string) => void;
   onToolbarAction?: (action: string) => void;
   autoHighlightOnExpand?: boolean;
 }
@@ -148,7 +148,7 @@ export function renderIssueCard(config: IssueCardConfig): string {
   const safeSnip = escHtml(config.snippet);
 
   return `
-    <div class="a11y-issue-card" data-idx="${config.idx}" style="border-left: 3px solid ${config.borderColor} !important;">
+    <div class="a11y-issue-card" data-idx="${config.idx}" data-selector="${safeSel}" style="border-left: 3px solid ${config.borderColor} !important;">
       <div class="a11y-card-header" style="padding: 12px 14px !important; cursor: pointer !important; display: flex !important; align-items: flex-start !important; gap: 8px !important;">
         ${config.badgeHtml}
         <div style="flex: 1 !important; min-width: 0 !important;">
@@ -222,6 +222,19 @@ export function attachResultsPageListeners(
       return;
     }
 
+    // Show in developer tools button — must be checked before card-header
+    // because the button sits inside the card body (not the header), but
+    // we want to ensure the click is captured before any further fallthrough.
+    const devtoolsBtn = target.closest('.a11y-devtools-btn') as HTMLElement;
+    if (devtoolsBtn && actions.onShowInDevTools) {
+      e.stopPropagation();
+      const card = devtoolsBtn.closest('.a11y-issue-card') as HTMLElement;
+      const idx = parseInt(devtoolsBtn.getAttribute('data-idx') || '0', 10);
+      const selector = card?.getAttribute('data-selector') || '';
+      actions.onShowInDevTools(idx, selector);
+      return;
+    }
+
     // Card expand/collapse
     const cardHeader = target.closest('.a11y-card-header');
     if (cardHeader) {
@@ -243,14 +256,6 @@ export function attachResultsPageListeners(
           card?.classList.remove('is-expanded');
         }
       }
-    }
-
-    // Show in developer tools button
-    const devtoolsBtn = target.closest('.a11y-devtools-btn') as HTMLElement;
-    if (devtoolsBtn && actions.onShowInDevTools) {
-      e.stopPropagation();
-      const idx = parseInt(devtoolsBtn.getAttribute('data-idx') || '0', 10);
-      actions.onShowInDevTools(idx);
       return;
     }
   }, { signal });

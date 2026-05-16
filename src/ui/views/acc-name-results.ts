@@ -219,7 +219,7 @@ export function attachAccNameListeners(
   actions: {
     onBack: () => void;
     onHighlight: (els: Element[]) => void;
-    onShowInDevTools?: (idx: number) => void;
+    onShowInDevTools?: (idx: number, selector: string) => void;
     onSeverityChange?: (next: Set<string>) => void;
     onSearchInput?: (value: string) => void;
   }
@@ -233,7 +233,9 @@ export function attachAccNameListeners(
         const entry = filtered[idx];
         if (entry?.element) actions.onHighlight([entry.element]);
       },
-      onShowInDevTools: actions.onShowInDevTools,
+      onShowInDevTools: actions.onShowInDevTools
+        ? (idx, sel) => actions.onShowInDevTools!(idx, sel)
+        : undefined,
       onSeverityChange: actions.onSeverityChange,
       onSearchInput: actions.onSearchInput,
       autoHighlightOnExpand: true,

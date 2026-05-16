@@ -109,7 +109,7 @@ export function attachAriaListeners(
   actions: {
     onBack: () => void;
     onHighlight: (els: Element[]) => void;
-    onShowInDevTools?: (idx: number) => void;
+    onShowInDevTools?: (idx: number, selector: string) => void;
     onSeverityChange?: (next: Set<string>) => void;
   },
   activeSevs: Set<string>,
@@ -123,7 +123,9 @@ export function attachAriaListeners(
         const issue = filtered[idx];
         if (issue) actions.onHighlight([issue.element]);
       },
-      onShowInDevTools: actions.onShowInDevTools,
+      onShowInDevTools: actions.onShowInDevTools
+        ? (idx, sel) => actions.onShowInDevTools!(idx, sel)
+        : undefined,
       onSeverityChange: actions.onSeverityChange,
       autoHighlightOnExpand: true,
     },

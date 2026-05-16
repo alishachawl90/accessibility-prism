@@ -127,7 +127,7 @@ class A11yContent {
       case 'HIGHLIGHT_BY_SELECTOR':   this.highlightBySelector(msg.selector, msg.color, msg.label); break;
       case 'SHOW_COMPONENT_FLOW':     this.showComponentFlow(msg.componentName, msg.instanceIdx); break;
       case 'CANCEL_TAB_WALK':         this.tabWalkCancelled = true; break;
-      case 'PREPARE_DEVTOOLS_INSPECT': this.prepareDevToolsInspect(msg.auditType, msg.index); break;
+      case 'PREPARE_DEVTOOLS_INSPECT': this.prepareDevToolsInspect(msg.selector); break;
     }
   }
 
@@ -149,20 +149,22 @@ class A11yContent {
     });
   }
 
-  private prepareDevToolsInspect(auditType: string, index: number) {
-    const el = this.resolveElement(auditType, index);
+  private prepareDevToolsInspect(selector: string) {
+    let el: Element | null = null;
+    try { el = document.querySelector(selector); } catch { /* invalid selector */ }
     if (!el) {
-      console.warn('[Prism] Could not resolve element to inspect');
+      console.warn('[Prism] Could not find element to inspect:', selector);
       return;
     }
+    // Assign a stable temp ID so devtools.js can call inspect(document.querySelector('#tempId'))
     const tempId = '__prism_inspect__' + Date.now();
     const oldId = el.getAttribute('id');
     el.setAttribute('id', tempId);
-    this.send({ type: 'DEVTOOLS_INSPECT_READY', tempId });
-    // Cleanup the temp ID after giving DevTools time to inspect
+    this.send({ type: 'DEVTOOLS_INSPECT_READY', tempId: `#${tempId}` });
+    // Restore original ID after DevTools has had time to receive the message
     setTimeout(() => {
-      if (oldId !== null) el.setAttribute('id', oldId);
-      else el.removeAttribute('id');
+      if (oldId !== null) el!.setAttribute('id', oldId);
+      else el!.removeAttribute('id');
     }, 2000);
   }
 

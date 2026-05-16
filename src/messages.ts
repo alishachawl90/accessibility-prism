@@ -43,7 +43,7 @@ export type CommandMessage =
   | { type: 'EXPORT_SCORECARD' }
   | { type: 'HIGHLIGHT'; auditType: AuditType; index: number }
   | { type: 'HIGHLIGHT_BY_SELECTOR'; selector: string; color?: string; label?: string }
-  | { type: 'PREPARE_DEVTOOLS_INSPECT'; auditType: AuditType; index: number }
+  | { type: 'PREPARE_DEVTOOLS_INSPECT'; selector: string }
   | { type: 'SHOW_COMPONENT_FLOW'; componentName: string; instanceIdx: number }
   | { type: 'CANCEL_TAB_WALK' };
 

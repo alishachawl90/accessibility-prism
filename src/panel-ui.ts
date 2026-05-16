@@ -419,8 +419,8 @@ class PopupWindowUI {
       onExportScorecard: () => this.cmd({ type: 'EXPORT_SCORECARD' }),
       onClose: () => window.close(),
       onCancelTabWalk: () => this.cmd({ type: 'CANCEL_TAB_WALK' }),
-      onShowInDevTools: (auditType, index) =>
-        this.cmd({ type: 'PREPARE_DEVTOOLS_INSPECT', auditType, index }),
+      onShowInDevTools: (_auditType, _index, selector) =>
+        this.cmd({ type: 'PREPARE_DEVTOOLS_INSPECT', selector }),
     });
 
     // chrome.runtime.connect() reaches the background service worker, NOT content scripts.

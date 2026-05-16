@@ -69,7 +69,7 @@ export function attachFormLabelsListeners(
   actions: {
     onBack: () => void;
     onHighlight: (els: Element[]) => void;
-    onShowInDevTools?: (idx: number) => void;
+    onShowInDevTools?: (idx: number, selector: string) => void;
     onSeverityChange?: (next: Set<string>) => void;
   },
   activeSevs: Set<string>,
@@ -78,7 +78,9 @@ export function attachFormLabelsListeners(
   attachResultsPageListeners(container, {
     onBack: actions.onBack,
     onHighlight: (idx) => { const i = filtered[idx]; if (i) actions.onHighlight([i.element]); },
-    onShowInDevTools: actions.onShowInDevTools,
+    onShowInDevTools: actions.onShowInDevTools
+      ? (idx, sel) => actions.onShowInDevTools!(idx, sel)
+      : undefined,
     onSeverityChange: actions.onSeverityChange,
     autoHighlightOnExpand: true,
   }, { active: activeSevs });
