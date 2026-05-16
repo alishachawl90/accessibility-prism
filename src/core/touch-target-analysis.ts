@@ -46,6 +46,11 @@ export function analyzeTouchTargets(root?: Element | Document): TouchTargetIssue
     const width = Math.round(rect.width);
     const height = Math.round(rect.height);
     const minDim = Math.min(width, height);
+    
+    const tag = el.tagName.toLowerCase();
+    const text = el.textContent?.trim().substring(0, 40) || '';
+    const ariaLabel = el.getAttribute('aria-label');
+    const context = ariaLabel || text || tag;
 
     if (minDim < AA_MIN_SIZE) {
       issues.push({
@@ -56,6 +61,7 @@ export function analyzeTouchTargets(root?: Element | Document): TouchTargetIssue
         level: 'AA',
         severity: 'error',
         description: `Touch target is ${width}x${height}px. WCAG 2.5.8 requires at least ${AA_MIN_SIZE}x${AA_MIN_SIZE}px for AA compliance.`,
+        context,
       });
     } else if (minDim < AAA_MIN_SIZE) {
       issues.push({
@@ -66,6 +72,7 @@ export function analyzeTouchTargets(root?: Element | Document): TouchTargetIssue
         level: 'AAA',
         severity: 'warning',
         description: `Touch target is ${width}x${height}px. WCAG 2.5.5 recommends at least ${AAA_MIN_SIZE}x${AAA_MIN_SIZE}px for AAA compliance.`,
+        context,
       });
     }
   });

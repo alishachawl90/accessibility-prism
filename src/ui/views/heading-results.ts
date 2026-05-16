@@ -36,7 +36,7 @@ function renderHeadingTree(data: HeadingAnalysisResult): string {
       ? escHtml(h.text)
       : '<em style="color: #6B7280;">empty</em>';
     html += `
-        <div class="heading-node" data-idx="${idx}" style="display: flex !important; align-items: center !important; gap: 10px !important; padding: 10px 12px !important; padding-left: ${12 + indent}px !important; margin-bottom: 4px !important; background: white !important; border: 1px solid ${hasIssue ? '#FCA5A5' : '#E5E7EB'} !important; border-left: 3px solid ${color} !important; border-radius: 8px !important; cursor: pointer !important; transition: border-color 0.15s !important; box-shadow: 0 1px 2px rgba(0,0,0,0.04) !important;">
+        <div class="heading-node" data-idx="${idx}" style="display: flex !important; align-items: center !important; gap: 10px !important; padding: 10px 12px !important; padding-left: ${12 + indent}px !important; margin-bottom: 4px !important; background: var(--node-bg, white) !important; border: 1px solid var(--node-border, ${hasIssue ? '#FCA5A5' : '#E5E7EB'}) !important; border-left: 3px solid ${color} !important; border-radius: 8px !important; cursor: pointer !important; transition: border-color 0.15s !important; box-shadow: 0 1px 2px rgba(0,0,0,0.04) !important;">
           <span style="background: ${color} !important; color: white !important; padding: 2px 8px !important; border-radius: 4px !important; font-size: 11px !important; font-weight: 700 !important; flex-shrink: 0 !important;">H${h.level}</span>
           <span style="font-size: 13px !important; color: #1F2937 !important; overflow: hidden !important; text-overflow: ellipsis !important; white-space: nowrap !important; flex: 1 !important;">${textHtml}</span>
           ${hasIssue ? '<span style="color: #DC2626 !important; font-size: 12px !important; flex-shrink: 0 !important;">&#9888;</span>' : ''}
@@ -114,6 +114,10 @@ export function attachHeadingListeners(
   container.addEventListener('click', (e: MouseEvent) => {
     const row = (e.target as HTMLElement).closest('.heading-node');
     if (!row) return;
+    
+    container.querySelectorAll('.heading-node.is-active').forEach(el => el.classList.remove('is-active'));
+    row.classList.add('is-active');
+
     const idx = parseInt(row.getAttribute('data-idx') || '0', 10);
     const heading = data.headings[idx];
     if (heading) actions.onHighlight([heading.element]);

@@ -121,7 +121,7 @@ export const PANEL_CSS = `
     font-size: 10px !important;
     font-weight: 600 !important;
   }
-  #a11y-analyzer-panel .a11y-panel-title    { font-weight: 700 !important; font-size: 15px !important; letter-spacing: 0.2px !important; color: white !important; }
+  #a11y-analyzer-panel .a11y-panel-title    { font-weight: 700 !important; font-size: 15px !important; letter-spacing: 0.2px !important; color: #1F2937 !important; }
   #a11y-analyzer-panel .a11y-scroll-area    { padding: 14px 16px !important; background: var(--bg-subtle) !important; overflow-y: auto !important; flex: 1 !important; }
   #a11y-analyzer-panel .a11y-header-bar     { padding: 12px 16px !important; background: var(--surface) !important; border-bottom: 1px solid var(--border) !important; display: flex !important; gap: 16px !important; font-size: 13px !important; font-weight: 600 !important; align-items: center !important; }
   #a11y-analyzer-panel .a11y-section-title  { font-size: 12px !important; font-weight: 600 !important; color: var(--text-muted) !important; text-transform: uppercase !important; letter-spacing: 0.5px !important; margin-bottom: 8px !important; }
@@ -169,15 +169,48 @@ export const PANEL_CSS = `
   }
 
   #a11y-analyzer-panel .a11y-issue-card {
-    background: white !important;
-    border: 1px solid #E5E7EB !important;
+    background: var(--node-bg, white) !important;
+    border: 1px solid var(--node-border, #E5E7EB) !important;
     border-radius: 8px !important;
     margin-bottom: 8px !important;
     overflow: hidden !important;
     transition: border-color 0.15s !important;
     box-shadow: 0 1px 2px rgba(0,0,0,0.04) !important;
   }
-  #a11y-analyzer-panel .a11y-issue-card:hover { border-color: var(--color-accent) !important; }
+
+  /* Hover and Active/Expanded states via CSS variables */
+  #a11y-analyzer-panel .a11y-issue-card:hover,
+  #a11y-analyzer-panel .a11y-issue-card.is-expanded,
+  #a11y-analyzer-panel .rule-card:hover,
+  #a11y-analyzer-panel .rule-card.is-expanded,
+  #a11y-analyzer-panel .comp-node:hover,
+  #a11y-analyzer-panel .comp-node.is-active,
+  #a11y-analyzer-panel .group-node:hover,
+  #a11y-analyzer-panel .group-node.is-active,
+  #a11y-analyzer-panel .heading-node:hover,
+  #a11y-analyzer-panel .heading-node.is-active {
+    --node-bg: #FDF2F8;
+    --node-border: #FBCFE8;
+  }
+
+  /* Keep the body transparent when the card is expanded so it doesn't clash */
+  #a11y-analyzer-panel .a11y-issue-card.is-expanded .a11y-card-body {
+    background: transparent !important;
+    border-top-color: #FBCFE8 !important;
+  }
+
+  /* Back Button Hover via CSS variables */
+  #a11y-analyzer-panel #btn-back:hover {
+    --back-bg: #F3F4F6;
+    --back-color: #1F2937;
+  }
+
+  /* Pre-screen Audit Button Hover via CSS variables */
+  #a11y-analyzer-panel .a11y-audit-btn:hover {
+    --btn-border: var(--audit-btn-hover, #6366F1);
+    --btn-bg: #FDF2F8;
+    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1) !important;
+  }
 
   #a11y-analyzer-panel .a11y-card-body {
     padding: 10px 14px !important;
@@ -282,24 +315,62 @@ export const PANEL_CSS = `
     word-break: break-all !important;
   }
 
-  /* Header icon buttons (export / close) — replaces inline onmouseover/onmouseout */
+  /* Header icon buttons (export / close) — light theme (white header) */
   #a11y-analyzer-panel .a11y-hdr-btn:hover {
-    background: rgba(255,255,255,0.2) !important;
-    color: white !important;
+    background: #E5E7EB !important;
+    color: #1F2937 !important;
   }
-  #a11y-analyzer-panel .a11y-hdr-btn-close:hover {
-    background: rgba(239,68,68,0.35) !important;
-    color: white !important;
+  #a11y-analyzer-panel .a11y-hdr-btn-light:hover {
+    background: #E5E7EB !important;
+    border-color: #D1D5DB !important;
+    color: #1F2937 !important;
+  }
+  #a11y-analyzer-panel .a11y-hdr-btn-close-light:hover {
+    background: #FEE2E2 !important;
+    border-color: #FCA5A5 !important;
+    color: #B91C1C !important;
   }
   #a11y-analyzer-panel .a11y-hdr-btn-export-popup:hover {
-    background: rgba(255,255,255,0.15) !important;
+    background: #E5E7EB !important;
+    border-color: #D1D5DB !important;
   }
 
-  /* Pre-screen audit buttons — dynamic hover color via CSS custom property */
-  #a11y-analyzer-panel .a11y-audit-btn:hover {
-    border-color: var(--audit-btn-hover, #6366F1) !important;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.12) !important;
+  /* Tooltip on download report button */
+  #a11y-analyzer-panel .a11y-tooltip-wrap { display: inline-flex !important; position: relative !important; }
+  #a11y-analyzer-panel .a11y-tooltip {
+    position: absolute !important;
+    top: calc(100% + 6px) !important;
+    right: 0 !important;
+    background: #1F2937 !important;
+    color: #FFFFFF !important;
+    font-size: 11px !important;
+    font-weight: 500 !important;
+    white-space: nowrap !important;
+    padding: 4px 8px !important;
+    border-radius: 5px !important;
+    pointer-events: none !important;
+    opacity: 0 !important;
+    transform: translateY(-3px) !important;
+    transition: opacity 0.15s, transform 0.15s !important;
+    z-index: 9999 !important;
+    line-height: 1.4 !important;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.18) !important;
   }
+  #a11y-analyzer-panel .a11y-tooltip::after {
+    content: '' !important;
+    position: absolute !important;
+    bottom: 100% !important;
+    right: 10px !important;
+    border: 4px solid transparent !important;
+    border-bottom-color: #1F2937 !important;
+  }
+  #a11y-analyzer-panel .a11y-tooltip-wrap:hover .a11y-tooltip,
+  #a11y-analyzer-panel .a11y-tooltip-wrap:focus-within .a11y-tooltip {
+    opacity: 1 !important;
+    transform: translateY(0) !important;
+  }
+
+
 
   /* Scorecard export button */
   #a11y-analyzer-panel .a11y-export-scorecard-btn:hover {

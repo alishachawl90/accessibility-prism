@@ -13,7 +13,7 @@ interface PreScreenButton {
 const SECTION_STYLE = `font-size: 11px !important; font-weight: 700 !important; color: #6B7280 !important; text-transform: uppercase !important; letter-spacing: 0.5px !important; margin: 4px 0 6px 0 !important; line-height: 1.5 !important;`;
 
 function renderButton(btn: PreScreenButton): string {
-  const base = `padding: 14px !important; background: white !important; border: 1px solid #E5E7EB !important; border-radius: 10px !important; cursor: pointer !important; text-align: left !important; font-size: 14px !important; box-shadow: 0 1px 2px rgba(0,0,0,0.04) !important; transition: border-color 0.15s, box-shadow 0.15s !important; display: flex !important; align-items: center !important; gap: 14px !important; width: 100% !important;`;
+  const base = `padding: 14px !important; background: var(--btn-bg, white) !important; border: 1px solid var(--btn-border, #E5E7EB) !important; border-radius: 10px !important; cursor: pointer !important; text-align: left !important; font-size: 14px !important; box-shadow: 0 1px 2px rgba(0,0,0,0.04) !important; transition: border-color 0.15s, box-shadow 0.15s !important; display: flex !important; align-items: center !important; gap: 14px !important; width: 100% !important;`;
   return `
     <button id="${btn.id}" class="a11y-audit-btn" style="${base}; --audit-btn-hover: ${btn.hoverColor};">
       <span style="width: 34px !important; height: 34px !important; border-radius: 8px !important; background: ${btn.iconBg} !important; display: flex !important; align-items: center !important; justify-content: center !important; flex-shrink: 0 !important;">

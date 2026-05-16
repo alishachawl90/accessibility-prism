@@ -9,12 +9,7 @@ import {
   attachResultsPageListeners,
 } from './results-template';
 
-function getContext(el: Element): string {
-  const tag = el.tagName.toLowerCase();
-  const text = el.textContent?.trim().substring(0, 40) || '';
-  const ariaLabel = el.getAttribute('aria-label');
-  return ariaLabel || text || tag;
-}
+
 
 function touchTargetBorderColor(issue: TouchTargetIssue): string {
   return SEV[issue.severity].badge;
@@ -47,7 +42,7 @@ export function renderTouchTargetResults(issues: TouchTargetIssue[]): string {
           idx,
           borderColor: touchTargetBorderColor(issue),
           badgeHtml: renderSeverityBadge(issue.severity),
-          titleHtml: escHtml(getContext(issue.element)),
+          titleHtml: escHtml(issue.context),
           descriptionHtml: renderTouchTargetDescription(issue),
           selector: getCssSelector(issue.element),
           snippet: getSnippet(issue.element),

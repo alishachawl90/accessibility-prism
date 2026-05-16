@@ -241,6 +241,7 @@ export interface TouchTargetIssue {
   level: 'AA' | 'AAA';
   severity: 'error' | 'warning';
   description: string;
+  context: string;
 }
 
 // === Alt Text Audit ===

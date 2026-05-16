@@ -193,7 +193,7 @@ function renderRuleGroup(data: AxeListData): string {
     const wcag = parseWcagInfo(v.tags);
     const impact = IMPACT[(v.impact || 'minor') as keyof typeof IMPACT] || IMPACT.minor;
     html += `
-      <div class="rule-card" data-id="${v.id}" style="background: white !important; border: 1px solid #E5E7EB !important; border-left: 3px solid ${impact.badge} !important; border-radius: 8px !important; padding: 16px !important; margin-bottom: 10px !important; cursor: pointer !important; transition: border-color 0.15s; box-shadow: 0 1px 2px rgba(0,0,0,0.04) !important;">
+      <div class="rule-card" data-id="${v.id}" style="border-left: 3px solid ${impact.badge} !important; border-radius: 8px !important; padding: 16px !important; margin-bottom: 10px !important; cursor: pointer !important; transition: border-color 0.15s; box-shadow: 0 1px 2px rgba(0,0,0,0.04) !important;">
         <div style="display: flex !important; align-items: center !important; gap: 6px !important; margin-bottom: 8px !important;">
           <h3 style="margin: 0 !important; font-size: 14px !important; font-weight: 600 !important; line-height: 1.5 !important; color: #1F2937 !important; flex: 1 !important;">${escHtml(v.help)}</h3>
         </div>
@@ -296,7 +296,7 @@ function renderComponentGroup(data: AxeListData): string {
       issue.nodes.forEach((nodeEl, nIdx) => {
         const context = getElementContext(nodeEl);
         nodeHtml += `
-          <div class="comp-node" data-cidx="${cIdx}" data-iidx="${iIdx}" data-nidx="${nIdx}" style="padding: 8px 10px !important; margin-bottom: 4px !important; background: white !important; border: 1px solid #E5E7EB !important; border-radius: 6px !important; cursor: pointer !important; font-size: 12px !important; color: #374151 !important; display: flex !important; justify-content: space-between !important; align-items: center !important; transition: border-color 0.15s !important;">
+          <div class="comp-node" data-cidx="${cIdx}" data-iidx="${iIdx}" data-nidx="${nIdx}" style="padding: 8px 10px !important; margin-bottom: 4px !important; background: var(--node-bg, white) !important; border: 1px solid var(--node-border, #E5E7EB) !important; border-radius: 6px !important; cursor: pointer !important; font-size: 12px !important; color: #374151 !important; display: flex !important; justify-content: space-between !important; align-items: center !important; transition: border-color 0.15s !important;">
             <span style="overflow: hidden !important; text-overflow: ellipsis !important; white-space: nowrap !important; flex: 1 !important;">${escHtml(context)}</span>
             <span style="color: ${HIGHLIGHT} !important; font-weight: 500 !important; flex-shrink: 0 !important; margin-left: 8px !important; font-size: 12px !important;">Highlight &rarr;</span>
           </div>
@@ -355,7 +355,7 @@ function renderRuleSubGroup(ruleId: string, help: string, wcag: ReturnType<typeo
   nodes.forEach((n, nIdx) => {
     const context = getElementContext(n.node);
     html += `
-      <div class="group-node" data-pkey="${parentKey}" data-rule="${ruleId}" data-nidx="${nIdx}" style="padding: 8px 10px !important; margin-bottom: 4px !important; background: white !important; border: 1px solid #E5E7EB !important; border-radius: 6px !important; cursor: pointer !important; font-size: 12px !important; color: #374151 !important; display: flex !important; justify-content: space-between !important; align-items: center !important; transition: border-color 0.15s !important;">
+      <div class="group-node" data-pkey="${parentKey}" data-rule="${ruleId}" data-nidx="${nIdx}" style="padding: 8px 10px !important; margin-bottom: 4px !important; background: var(--node-bg, white) !important; border: 1px solid var(--node-border, #E5E7EB) !important; border-radius: 6px !important; cursor: pointer !important; font-size: 12px !important; color: #374151 !important; display: flex !important; justify-content: space-between !important; align-items: center !important; transition: border-color 0.15s !important;">
         <span style="overflow: hidden !important; text-overflow: ellipsis !important; white-space: nowrap !important; flex: 1 !important;">${escHtml(context)}</span>
         <span style="color: ${HIGHLIGHT} !important; font-weight: 500 !important; flex-shrink: 0 !important; margin-left: 8px !important; font-size: 12px !important;">Highlight &rarr;</span>
       </div>
@@ -434,6 +434,10 @@ export function attachAxeListListeners(container: HTMLElement, data: AxeListData
   container.querySelectorAll('.comp-node').forEach(el => {
     el.addEventListener('click', (e) => {
       e.stopPropagation();
+      
+      container.querySelectorAll('.comp-node.is-active, .group-node.is-active').forEach(node => node.classList.remove('is-active'));
+      el.classList.add('is-active');
+
       const cIdx = parseInt(el.getAttribute('data-cidx') || '0', 10);
       const iIdx = parseInt(el.getAttribute('data-iidx') || '0', 10);
       const nIdx = parseInt(el.getAttribute('data-nidx') || '0', 10);
@@ -451,6 +455,10 @@ export function attachAxeListListeners(container: HTMLElement, data: AxeListData
   container.querySelectorAll('.group-node').forEach(el => {
     el.addEventListener('click', (e) => {
       e.stopPropagation();
+
+      container.querySelectorAll('.comp-node.is-active, .group-node.is-active').forEach(node => node.classList.remove('is-active'));
+      el.classList.add('is-active');
+
       const pkey = el.getAttribute('data-pkey') || '';
       const ruleId = el.getAttribute('data-rule') || '';
       const nidx = parseInt(el.getAttribute('data-nidx') || '0', 10);

@@ -1,7 +1,7 @@
 import type { AxeViolation, ComponentCluster, ComponentIssue, KeyboardIssue, ComponentTabFlow, HeadingAnalysisResult, LandmarkAnalysisResult, ContrastIssue, FocusManagementIssue, LiveRegionResult, TouchTargetIssue, AltTextIssue, AccNameResult, AriaValidationResult, FormLabelsResult, AccNameEntry } from '../core/types';
 import type { PageRegion } from '../core/region-detection';
 import { PANEL_CSS } from './panel-styles';
-import { BORDER, HEADER_BG } from './tokens';
+import { BORDER } from './tokens';
 import * as icons from './icons';
 
 import { renderPreScreen, attachPreScreenListeners } from './views/pre-screen';
@@ -523,41 +523,79 @@ export class FloatingPanel {
     }
   }
 
+  /** Inline Prism SVG logo extracted from public/icons/prism.svg */
+  private static readonly PRISM_LOGO_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" style="flex-shrink:0 !important;" viewBox="0 0 128 128">
+  <defs>
+    <linearGradient id="prism-face" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#334155"/>
+      <stop offset="100%" stop-color="#1E293B"/>
+    </linearGradient>
+    <linearGradient id="prism-light" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#F8FAFC"/>
+      <stop offset="100%" stop-color="#E2E8F0"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background circle -->
+  <rect width="128" height="128" rx="28" fill="#0F172A"/>
+
+  <!-- Incoming light beam -->
+  <line x1="14" y1="58" x2="42" y2="58" stroke="url(#prism-light)" stroke-width="4" stroke-linecap="round" opacity="0.9"/>
+
+  <!-- Prism triangle -->
+  <polygon points="48,28 88,64 48,100" fill="url(#prism-face)" stroke="#475569" stroke-width="2" stroke-linejoin="round"/>
+  <polygon points="48,28 88,64 48,100" fill="none" stroke="#94A3B8" stroke-width="0.5" stroke-linejoin="round" opacity="0.4"/>
+
+  <!-- Light refraction highlight on prism -->
+  <line x1="48" y1="42" x2="48" y2="86" stroke="#CBD5E1" stroke-width="1" opacity="0.25"/>
+
+  <!-- 5 spectrum rays exiting prism -->
+  <line x1="88" y1="64" x2="116" y2="34" stroke="#16A34A" stroke-width="3.5" stroke-linecap="round" opacity="0.95"/>
+  <line x1="88" y1="64" x2="118" y2="48" stroke="#2563EB" stroke-width="3.5" stroke-linecap="round" opacity="0.95"/>
+  <line x1="88" y1="64" x2="118" y2="64" stroke="#F97316" stroke-width="3.5" stroke-linecap="round" opacity="0.95"/>
+  <line x1="88" y1="64" x2="118" y2="80" stroke="#EF4444" stroke-width="3.5" stroke-linecap="round" opacity="0.95"/>
+  <line x1="88" y1="64" x2="116" y2="94" stroke="#7C3AED" stroke-width="3.5" stroke-linecap="round" opacity="0.95"/>
+
+  <!-- Small accessibility person icon inside prism -->
+  <circle cx="62" cy="54" r="4.5" fill="#E2E8F0" opacity="0.8"/>
+  <path d="M62 60 L62 74 M55 66 L69 66 M58 84 L62 74 L66 84" stroke="#E2E8F0" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity="0.8"/>
+</svg>`;
+
   private renderHeader(): string {
     const isPopup = this.callbacks.isPopupWindow ?? false;
 
-    // === Popup window header — flat, no close/minimize, page URL strip ===
+    // === Popup window header — clean white ===
     if (isPopup) {
       const displayUrl = this.pageUrl
         ? (this.pageUrl.length > 52 ? this.pageUrl.slice(0, 50) + '…' : this.pageUrl)
         : '';
       const displayTitle = this.pageTitle || '';
+      
       const pageStrip = displayUrl
-        ? `<div style="background: rgba(0,0,0,0.25) !important; padding: 6px 16px !important; display: flex !important; align-items: center !important; gap: 8px !important; border-top: 1px solid rgba(255,255,255,0.1) !important;">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.7)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0 !important;"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><polyline points="13 2 13 9 20 9"></polyline></svg>
+        ? `<div style="padding: 6px 16px !important; display: flex !important; align-items: center !important; gap: 8px !important; border-top: 1px solid #E5E7EB !important;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#6B7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0 !important;"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><polyline points="13 2 13 9 20 9"></polyline></svg>
             <span style="display:flex !important; flex-direction:column !important; min-width:0 !important; gap:1px !important;">
-              ${displayTitle ? `<span style="font-size:11px !important; font-weight:600 !important; color:rgba(255,255,255,0.95) !important; white-space:nowrap !important; overflow:hidden !important; text-overflow:ellipsis !important; line-height:1.3 !important;">${displayTitle}</span>` : ''}
-              <span style="font-size:10px !important; color:rgba(255,255,255,0.65) !important; white-space:nowrap !important; overflow:hidden !important; text-overflow:ellipsis !important; line-height:1.3 !important; font-family:monospace !important;">${displayUrl}</span>
+              ${displayTitle ? `<span style="font-size:11px !important; font-weight:600 !important; color:#374151 !important; white-space:nowrap !important; overflow:hidden !important; text-overflow:ellipsis !important; line-height:1.3 !important;">${displayTitle}</span>` : ''}
+              <span style="font-size:10px !important; color:#6B7280 !important; white-space:nowrap !important; overflow:hidden !important; text-overflow:ellipsis !important; line-height:1.3 !important; font-family:monospace !important;">${displayUrl}</span>
             </span>
            </div>`
         : '';
 
       return `
-        <div id="panel-header" style="background: ${HEADER_BG} !important; color: white !important; user-select: none !important; flex-shrink: 0 !important;">
+        <div id="panel-header" style="background: #ffffff !important; border-bottom: 1px solid #E5E7EB !important; user-select: none !important; flex-shrink: 0 !important;">
           <div style="padding: 12px 16px !important; display: flex !important; align-items: center !important; justify-content: space-between !important;">
             <div style="display: flex !important; align-items: center !important; gap: 9px !important;">
-              <svg width="22" height="22" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0 !important;">
-                <circle cx="18" cy="18" r="18" fill="white" fill-opacity="0.15"/>
-                <path d="M18 8 L28 13 L28 23 L18 28 L8 23 L8 13 Z" stroke="white" stroke-width="1.5" fill="none"/>
-                <circle cx="18" cy="18" r="4" fill="white"/>
-              </svg>
-              <span style="font-size:14px !important; font-weight:700 !important; color:white !important; letter-spacing:-0.01em !important;">Accessibility Prism</span>
+              ${FloatingPanel.PRISM_LOGO_SVG}
+              <span style="font-size:14px !important; font-weight:700 !important; color:#1F2937 !important; letter-spacing:-0.01em !important;">Accessibility Prism</span>
             </div>
-            <button id="btn-export" title="Download accessibility report"
-              class="a11y-hdr-btn-export-popup"
-              style="background:transparent !important; border:none !important; padding:6px !important; display:flex !important; align-items:center !important; justify-content:center !important; cursor:pointer !important; color:rgba(255,255,255,0.8) !important; border-radius:4px !important; transition:background 0.15s !important;">
-              ${icons.ICON_EXPORT}
-            </button>
+            <div class="a11y-tooltip-wrap" style="position:relative !important; display:inline-flex !important;">
+              <button id="btn-export" aria-label="Download accessibility report"
+                class="a11y-hdr-btn-export-popup"
+                style="background:transparent !important; border:1px solid transparent !important; padding:6px !important; display:flex !important; align-items:center !important; justify-content:center !important; cursor:pointer !important; color:#4B5563 !important; border-radius:6px !important; transition:background 0.15s, border-color 0.15s !important;">
+                ${icons.ICON_EXPORT}
+              </button>
+              <span class="a11y-tooltip" role="tooltip">Download report</span>
+            </div>
           </div>
           ${pageStrip}
         </div>
@@ -566,23 +604,27 @@ export class FloatingPanel {
 
     // === Standalone / test fixture header — keeps collapse + close ===
     return `
-      <div id="panel-header" style="padding: 14px 16px !important; background: ${HEADER_BG} !important; color: white !important; display: flex !important; align-items: center !important; justify-content: space-between !important; cursor: pointer !important; border-radius: ${this.collapsed ? '12px' : '12px 12px 0 0'} !important; user-select: none !important;">
+      <div id="panel-header" style="padding: 12px 16px !important; background: #ffffff !important; border-bottom: 1px solid #E5E7EB !important; color: #1F2937 !important; display: flex !important; align-items: center !important; justify-content: space-between !important; cursor: pointer !important; border-radius: ${this.collapsed ? '12px' : '12px 12px 0 0'} !important; user-select: none !important;">
         <div style="display: flex !important; align-items: center !important; gap: 8px !important;">
-          <span class="a11y-panel-title">Accessibility Prism</span>
-          <span style="background: rgba(255,255,255,0.25) !important; padding: 2px 8px !important; border-radius: 4px !important; font-size: 11px !important; font-weight: 700 !important; color: white !important; line-height: 1.5 !important;">v3</span>
+          ${FloatingPanel.PRISM_LOGO_SVG}
+          <span class="a11y-panel-title" style="color:#1F2937 !important;">Accessibility Prism</span>
+          <span style="background: #EEF2FF !important; padding: 2px 8px !important; border-radius: 4px !important; font-size: 11px !important; font-weight: 700 !important; color: #4F46E5 !important; line-height: 1.5 !important;">v3</span>
         </div>
         <div style="display: flex !important; align-items: center !important; gap: 8px !important;">
-          <button id="btn-export" title="Download accessibility report"
-            class="a11y-hdr-btn"
-            style="background: rgba(255,255,255,0.1) !important; border: 1px solid rgba(255,255,255,0.2) !important; border-radius: 6px !important; width: 30px !important; height: 30px !important; display: flex !important; align-items: center !important; justify-content: center !important; cursor: pointer !important; color: rgba(255,255,255,0.85) !important; transition: all 0.15s !important;">
-            ${icons.ICON_EXPORT}
-          </button>
+          <div class="a11y-tooltip-wrap" style="position:relative !important; display:inline-flex !important;">
+            <button id="btn-export" aria-label="Download accessibility report"
+              class="a11y-hdr-btn a11y-hdr-btn-light"
+              style="background: #F3F4F6 !important; border: 1px solid #E5E7EB !important; border-radius: 6px !important; width: 30px !important; height: 30px !important; display: flex !important; align-items: center !important; justify-content: center !important; cursor: pointer !important; color: #4B5563 !important; transition: all 0.15s !important;">
+              ${icons.ICON_EXPORT}
+            </button>
+            <span class="a11y-tooltip" role="tooltip">Download report</span>
+          </div>
           <button id="btn-close-panel" title="Close Accessibility Prism"
-            class="a11y-hdr-btn a11y-hdr-btn-close"
-            style="background: rgba(255,255,255,0.1) !important; border: 1px solid rgba(255,255,255,0.2) !important; border-radius: 6px !important; width: 30px !important; height: 30px !important; display: flex !important; align-items: center !important; justify-content: center !important; cursor: pointer !important; color: rgba(255,255,255,0.85) !important; transition: all 0.15s !important;">
+            class="a11y-hdr-btn a11y-hdr-btn-close-light"
+            style="background: #F3F4F6 !important; border: 1px solid #E5E7EB !important; border-radius: 6px !important; width: 30px !important; height: 30px !important; display: flex !important; align-items: center !important; justify-content: center !important; cursor: pointer !important; color: #4B5563 !important; transition: all 0.15s !important;">
             ${icons.ICON_CLOSE}
           </button>
-          <span id="collapse-icon" style="display: flex !important; align-items: center !important; color: rgba(255,255,255,0.85) !important; margin-left: 4px !important;">
+          <span id="collapse-icon" style="display: flex !important; align-items: center !important; color: #6B7280 !important; margin-left: 4px !important;">
             ${this.collapsed ? icons.ICON_MAXIMIZE : icons.ICON_MINIMIZE}
           </span>
         </div>

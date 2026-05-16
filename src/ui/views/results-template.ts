@@ -68,7 +68,7 @@ export function renderResultsPage(config: ResultsPageConfig): string {
   // Nav bar
   html += `
     <div style="padding: 14px 16px !important; display: flex !important; align-items: center !important; gap: 8px !important; background: white !important; border-bottom: 1px solid ${BORDER} !important;">
-      <button id="btn-back" style="background:none !important;border:none !important;cursor:pointer !important;padding:2px !important;display:flex !important;align-items:center !important;gap:4px !important;font-size:13px !important;color:#6B7280 !important;">${ICON_CHEVRON_LEFT}<span>${escHtml(config.backLabel || 'Back')}</span></button>
+      <button id="btn-back" style="background: var(--back-bg, none) !important; border:none !important; cursor:pointer !important; padding:4px 6px !important; margin-left: -4px !important; border-radius: 6px !important; display:flex !important; align-items:center !important; gap:4px !important; font-size:13px !important; color: var(--back-color, #6B7280) !important; transition: background 0.15s, color 0.15s !important;">${ICON_CHEVRON_LEFT}<span>${escHtml(config.backLabel || 'Back')}</span></button>
       <h2 style="margin: 0 !important; font-size: 17px !important; font-weight: 700 !important; color: #1F2937 !important;">${escHtml(config.title)}</h2>
     </div>`;
 
@@ -230,6 +230,8 @@ export function attachResultsPageListeners(
         const isOpen = body.style.display !== 'none' && body.style.display !== '';
         body.style.setProperty('display', isOpen ? 'none' : 'block', 'important');
         if (chevron) chevron.style.transform = isOpen ? '' : 'rotate(180deg)';
+        if (!isOpen) card?.classList.add('is-expanded');
+        else card?.classList.remove('is-expanded');
       }
     }
   }, { signal });
