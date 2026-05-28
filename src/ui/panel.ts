@@ -56,6 +56,7 @@ interface PanelCallbacks {
   onRunReadingOrder: () => void;
   onRunScorecard: () => void;
   onExportScorecard: () => void;
+  onRefresh: () => void;
   onClose: () => void;
   onCancelTabWalk?: () => void;
   onShowInDevTools?: (auditType: 'acc-names' | 'aria' | 'form-labels', index: number, selector: string) => void;
@@ -589,13 +590,22 @@ export class FloatingPanel {
               ${FloatingPanel.PRISM_LOGO_SVG}
               <span style="font-size:14px !important; font-weight:700 !important; color:#1F2937 !important; letter-spacing:-0.01em !important;">Accessibility Prism</span>
             </div>
-            <div class="a11y-tooltip-wrap" style="position:relative !important; display:inline-flex !important;">
-              <button id="btn-export" aria-label="Download accessibility report"
-                class="a11y-hdr-btn-export-popup"
-                style="background:transparent !important; border:1px solid transparent !important; padding:6px !important; display:flex !important; align-items:center !important; justify-content:center !important; cursor:pointer !important; color:#4B5563 !important; border-radius:6px !important; transition:background 0.15s, border-color 0.15s !important;">
-                ${icons.ICON_EXPORT}
-              </button>
-              <span class="a11y-tooltip" role="tooltip">Download report</span>
+            <div style="display:flex !important; align-items:center !important; gap:4px !important;">
+              <div class="a11y-tooltip-wrap" style="position:relative !important; display:inline-flex !important;">
+                <button id="btn-refresh" aria-label="Clear results and overlay"
+                  style="background:transparent !important; border:1px solid transparent !important; padding:6px !important; display:flex !important; align-items:center !important; justify-content:center !important; cursor:pointer !important; color:#6B7280 !important; border-radius:6px !important; transition:background 0.15s, border-color 0.15s, color 0.15s !important;">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 .49-3.51"></path></svg>
+                </button>
+                <span class="a11y-tooltip" role="tooltip">Clear results &amp; overlay</span>
+              </div>
+              <div class="a11y-tooltip-wrap" style="position:relative !important; display:inline-flex !important;">
+                <button id="btn-export" aria-label="Download accessibility report"
+                  class="a11y-hdr-btn-export-popup"
+                  style="background:transparent !important; border:1px solid transparent !important; padding:6px !important; display:flex !important; align-items:center !important; justify-content:center !important; cursor:pointer !important; color:#4B5563 !important; border-radius:6px !important; transition:background 0.15s, border-color 0.15s !important;">
+                  ${icons.ICON_EXPORT}
+                </button>
+                <span class="a11y-tooltip" role="tooltip">Download report</span>
+              </div>
             </div>
           </div>
           ${pageStrip}
@@ -612,6 +622,14 @@ export class FloatingPanel {
           <span style="background: #EEF2FF !important; padding: 2px 8px !important; border-radius: 4px !important; font-size: 11px !important; font-weight: 700 !important; color: #4F46E5 !important; line-height: 1.5 !important;">v3</span>
         </div>
         <div style="display: flex !important; align-items: center !important; gap: 8px !important;">
+          <div class="a11y-tooltip-wrap" style="position:relative !important; display:inline-flex !important;">
+            <button id="btn-refresh" aria-label="Clear results and overlay"
+              class="a11y-hdr-btn a11y-hdr-btn-light"
+              style="background: #F3F4F6 !important; border: 1px solid #E5E7EB !important; border-radius: 6px !important; width: 30px !important; height: 30px !important; display: flex !important; align-items: center !important; justify-content: center !important; cursor: pointer !important; color: #6B7280 !important; transition: all 0.15s !important;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 .49-3.51"></path></svg>
+            </button>
+            <span class="a11y-tooltip" role="tooltip">Clear results &amp; overlay</span>
+          </div>
           <div class="a11y-tooltip-wrap" style="position:relative !important; display:inline-flex !important;">
             <button id="btn-export" aria-label="Download accessibility report"
               class="a11y-hdr-btn a11y-hdr-btn-light"
@@ -644,13 +662,19 @@ export class FloatingPanel {
       this.callbacks.onExportReport();
     });
 
+    this.container.querySelector('#btn-refresh')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.resetToHome();
+      this.callbacks.onRefresh();
+    });
+
     // Standalone fixture only: collapse toggle + close button
     if (!this.callbacks.isPopupWindow) {
       const header = this.container.querySelector('#panel-header') as HTMLElement;
       if (header) {
         header.addEventListener('click', (e) => {
           const target = e.target as HTMLElement;
-          if (target.closest('#btn-export') || target.closest('#btn-close-panel')) return;
+          if (target.closest('#btn-export') || target.closest('#btn-refresh') || target.closest('#btn-close-panel')) return;
           this.collapsed = !this.collapsed;
           this.render();
         });
@@ -660,6 +684,39 @@ export class FloatingPanel {
         this.callbacks.onClose();
       });
     }
+  }
+
+  /** Reset all panel state and return to the home screen. Called by the refresh button. */
+  private resetToHome() {
+    this.currentView = 'pre-screen';
+    this.scopeElement = null;
+    this.scopeLabel = '';
+    this.pendingRerunView = null;
+    this.violations = [];
+    this.components = new Map();
+    this.dedupedIssues = [];
+    this.regions = [];
+    this.keyboardIssues = [];
+    this.componentFlows = [];
+    this.headingData = { headings: [], issues: [] };
+    this.landmarkData = { landmarks: [], issues: [] };
+    this.contrastIssues = [];
+    this.focusMgmtIssues = [];
+    this.liveRegionData = { regions: [], issues: [] };
+    this.touchTargetIssues = [];
+    this.altTextIssues = [];
+    this.accNameResult = { entries: [], issueCount: 0, warningCount: 0 };
+    this.ariaResult = { issues: [], errorCount: 0, warningCount: 0 };
+    this.formLabelsResult = { issues: [], totalControls: 0, labeledControls: 0 };
+    this.walkthroughEntries = [];
+    this.walkthroughIndex = 0;
+    this.readingOrderEntries = [];
+    this.scorecardData = null;
+    this.manualTrail = [];
+    this.manualRecordingStarted = false;
+    this.tabWalkProgress = null;
+    this.scrollPositions.clear();
+    this.render();
   }
 
   // === View rendering delegation ===

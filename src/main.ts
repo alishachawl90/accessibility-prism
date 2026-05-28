@@ -49,6 +49,7 @@ class A11yAnalyzer {
       onBeginManualRecording: () => this.startManualKeyboard(),
       onStopManualKeyboard: () => this.stopManualKeyboard(),
       onResetManualTrail: () => this.resetManualTrail(),
+      onRefresh: () => { clearOverlay(this.overlaySvg); this.stopManualKeyboard(); this.dismissPicker(); },
       onExportReport: () => this.exportReport(),
       onViolationClick: (nodes) => this.handleViolationClick(nodes),
       onShowComponentFlow: (flow, instanceIdx) => this.showComponentFlow(flow, instanceIdx),

@@ -127,6 +127,7 @@ class A11yContent {
       case 'HIGHLIGHT_BY_SELECTOR':   this.highlightBySelector(msg.selector, msg.color, msg.label); break;
       case 'SHOW_COMPONENT_FLOW':     this.showComponentFlow(msg.componentName, msg.instanceIdx); break;
       case 'CANCEL_TAB_WALK':         this.tabWalkCancelled = true; break;
+      case 'CLEAR_OVERLAY':           clearOverlay(this.overlaySvg); break;
       case 'PREPARE_DEVTOOLS_INSPECT': this.prepareDevToolsInspect(msg.selector); break;
     }
   }

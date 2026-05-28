@@ -69,6 +69,7 @@ class StandaloneA11yUI {
       onBeginManualRecording: () => this.startManualKeyboard(),
       onStopManualKeyboard: () => this.stopManualKeyboard(),
       onResetManualTrail: () => this.resetManualTrail(),
+      onRefresh: () => { clearOverlay(this.overlaySvg); this.stopManualKeyboard(); this.dismissPicker(); },
       onExportReport: () => this.exportReport(),
       onViolationClick: (nodes) => this.handleViolationClick(nodes),
       onShowComponentFlow: (flow, instanceIdx) => this.showComponentFlow(flow, instanceIdx),
@@ -383,11 +384,14 @@ class PopupWindowUI {
       onStopManualKeyboard: () => this.cmd({ type: 'STOP_MANUAL' }),
       onResetManualTrail: () => this.cmd({ type: 'RESET_MANUAL' }),
       onHighlightBySelector: (sel: string) => this.cmd({ type: 'HIGHLIGHT_BY_SELECTOR', selector: sel }),
+      onRefresh: () => this.cmd({ type: 'CLEAR_OVERLAY' }),
       onExportReport: () => this.cmd({ type: 'EXPORT_REPORT' }),
       onViolationClick: (nodes) => {
-        // nodes here are serialized { selector, snippet } objects (not real Elements)
+        // nodes here are serialized { selector, snippet } objects (not real Elements).
+        // When nodes is empty (e.g. navigating back), clear the overlay instead.
         const sel = (nodes[0] as unknown as { selector?: string })?.selector;
         if (sel) this.cmd({ type: 'HIGHLIGHT_BY_SELECTOR', selector: sel });
+        else this.cmd({ type: 'CLEAR_OVERLAY' });
       },
       onShowComponentFlow: (flow, instanceIdx) => this.cmd({ type: 'SHOW_COMPONENT_FLOW', componentName: flow.component.name, instanceIdx }),
       onRunHeadings: () => this.cmd({ type: 'RUN_HEADINGS' }),

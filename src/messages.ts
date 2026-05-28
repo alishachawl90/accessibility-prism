@@ -45,7 +45,8 @@ export type CommandMessage =
   | { type: 'HIGHLIGHT_BY_SELECTOR'; selector: string; color?: string; label?: string }
   | { type: 'PREPARE_DEVTOOLS_INSPECT'; selector: string }
   | { type: 'SHOW_COMPONENT_FLOW'; componentName: string; instanceIdx: number }
-  | { type: 'CANCEL_TAB_WALK' };
+  | { type: 'CANCEL_TAB_WALK' }
+  | { type: 'CLEAR_OVERLAY' };
 
 // ────────────────────────────────────────────────────────────────────────────
 // Result messages: Content Script → Popup
