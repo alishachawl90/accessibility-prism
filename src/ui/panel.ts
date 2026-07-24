@@ -594,7 +594,7 @@ export class FloatingPanel {
               <div class="a11y-tooltip-wrap" style="position:relative !important; display:inline-flex !important;">
                 <button id="btn-refresh" aria-label="Clear results and overlay"
                   style="background:transparent !important; border:1px solid transparent !important; padding:6px !important; display:flex !important; align-items:center !important; justify-content:center !important; cursor:pointer !important; color:#6B7280 !important; border-radius:6px !important; transition:background 0.15s, border-color 0.15s, color 0.15s !important;">
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 .49-3.51"></path></svg>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
                 </button>
                 <span class="a11y-tooltip" role="tooltip">Clear results &amp; overlay</span>
               </div>
@@ -626,7 +626,7 @@ export class FloatingPanel {
             <button id="btn-refresh" aria-label="Clear results and overlay"
               class="a11y-hdr-btn a11y-hdr-btn-light"
               style="background: #F3F4F6 !important; border: 1px solid #E5E7EB !important; border-radius: 6px !important; width: 30px !important; height: 30px !important; display: flex !important; align-items: center !important; justify-content: center !important; cursor: pointer !important; color: #6B7280 !important; transition: all 0.15s !important;">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 .49-3.51"></path></svg>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
             </button>
             <span class="a11y-tooltip" role="tooltip">Clear results &amp; overlay</span>
           </div>

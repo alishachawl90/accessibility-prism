@@ -2,9 +2,11 @@ import type { HeadingNode, HeadingIssue, HeadingAnalysisResult } from './types';
 
 function isVisible(el: Element): boolean {
   const cs = window.getComputedStyle(el);
+  // Only exclude elements completely removed from rendering.
+  // Screen-reader-only headings (clip, clip-path, 0-size) are still semantically
+  // important and must appear in the heading outline.
   if (cs.display === 'none' || cs.visibility === 'hidden') return false;
-  const rect = el.getBoundingClientRect();
-  return rect.width > 0 || rect.height > 0;
+  return true;
 }
 
 function isExtension(el: Element): boolean {

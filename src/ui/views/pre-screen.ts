@@ -151,7 +151,7 @@ export function renderPreScreen(): string {
       <span style="color: #9CA3AF !important;">·</span>
       <span style="font-size: 11px !important; color: #6B7280 !important; line-height: 1.5 !important;">Powered by axe-core + Prism Rules</span>
       <span style="color: #9CA3AF !important;">·</span>
-      <span style="font-size: 11px !important; color: #6B7280 !important; line-height: 1.5 !important;">Built by Madhur Batra</span>
+      <span style="font-size: 11px !important; color: #6B7280 !important; line-height: 1.5 !important;">Built by Madhur & Alisha</span>
     </div>
   `;
 
