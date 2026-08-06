@@ -1,6 +1,6 @@
 # Accessibility Prism — Agent Handoff Documentation
 
-**Version:** 3.0.0  
+**Version:** 3.0.1  
 **Type:** Chrome Extension (detached popup window)  
 **Stack:** TypeScript, Vite, axe-core, Playwright
 
