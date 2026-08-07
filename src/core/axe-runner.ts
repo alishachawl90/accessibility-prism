@@ -1,6 +1,8 @@
 import axe from 'axe-core';
 import type { AxeViolation, AxeCheckResult, AxeResultType } from './types';
-import { registerPrismRules, isPrismRule } from './custom-rules/index';
+import { isPrismRule } from './custom-rules/index';
+// NOTE: registerPrismRules import removed while Prism custom rules are temporarily disabled (see runAxe below).
+// Restore `import { registerPrismRules, isPrismRule } from './custom-rules/index';` when re-enabling.
 
 function mapChecks(checks: any[]): AxeCheckResult[] {
   if (!checks || !Array.isArray(checks)) return [];
@@ -69,7 +71,9 @@ function mapResult(item: any, resultType: AxeResultType): AxeViolation | null {
 
 export async function runAxe(root?: Element): Promise<AxeViolation[]> {
   try {
-    registerPrismRules();
+    // TEMPORARILY DISABLED — Prism custom rules (registerPrismRules) produce the "experimental"
+    // result-type bucket, which was flagged as inaccurate. Uncomment to re-enable.
+    // registerPrismRules();
 
     const context: any = root
       ? { include: [root], exclude: ['#a11y-analyzer-panel', '#a11y-analyzer-overlay'] }
@@ -83,8 +87,11 @@ export async function runAxe(root?: Element): Promise<AxeViolation[]> {
           'wcag2a', 'wcag2aa', 'wcag2aaa',
           'wcag21a', 'wcag21aa',
           'wcag22aa',
-          'best-practice',
-          'prism-custom',
+          // TEMPORARILY DISABLED — 'best-practice' and 'prism-custom' result types were flagged
+          // as inaccurate. Uncomment both the tags below and registerPrismRules() above together
+          // to restore the "Best Practice" and "Experimental" result-type classifications.
+          // 'best-practice',
+          // 'prism-custom',
         ],
       },
     });
