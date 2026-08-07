@@ -196,7 +196,7 @@ No data collection. All analysis runs locally in the browser tab. No external re
 
 ## Credits
 
-Built by **Madhur Batra**
+Built by **Alisha**
 
 Powered by [axe-core](https://github.com/dequelabs/axe-core) by Deque Systems and [dom-accessibility-api](https://github.com/eps1lon/dom-accessibility-api)
 
