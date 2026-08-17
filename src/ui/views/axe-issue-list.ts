@@ -79,13 +79,14 @@ export function renderAxeIssueList(data: AxeListData): string {
   let html = renderNavBar('Issues', true, 'Back');
 
   // Result type filter chips
-  // TEMPORARILY DISABLED — 'best-practice' and 'experimental' chips hidden while those
-  // classifications are disabled at the source (see core/axe-runner.ts runAxe()).
+  // 'experimental' chip stays hidden — Prism custom rules remain disabled at the source
+  // (see core/axe-runner.ts runAxe()). 'best-practice' chip restored so users can tell
+  // must-fix violations/needs-review apart from good-practice-only findings.
   html += `
     <div style="padding: 10px 16px !important; background: white !important; border-bottom: 1px solid ${BORDER} !important; display: flex !important; gap: 8px !important; flex-wrap: wrap !important;">
       ${resultTypeChip('violation', active.has('violation'), typeCounts.violation)}
       ${resultTypeChip('needs-review', active.has('needs-review'), typeCounts['needs-review'])}
-      ${/* resultTypeChip('best-practice', active.has('best-practice'), typeCounts['best-practice']) */ ''}
+      ${resultTypeChip('best-practice', active.has('best-practice'), typeCounts['best-practice'])}
       ${/* typeCounts.experimental > 0 ? resultTypeChip('experimental', active.has('experimental'), typeCounts.experimental) : '' */ ''}
     </div>
   `;

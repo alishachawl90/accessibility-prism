@@ -19,12 +19,16 @@ function isInsideExtension(el: Element | null): boolean {
   return !!el.closest('#a11y-analyzer-panel') || !!el.closest('#a11y-analyzer-overlay');
 }
 
-// NOTE: `best-practice` is just an axe-core categorization tag, not a severity downgrade.
-// axe-core / axe DevTools report these as normal violations/needs-review — Prism used to
-// segregate them into a separate 'best-practice' resultType bucket and (temporarily) stopped
-// running them entirely. Both behaviors were inaccurate vs. axe-core's actual semantics, so
-// isBestPractice()/mapResult() no longer reclassify these — they're treated exactly like any
-// other axe-core rule to match axe DevTools accuracy.
+// `best-practice` is an axe-core categorization tag for rules with no WCAG success-criterion
+// tag attached — i.e. recommended good practice, not a legal/conformance requirement. axe-core
+// and axe DevTools still bucket these under plain violations/needs-review at the API level, but
+// Prism deliberately re-surfaces them as a distinct 'best-practice' resultType so users can tell
+// "must fix for WCAG/EAA conformance" apart from "good to have, not required." This was briefly
+// removed (to chase 1:1 axe DevTools parity) but caused confusion — see AGENTS.md/README changelog.
+function isBestPractice(tags: string[]): boolean {
+  return tags.includes('best-practice');
+}
+
 function mapResultNodes(violation: any): AxeViolation['nodes'] {
   return violation.nodes
     .map((node: any) => {
@@ -57,6 +61,8 @@ function mapResult(item: any, resultType: AxeResultType): AxeViolation | null {
   const nodes = mapResultNodes(item);
   if (nodes.length === 0) return null;
 
+  const actualType = isBestPractice(item.tags || []) ? 'best-practice' : resultType;
+
   return {
     id: item.id,
     impact: item.impact,
@@ -65,7 +71,7 @@ function mapResult(item: any, resultType: AxeResultType): AxeViolation | null {
     helpUrl: item.helpUrl || '',
     description: item.description,
     nodes,
-    resultType,
+    resultType: actualType,
   };
 }
 
