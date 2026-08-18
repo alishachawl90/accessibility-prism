@@ -90,18 +90,6 @@ Install **Accessibility Prism** from the Chrome Web Store and click **Add to Chr
 5. Use the **Scope** bar at the top of any result view to narrow analysis to a CSS selector or a picked element; click **Clear** to return to full-page results
 6. Export an HTML report of the axe scan from the panel header download button
 
-## Understanding Result Types
-
-Prism separates axe-core findings into three types, and the distinction matters for prioritisation:
-
-- **✕ Violation** — fails a mapped WCAG success criterion. Must fix for conformance.
-- **? Needs Review** — axe-core could not determine pass or fail automatically. Requires human judgement; never assume it passes.
-- **★ Best Practice** — a recommended practice with **no** WCAG success-criterion mapping. Worth fixing, but not a conformance requirement.
-
-By default the **Needs Review** chip is switched off, so those results are hidden on first load — axe-core's "incomplete" findings need human judgement and would otherwise add noise. Toggle the chip on when you are ready to work through them.
-
-This distinction is deliberate: a rule like `empty-heading` is tagged `best-practice` in axe-core because it maps to no WCAG criterion. It's genuinely worth fixing (an empty heading announces nothing to a screen reader) but it won't fail a WCAG/EAA audit. Surfacing that difference prevents teams from treating optional improvements as release blockers, or vice versa.
-
 ## Limitations
 
 Accessibility Prism is a debugging and inspection tool, not a compliance certification:
