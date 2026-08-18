@@ -41,12 +41,19 @@ Every audit below is a **one-click button** inside the popup panel — no test f
 - **Component Keyboard Flow** — inspect tab flow within a single UI component
 - **Focus Management** — validates dialog/modal focus trapping and return-focus behavior
 
-### Screen Reader Simulation
-- **Accessible Name Inspector** — computed name, role, and state for every significant element, grouped by status (Error / Warning / Pass)
-- **ARIA Validation** — broken references, invalid roles, forbidden patterns, missing required props
-- **Form Labels Audit** — unlabeled controls, placeholder-only inputs, missing fieldset legends
-- **Announcement Walk-Through** — step through elements hearing what a screen reader would announce, computed via the W3C Accessible Name and Description Computation spec
-- **Reading Order** — numbered DOM-order markers drawn directly on the page
+### Screen Reader Simulation — the part that sets Prism apart
+
+Most accessibility tools tell you a rule failed. Very few tell you what a screen reader user will actually *hear*.
+
+Checking that normally means installing NVDA, JAWS, or VoiceOver and learning to drive it — a real barrier for the developers, designers, and product managers who simply need to know whether their component announces sensibly. Prism brings that into the panel.
+
+- **Announcement Walk-Through** — step through the page one element at a time and read exactly what would be announced: name, role, state, and description. Computed using the W3C Accessible Name and Description Computation algorithm — the same specification browsers use to build their own accessibility tree — not guesswork or a simplified approximation.
+- **Accessible Name Inspector** — the computed name, role, and state of every significant element, grouped by status (Error / Warning / Pass). Spot the control that announces as nothing more than "button" before a user does.
+- **Reading Order** — numbered markers drawn directly on the page showing the true DOM order a screen reader follows, which is frequently not the order the eye follows.
+- **ARIA Validation** — broken `aria-labelledby` references, invalid roles, forbidden patterns, missing required properties: the ARIA mistakes that silently distort or erase what gets announced.
+- **Form Labels Audit** — unlabeled controls, placeholder-only inputs, missing fieldset legends — the most common reason a form is impossible to complete by ear.
+
+This is simulation, not a replacement for testing with real assistive technology (see Limitations). But it catches the majority of announcement problems in seconds, at the point in the workflow where they are cheapest to fix.
 
 ### Monitoring
 - **Live Region Monitor** — detects `aria-live` regions and `role="alert"` elements with severity breakdown and assertive/polite classification
