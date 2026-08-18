@@ -5,7 +5,7 @@ Ensuring Web Accessibility with Accessibility Prism: A Comprehensive Guide
 
 ## Introduction
 
-In today's digital age, web accessibility is more important than ever. Ensuring that your website is accessible to everyone, including people with disabilities, is not just a legal requirement but also a moral obligation. To make this easier for developers, QA engineers, and accessibility specialists, we built **Accessibility Prism** — an all-in-one Chrome/Edge extension that runs directly in the browser and consolidates 15 accessibility audits into a single panel. This article walks through our approach, the key features of the extension, and how to use it day-to-day.
+In today's digital age, web accessibility is more important than ever. Ensuring that your website is accessible to everyone, including people with disabilities, is not just a legal requirement but also a moral obligation. To make this easier for developers, QA engineers, and accessibility specialists, we built **Accessibility Prism** — an all-in-one Chrome extension that runs directly in the browser and consolidates 15 accessibility audits into a single panel. This article walks through our approach, the key features of the extension, and how to use it day-to-day.
 
 ### Why Web Accessibility Matters
 
@@ -20,6 +20,8 @@ Web accessibility testing is fragmented. Teams juggle multiple tools — automat
 Because it runs interactively in the browser rather than in CI, it complements automated pipeline testing rather than replacing it: use axe in CI to catch regressions, and Prism when you need to actually inspect, understand, and debug an issue on a live page.
 
 ## Key Features
+
+Every audit below is a **one-click button** inside the popup panel — no test file to write, no CLI to run, no configuration.
 
 ### Automated Scanning (axe-core)
 - **Full Page Scan** — axe-core analysis across Violations, Needs Review, and Best Practice findings
@@ -49,51 +51,19 @@ Because it runs interactively in the browser rather than in CI, it complements a
 ### Monitoring
 - **Live Region Monitor** — detects `aria-live` regions and `role="alert"` elements with severity breakdown and assertive/polite classification
 
-## How It Works
-
-Each audit is a **one-click button** inside the popup panel — no test file to write, no CLI to run.
-
-| Audit | What it does | When to use it |
-|---|---|---|
-| **Full Page Scan** | Runs axe-core across the entire page | First pass on any page — catches the broadest range of WCAG issues |
-| **Partial Page Scan** | Runs axe-core against a single picked element/CSS selector | Narrowing down to one component after a full scan, or testing a component in isolation |
-| **Heading Structure** | Validates H1–H6 hierarchy | Verifying document outline and skip-level errors |
-| **Landmark Overview** | Maps ARIA landmarks (`header`, `nav`, `main`, etc.) | Checking page regions are correctly exposed to assistive tech |
-| **Alt Text Audit** | Checks images for missing, suspicious, or overly long alt text | Content/image review before publishing |
-| **Keyboard Analysis** | Automated tab-order + focus-trap detection | Regression-testing keyboard navigation without manually tabbing through |
-| **Manual Keyboard Test** | Records your live tab trail with on-page arrows | Verifying keyboard behavior a static analyzer can't infer (visual focus order, custom widgets) |
-| **Component Keyboard Flow** | Shows tab stops and inline issues within one component | Debugging a specific widget's keyboard behavior |
-| **Focus Management** | Validates dialog/modal focus trapping and return focus | Testing modals, drawers, and overlays |
-| **Accessible Name Inspector** | Computes the accessible name/role/state per element | Debugging "screen reader announces the wrong thing" issues |
-| **ARIA Validation** | Flags invalid/broken ARIA usage | Catching ARIA misuse |
-| **Form Labels Audit** | Flags unlabeled or poorly labeled form controls | Form accessibility review before a form ships |
-| **Announcement Walk-Through** | Step-by-step simulated screen reader narration | Sanity-checking the actual experience for a screen reader user |
-| **Reading Order** | Numbered DOM-order markers drawn on the page | Verifying visual order matches DOM order |
-| **Live Region Monitor** | Flags `aria-live`/`role="alert"` regions | Checking dynamic content is announced correctly |
-
 ## Setup
 
-Accessibility Prism ships as a Chrome/Edge Manifest V3 extension built with TypeScript and Vite.
+Accessibility Prism ships as a Chrome Manifest V3 extension built with TypeScript and Vite.
 
-### Dependencies
+### Installation
+
+Install **Accessibility Prism** from the Chrome Web Store and click **Add to Chrome**. That's the whole setup — no build step, no configuration, no project changes.
+
+### What's under the hood
 - **axe-core** — automated WCAG rule engine
 - **dom-accessibility-api** — W3C AccName spec-compliant accessible name/description computation, powering the SR Walk-Through
 - **Playwright** — automated UI test suite for the extension itself (147 tests across 14 spec files)
 - No UI frameworks — vanilla TypeScript, kept deliberately lightweight
-
-### Installation
-
-```bash
-git clone https://github.com/alishachawl90/accessibility-prism-standalone.git
-cd accessibility-prism-standalone
-npm install
-npm run build
-```
-
-Then in Chrome/Edge:
-1. Open `chrome://extensions/` (or `edge://extensions/`)
-2. Enable **Developer mode**
-3. Click **Load unpacked** → select the **`dist/`** folder (created by `npm run build`; contains `manifest.json`, `background.js`, `content.js`, `panel.js`, `panel.html`, and `icons/`)
 
 ## Usage
 
@@ -110,19 +80,17 @@ Every audit runs live in the current tab the moment you click its button, and re
 
 - **Full Page Scan** → axe-core runs against the page → rule cards appear, grouped and filterable by result type, impact, WCAG level, and free-text search
 - Clicking a rule card opens **Issue Details**: every occurrence, its selector, HTML snippet, and a **Highlight on page** button
-- The extension's own correctness is verified by its Playwright suite (`npm test`), which drives the popup exactly as a user would, against a deliberately "bad accessibility" fixture page
+- The extension's own correctness is covered by a Playwright suite that drives the popup exactly as a user would, against a deliberately "bad accessibility" fixture page
 
 Note that by default the **Needs Review** filter chip is off — axe-core's "incomplete" results need human judgment and are excluded from the initial view to reduce noise. Toggle the chip on to see them.
 
 ## Understanding Result Types
 
-Prism distinguishes three axe-core result types, which matters for prioritisation:
+Prism separates axe-core findings into three types, and the distinction matters for prioritisation:
 
-| Type | Meaning | Action |
-|---|---|---|
-| **✕ Violation** | Fails a mapped WCAG success criterion | Must fix for conformance |
-| **? Needs Review** | axe-core couldn't determine pass/fail automatically | Requires manual human judgement |
-| **★ Best Practice** | Recommended practice with **no** WCAG success-criterion mapping | Good to fix, not a conformance requirement |
+- **✕ Violation** — fails a mapped WCAG success criterion. Must fix for conformance.
+- **? Needs Review** — axe-core could not determine pass or fail automatically. Requires human judgement; never assume it passes.
+- **★ Best Practice** — a recommended practice with **no** WCAG success-criterion mapping. Worth fixing, but not a conformance requirement.
 
 This distinction is deliberate: a rule like `empty-heading` is tagged `best-practice` in axe-core because it maps to no WCAG criterion. It's genuinely worth fixing (an empty heading announces nothing to a screen reader) but it won't fail a WCAG/EAA audit. Surfacing that difference prevents teams from treating optional improvements as release blockers, or vice versa.
 

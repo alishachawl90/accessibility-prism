@@ -2,34 +2,27 @@
 
 **Current version: v3.0.1** | [Changelog](#changelog)
 
-A comprehensive, all-in-one accessibility testing Chrome extension that goes far beyond automated scanning. Accessibility Prism combines axe-core engine analysis with manual testing tools, visual overlays, and plain-English scored reports — giving developers, QA engineers, and accessibility specialists everything they need in a single panel.
+A comprehensive, all-in-one accessibility testing Chrome extension that goes far beyond automated scanning. Accessibility Prism combines axe-core engine analysis with manual testing tools, visual overlays, and plain-English fix guidance — giving developers, QA engineers, and accessibility specialists everything they need in a single panel.
 
 ## The Problem
 
 Web accessibility testing is fragmented. Teams juggle multiple tools — automated scanners that catch only 30-40% of issues, separate keyboard testers, manual screen reader checks, ARIA validators — each with different UIs, different output formats, and no unified view. Issues fall through the cracks, and non-technical stakeholders struggle to understand raw audit data.
 
-**Accessibility Prism solves this** by consolidating 15+ accessibility checks into one extension with scored reports anyone can understand.
+**Accessibility Prism solves this** by consolidating 15 accessibility audits into one extension with plain-English findings anyone can understand.
 
 ## Features
 
-### Accessibility Scorecard
-Run every analysis engine at once and get an A–F scored report across five categories: Content & Naming, Structure & Navigation, Keyboard & Interaction, ARIA & Semantics, and Visual Clarity. Export standalone HTML reports for stakeholders.
-
 ### Automated Scanning
-- **Full Page Scan** — axe-core analysis with violations, needs-review, best-practice, and 10 custom Prism rules (text spacing, focus indicators, scrollable keyboard access, link distinguishability, and more)
+- **Full Page Scan** — axe-core analysis across violations, needs-review, and best-practice findings
 - **Partial Page Scan** — pick any element to scope the scan to just that section
 - **Component Scoping** — every audit result view has a scope bar at the top: type a CSS selector or use the element picker to re-run any analysis against a specific component or section instead of the full page. Clear scope to return to full-page results
-- Multi-select result-type filters (Violation / Needs Review / Best Practice / Experimental), severity filters, WCAG level filter, and text search across all results
+- Multi-select result-type filters (Violation / Needs Review / Best Practice), impact filters, WCAG level filter, and text search across all results
 - Group results by Rule, Page Region, or UI Component
 
 ### Structure & Semantics
 - **Heading Structure** — hierarchy analysis with skip-level detection and visual H1–H6 markers drawn on the page
 - **Landmark Overview** — ARIA landmark mapping with dashed-border overlays and role labels
 - **Alt Text Audit** — flags missing, suspicious ("image of…"), or excessively long alternative text
-
-### Visual
-- **Color Contrast** — text contrast ratio checking against WCAG AA/AAA thresholds, with per-issue WCAG fix guidance
-- **Touch Target Size** — measures interactive elements against WCAG 2.5.5 and 2.5.8
 
 ### Keyboard & Focus
 - **Keyboard Analysis** — detects tab order issues, focus traps, and inaccessible interactives; results grouped by type, region, or component with collapsible accordions and WCAG knowledge blocks
@@ -48,7 +41,7 @@ Run every analysis engine at once and get an A–F scored report across five cat
 - **Live Region Monitor** — detects `aria-live` regions and `role="alert"` elements with severity breakdown, assertive/polite classification, and collapsible grouped issues
 
 ### WCAG Knowledge Blocks
-Every expanded issue card across Keyboard, Form Labels, ARIA Validation, and Color Contrast views shows an inline knowledge block with:
+Every expanded issue card across Keyboard, Form Labels, and ARIA Validation views shows an inline knowledge block with:
 - The specific WCAG success criterion and level
 - A plain-English statement of the user impact
 - A concrete fix suggestion
@@ -59,37 +52,21 @@ Every analysis draws contextual markers directly on the page — heading badges,
 
 ### Reports & Export
 - Standalone HTML accessibility reports (full page scan)
-- Scorecard HTML reports with category breakdowns and narrative summaries
 - Designed for sharing with non-technical stakeholders
 
 ### UX Details
-- **Loading spinner** — displayed for audits that take time (axe full scan, keyboard analysis, scorecard) so the panel never appears frozen
+- **Loading spinner** — displayed for audits that take time (axe full scan, keyboard analysis) so the panel never appears frozen
 - **Scroll restore** — navigating back to a results list restores the previous scroll position
 - Parallel test execution with retry for flaky network conditions
 
 ## Installation
 
-### From the Edge Add-ons Store
-Search for **Accessibility Prism** in the [Microsoft Edge Add-ons store](https://microsoftedge.microsoft.com/addons/) and click **Get**.
-
-### Load from Source (Developer)
-
-```bash
-git clone https://github.com/user/accessibility-prism.git
-cd accessibility-prism
-npm install
-npm run build
-```
-
-Then in Edge/Chrome:
-1. Open `edge://extensions/` (or `chrome://extensions/`)
-2. Enable **Developer mode**
-3. Click **Load unpacked** → select the **`dist/`** folder (this is where `npm run build` outputs `manifest.json`, `background.js`, `content.js`, `panel.js`, `panel.html`, and `icons/`)
+Install **Accessibility Prism** from the Chrome Web Store and click **Add to Chrome**.
 
 ## Usage
 
 1. Click the **Accessibility Prism** icon in the browser toolbar — a detached popup window opens
-2. Select any analysis — Scorecard, Full Page Scan, Heading Structure, SR Walk-Through, etc.
+2. Select any analysis — Full Page Scan, Heading Structure, SR Walk-Through, etc.
 3. Results appear in the popup panel; visual overlays are drawn directly on the page behind it
 4. Click any issue card to expand it: see the HTML snippet, CSS selector, WCAG criterion, fix guidance, and a Highlight button
 5. Use the **Scope** bar at the top of any result view to narrow analysis to a CSS selector or a picked element; click **Clear** to return to full-page results
@@ -139,7 +116,7 @@ public/
 - **Detached popup window** — The panel runs in a completely separate browser window, eliminating host-page CSS conflicts and enabling testing at any viewport size, including responsive/mobile simulation
 - **Element serialization boundary** — DOM `Element` references cannot cross contexts. Every element is serialized to `{selector, snippet}` before sending via the Chrome port. `getCssSelector()`, `getSnippet()`, and `getElementContext()` all accept `Element | SerializedElement` so rendering code works in both contexts
 - **Scope cleared on navigation** — An `onClearScope` callback sends `CLEAR_SCOPE` to the content script whenever the user navigates back to the home screen, preventing scope bleed-over between different audit types
-- **Zero remote code** — Everything is bundled locally (axe-core included), fully Chrome/Edge Web Store compliant
+- **Zero remote code** — Everything is bundled locally (axe-core included), fully Chrome Web Store compliant
 - **W3C AccName spec for SR simulation** — The Announcement Walk-Through uses `dom-accessibility-api` (same algorithm as browsers) for accurate accessible name/role/state computation
 - **Centralised WCAG knowledge** — `utils/issue-knowledge.ts` is the single source of truth for all per-issue-type WCAG criteria, user impact statements, fix suggestions, and learn-more links
 
@@ -164,6 +141,10 @@ No data collection. All analysis runs locally in the browser tab. No external re
 ## Changelog
 
 ### Unreleased
+- **Chrome-only publication prep** — Removed all Microsoft Edge references from the README and article; the extension ships to the Chrome Web Store only. Replaced the "Load from Source (Developer)" / Developer-mode / Load-unpacked instructions in both docs with a single Chrome Web Store install line.
+- **Removed disabled features from user-facing docs** — README Features and Usage no longer advertise the Accessibility Scorecard, Color Contrast, Touch Target Size, the Experimental result type, or the 10 custom Prism rules, all of which are currently disabled in `pre-screen.ts`/`axe-runner.ts`. The docs now list exactly the 15 audits the UI actually exposes. Architecture and Changelog sections are unchanged (source files still exist; changelog is a historical record).
+- **Fixed store listing text** — `public/manifest.json` description advertised "10 custom rules" while they are disabled. Now reads "All-in-one accessibility testing: axe scanning, keyboard & ARIA analysis, screen reader simulation, and visual overlays." (120 chars, within the 132 limit).
+- **Article restructured for publication** — Dropped the basic "How It Works" audit table; its one useful line ("every audit is a one-click button… no CLI to run") moved into Key Features. Converted the remaining result-types table to prose, leaving the article table-free.
 - **Restored `best-practice` result-type distinction in Axe Scan** — Re-added `isBestPractice()` reclassification in `mapResult()` (`src/core/axe-runner.ts`) and the "Best Practice" filter chip in `axe-issue-list.ts`, both of which were removed in v3.0.1 while chasing 1:1 axe DevTools parity (see `0e96f8e` / `8b6ab5c`). Rationale: axe-core's `best-practice` tag means a rule has no WCAG success-criterion mapping — i.e. good practice, not a conformance requirement — and users were confused seeing rules like `empty-heading` rendered identically to real WCAG violations ("✕ Violation") with no way to tell them apart. The `runOnly` cleanup from `0e96f8e` (dropping the custom tag filter to match axe-core's true default rule set) is unaffected and stays as-is. `prism-custom` rules remain disabled (`registerPrismRules()` still commented out).
 
 ### v3.0.1
