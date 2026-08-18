@@ -17,6 +17,8 @@ Web accessibility testing is fragmented. Teams juggle multiple tools — automat
 
 **Accessibility Prism addresses this** by combining axe-core engine analysis with manual testing tools and visual page overlays — all inside a single detached popup window that opens with one click, with no separate app, test file, or CI pipeline required.
 
+Two capabilities set it apart from the usual scanner: it tells you **what a screen reader will actually announce**, and it verifies **what the keyboard actually does** rather than what the DOM implies it should. Both are covered below.
+
 Because it runs interactively in the browser rather than in CI, it complements automated pipeline testing rather than replacing it: use axe in CI to catch regressions, and Prism when you need to actually inspect, understand, and debug an issue on a live page.
 
 ## Key Features
@@ -35,11 +37,18 @@ Every audit below is a **one-click button** inside the popup panel — no test f
 - **Landmark Overview** — ARIA landmark mapping with dashed-border overlays and role labels
 - **Alt Text Audit** — flags missing, suspicious ("image of…"), or excessively long alternative text
 
-### Keyboard & Focus
-- **Keyboard Analysis** — detects tab order issues, focus traps, and inaccessible interactives; grouped by type, region, or component, each with its WCAG criterion, user impact, and fix
-- **Manual Keyboard Test** — record your own tab trail with numbered overlay arrows drawn live on the page
-- **Component Keyboard Flow** — inspect tab flow within a single UI component
-- **Focus Management** — validates dialog/modal focus trapping and return-focus behavior
+### Keyboard & Focus — testing what actually happens, not what should
+
+Almost every accessibility tool works out keyboard behaviour by reading the DOM: which elements are focusable in theory, and in what order. That misses the failures that matter most, because a page can look flawless on paper and still trap or skip a real user.
+
+Prism takes the opposite approach. It walks the page.
+
+- **Keyboard Analysis** — steps through every focusable element in real time, scrolling to follow along and drawing numbered badges with connecting arrows so you watch the tab order unfold. Crucially, it attempts to focus each element and records whether focus was *genuinely received*, then flags the ones that were skipped — elements hidden at runtime, or intercepted by a focus trap, that static analysis happily reports as fine. (Skipped-stop detection is marked experimental in the panel.)
+- **Manual Keyboard Test** — tab through the page yourself and Prism records your real trail, drawing it back as numbered arrows on the page. Reality rather than theory, including custom widgets no analyser can reason about.
+- **Component Keyboard Flow** — narrow the same analysis to a single UI component, so you can debug one card, menu, or dialog without wading through the entire page.
+- **Focus Management** — checks the patterns modals routinely get wrong: does focus move into the dialog, stay trapped while it's open, and return to the control that opened it.
+
+Every finding carries its WCAG criterion, the user impact in plain English, and a concrete fix.
 
 ### Screen Reader Simulation — the part that sets Prism apart
 
