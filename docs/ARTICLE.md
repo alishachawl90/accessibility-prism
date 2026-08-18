@@ -36,7 +36,7 @@ Every audit below is a **one-click button** inside the popup panel — no test f
 - **Alt Text Audit** — flags missing, suspicious ("image of…"), or excessively long alternative text
 
 ### Keyboard & Focus
-- **Keyboard Analysis** — detects tab order issues, focus traps, and inaccessible interactives; grouped by type, region, or component with WCAG knowledge blocks
+- **Keyboard Analysis** — detects tab order issues, focus traps, and inaccessible interactives; grouped by type, region, or component, each with its WCAG criterion, user impact, and fix
 - **Manual Keyboard Test** — record your own tab trail with numbered overlay arrows drawn live on the page
 - **Component Keyboard Flow** — inspect tab flow within a single UI component
 - **Focus Management** — validates dialog/modal focus trapping and return-focus behavior
@@ -94,20 +94,6 @@ Prism separates axe-core findings into three types, and the distinction matters 
 
 This distinction is deliberate: a rule like `empty-heading` is tagged `best-practice` in axe-core because it maps to no WCAG criterion. It's genuinely worth fixing (an empty heading announces nothing to a screen reader) but it won't fail a WCAG/EAA audit. Surfacing that difference prevents teams from treating optional improvements as release blockers, or vice versa.
 
-## WCAG Knowledge Blocks
-
-Expanded issue cards in the Keyboard, Form Labels, and ARIA Validation views show an inline **knowledge block** explaining the issue in context.
-
-### How it's generated
-`utils/issue-knowledge.ts` is the centralized source of truth mapping each non-axe issue type to its WCAG criterion, user-impact statement, and fix suggestion. axe-core-sourced issues (Full Page Scan) instead carry this information natively via axe's own `tags`, `help`, `helpUrl`, and `failureSummary` fields.
-
-### What it shows
-For each issue:
-- **WCAG success criterion and level** (A / AA / AAA)
-- **Plain-English user impact statement** — what actually breaks for a real user
-- **Concrete fix suggestion**
-- **"Learn more" link** to the authoritative spec
-
 ## Limitations
 
 Accessibility Prism is a debugging and inspection tool, not a compliance certification:
@@ -122,4 +108,4 @@ Accessibility Prism is a debugging and inspection tool, not a compliance certifi
 - [axe-core](https://github.com/dequelabs/axe-core) — the underlying rule engine
 - [dom-accessibility-api](https://github.com/eps1lon/dom-accessibility-api) — W3C AccName spec implementation
 - [Deque University](https://dequeuniversity.com/) — rule reference behind the `helpUrl` links in the panel
-- [WCAG 2.1](https://www.w3.org/TR/WCAG21/) — the standard underlying every knowledge block in the panel
+- [WCAG 2.1](https://www.w3.org/TR/WCAG21/) — the standard every finding in the panel maps back to
