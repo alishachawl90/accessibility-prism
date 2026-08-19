@@ -158,20 +158,22 @@ Accessibility Prism runs entirely in your browser. It requests only `activeTab`,
 
 That is also the reason results do not persist between scans: nothing is stored anywhere, including locally.
 
-## Check Any Page in Under a Minute
-
-Accessibility Prism is not trying to replace a full accessibility audit, and it does not pretend automation is enough. Many accessibility issues still require human judgement, which is exactly why the manual keyboard, announcement, and name inspection tools sit alongside the automated scan rather than behind it.
-
-What it does give you, whether you write code or write copy, is the same clear answer: is this page usable by everyone, or not?
-
-Chrome Web Store: *[link to be added]*
-
 ## Limitations, Stated Plainly
 
 - Automated scanning catches roughly **30–40%** of accessibility issues. A clean scan means no automatically detectable issues were found — nothing more.
 - Simulated screen reader output is not a substitute for real assistive technology testing. Prism computes what *should* be announced per the AccName specification; NVDA, JAWS, and VoiceOver each behave differently in practice.
 - Results are per-page and per-session, with no cross-page rollup.
 - Automation cannot judge whether alt text is *meaningful*, whether a reading order is *logical*, or whether an error message is *helpful*.
+
+## Check Any Page Before You Ship It
+
+Accessibility Prism will not replace a full accessibility audit, and it is not meant to. Many accessibility issues still require human judgement, which is exactly why the manual keyboard, announcement, and name inspection tools sit alongside the automated scan rather than behind it.
+
+What it does is make accessibility problems easier to see, understand, and reproduce — while there is still time to fix them.
+
+Because the best time to discover that someone cannot use your page is before you ship it.
+
+Chrome Web Store: *[link to be added]*
 
 ## References
 
