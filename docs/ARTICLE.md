@@ -11,8 +11,6 @@ Accessibility Prism is a Chrome extension built to make those issues visible to 
 
 Two gaps kept coming up in the tools we tried: understanding **what a screen reader is likely to announce**, and verifying **what actually happens when a user navigates with the keyboard**. Prism addresses both directly — announcements are computed from the W3C accessible name specification rather than approximated, and keyboard behaviour is established by walking the page and recording whether focus was genuinely received, rather than inferred from the DOM.
 
-Chrome Web Store: *[link to be added]*
-
 > The best accessibility tool is the one your designers and product managers will actually open before the page ships.
 >
 > — The reason this extension exists.
@@ -103,7 +101,7 @@ Concise breakdown of all the areas. For each one: what it checks, and why it mat
 
 ### 11. Announcement Walk-Through
 
-**What it checks:** what would actually be announced for each element, one step at a time — name, role, state, and description — computed using the W3C Accessible Name and Description Computation algorithm, the same specification browsers use to build their own accessibility tree.
+**What it checks:** the same underlying information as the inspector above, but walked in sequence rather than listed — stepping through the page one element at a time in the order a user would encounter them, reading out name, role, state, and description. Computed using the W3C Accessible Name and Description Computation algorithm, the same specification browsers use to build their own accessibility tree.
 
 **Why it matters:** most tools tell you a rule failed. Very few tell you what a screen reader user will hear. Checking that normally means installing NVDA, JAWS, or VoiceOver and learning to drive it, which is a real barrier for the developers, designers, and product managers who simply need to know whether their component announces sensibly.
 
@@ -160,7 +158,7 @@ That is also the reason results do not persist between scans: nothing is stored 
 
 ## Check Any Page in Under a Minute
 
-Accessibility Prism is not trying to replace a full accessibility audit, and it does not pretend automation is enough. Automated scanning catches roughly 30–40% of issues; the rest needs human judgement, which is exactly why the manual keyboard, announcement, and name inspection tools sit alongside the scan rather than behind it.
+Accessibility Prism is not trying to replace a full accessibility audit, and it does not pretend automation is enough. Many accessibility issues still require human judgement, which is exactly why the manual keyboard, announcement, and name inspection tools sit alongside the automated scan rather than behind it.
 
 What it does give you, whether you write code or write copy, is the same clear answer: is this page usable by everyone, or not?
 
