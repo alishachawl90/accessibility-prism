@@ -141,9 +141,7 @@ Accessibility Prism brings these different perspectives into one place. Here are
 
 <!-- SCREENSHOT: live region monitor -->
 
-## One Click. One Report.
-
-The HTML report covers the axe scan and keyboard findings in a single self-contained file that opens offline, with each issue carrying its WCAG criterion, the user impact in plain English, and a concrete fix. It is written to be readable by someone who has never opened DevTools, so it can go straight into a ticket or a handover.
+Findings from the page scan and keyboard analysis can be exported as a single self-contained HTML report that opens offline, with each issue carrying its WCAG criterion, the user impact in plain English, and a concrete fix — so it can go straight into a ticket or a handover.
 
 ## Who it is for
 
