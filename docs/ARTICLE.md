@@ -9,7 +9,7 @@ Most accessibility problems do not start as accessibility problems. They start a
 
 Accessibility Prism is a Chrome extension built to make those issues visible to everyone, not just the person who knows how to run a screen reader. It runs in a detached panel — no layout injection, no sidebar conflict — and consolidates fifteen audits over one page, drawing its findings directly onto the page so a designer or product manager can see the problem without reading a single rule ID.
 
-Two things you will not find combined in another extension: it tells you **what a screen reader will actually announce**, computed from the W3C accessible name specification, and it verifies **what the keyboard actually does** by walking the page and recording whether focus was genuinely received — rather than inferring it from the DOM.
+Two gaps kept coming up in the tools we tried: understanding **what a screen reader is likely to announce**, and verifying **what actually happens when a user navigates with the keyboard**. Prism addresses both directly — announcements are computed from the W3C accessible name specification rather than approximated, and keyboard behaviour is established by walking the page and recording whether focus was genuinely received, rather than inferred from the DOM.
 
 Chrome Web Store: *[link to be added]*
 
