@@ -71,20 +71,6 @@ Checking that normally means installing NVDA, JAWS, or VoiceOver and learning to
 
 This is simulation, not a replacement for testing with real assistive technology (see Limitations). But it catches the majority of announcement problems in seconds, at the point in the workflow where they are cheapest to fix.
 
-## Setup
-
-Accessibility Prism ships as a Chrome Manifest V3 extension built with TypeScript and Vite.
-
-### Installation
-
-Install **Accessibility Prism** from the Chrome Web Store and click **Add to Chrome**. That's the whole setup — no build step, no configuration, no project changes.
-
-### What's under the hood
-- **axe-core** — automated WCAG rule engine
-- **dom-accessibility-api** — W3C AccName spec-compliant accessible name/description computation, powering the SR Walk-Through
-- **Playwright** — automated UI test suite for the extension itself (147 tests across 14 spec files)
-- No UI frameworks — vanilla TypeScript, kept deliberately lightweight
-
 ## Usage
 
 1. Click the **Accessibility Prism** icon in the browser toolbar — a detached popup window opens
