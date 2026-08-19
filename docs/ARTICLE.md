@@ -3,13 +3,13 @@ Accessibility Prism: An All-in-One Chrome Extension for Accessibility Testing
 
 *Alisha Chawla & Madhur Batra · Accessibility Prism v3.0.1*
 
-Accessibility testing often starts simple: check the headings, look at contrast, tab through the page, confirm the form has labels. In practice those checks scatter across an automated scanner, a separate keyboard tester, a screen reader you had to learn to drive, an ARIA validator, and a spreadsheet nobody updates.
+Accessibility testing often starts simple: check the headings, look at contrast, tab through the page, confirm the form has labels. In practice, those checks quickly scatter across automated scanners, keyboard tools, screen readers, and ARIA validators.
 
-Most accessibility problems do not start as accessibility problems. They start as a `<div>` given a click handler, a heading used because it looked the right size, a modal that never returns focus, an icon button shipped without a label. By the time anyone notices, the page is live, a real user cannot complete the flow, and three teams are debating who owns the fix.
+Most accessibility problems do not start as accessibility problems. They start as a `<div>` given a click handler, a heading used because it looked the right size, a modal that never returns focus, or an icon button shipped without a label. By the time anyone notices, the page is live, a real user cannot complete the flow, and three teams are debating who owns the fix.
 
-Accessibility Prism is a Chrome extension built to make those issues visible to everyone, not just the person who knows how to run a screen reader. It runs in a detached panel — no layout injection, no sidebar conflict — and consolidates fifteen audits over one page, drawing its findings directly onto the page so a designer or product manager can see the problem without reading a single rule ID.
+Accessibility Prism is a Chrome extension that brings fifteen accessibility audits into one detached panel, with findings drawn directly onto the page so developers, QA, designers, and product managers can see what is wrong and why.
 
-Two gaps kept coming up in the tools we tried: understanding **what a screen reader is likely to announce**, and verifying **what actually happens when a user navigates with the keyboard**. Prism addresses both directly — announcements are computed from the W3C accessible name specification rather than approximated, and keyboard behaviour is established by walking the page and recording whether focus was genuinely received, rather than inferred from the DOM.
+Two gaps kept coming up in the tools we tried: understanding what a screen reader is likely to announce and verifying what actually happens when someone navigates with the keyboard. Prism tackles both directly — computing announcements from the W3C accessible name specification and testing whether elements actually receive focus instead of inferring keyboard behaviour from the DOM.
 
 > The best accessibility tool is the one your designers and product managers will actually open before the page ships.
 >
