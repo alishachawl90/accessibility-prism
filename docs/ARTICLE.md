@@ -29,9 +29,9 @@ Every audit below is a **one-click button** inside the popup panel — no test f
 
 axe-core catches the WCAG failures a machine can detect on its own — missing labels, invalid ARIA, insufficient contrast, broken references. Clearing these first means your own attention goes to the issues that genuinely need human judgement.
 
-- **Full Page Scan** — axe-core analysis across Violations, Needs Review, and Best Practice findings
-- **Partial Page Scan** — pick any element to scope the scan to just that section
-- **Component Scoping** — every result view has a scope bar: type a CSS selector or use the element picker to re-run any analysis against a specific component instead of the whole page
+- **Full Page Scan** — axe-core analysis across Violations, Needs Review, and Best Practice findings, so you can tell genuine conformance failures apart from recommendations before deciding what actually blocks a release
+- **Partial Page Scan** — pick any element to scope the scan to just that section, so a single component can be checked without wading through findings from the rest of the page
+- **Component Scoping** — every result view has a scope bar: type a CSS selector or use the element picker to re-run any analysis against one component instead of the whole page, which makes re-checking a fix quick rather than a full rescan
 - Multi-select result-type filters (Violation / Needs Review / Best Practice), impact filters, WCAG level filter, and full-text search across all results
 - Group results by Rule, Page Region, or UI Component
 
@@ -39,9 +39,9 @@ axe-core catches the WCAG failures a machine can detect on its own — missing l
 
 Screen reader and keyboard users navigate by structure rather than by sight. A broken heading outline or a missing landmark makes a page significantly harder to move through, even when it looks perfectly ordered on screen.
 
-- **Heading Structure** — hierarchy analysis with skip-level detection and visual H1–H6 markers drawn on the page
-- **Landmark Overview** — ARIA landmark mapping with dashed-border overlays and role labels
-- **Alt Text Audit** — flags missing, suspicious ("image of…"), or excessively long alternative text
+- **Heading Structure** — hierarchy analysis with skip-level detection and visual H1–H6 markers drawn on the page. Screen reader users navigate by heading, so a skipped level removes a route through the page
+- **Landmark Overview** — ARIA landmark mapping with dashed-border overlays and role labels, showing whether a user can jump straight to navigation, search, or main content instead of tabbing through everything
+- **Alt Text Audit** — flags missing, suspicious ("image of…"), or excessively long alternative text — the difference between an image that conveys its meaning and one announced as a filename
 
 ### Keyboard & Focus — testing what actually happens, not what should
 
