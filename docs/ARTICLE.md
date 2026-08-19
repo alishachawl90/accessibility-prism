@@ -15,9 +15,11 @@ Two gaps kept coming up in the tools we tried: understanding **what a screen rea
 >
 > — The reason this extension exists.
 
-## The Audit Areas, At A Glance
+## 15 Ways to Look at Accessibility
 
-Concise breakdown of all the areas. For each one: what it checks, and why it matters.
+Accessibility is not a single scan. A page can pass automated checks and still have a broken tab order, an inaccessible modal, a meaningless accessible name, or content that is announced in the wrong sequence.
+
+Accessibility Prism brings these different perspectives into one place. Here are the fifteen audit areas it covers — what each one checks, and why it matters.
 
 ### 1. Full Page Scan
 
