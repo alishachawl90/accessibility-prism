@@ -103,7 +103,7 @@ Concise breakdown of all the areas. For each one: what it checks, and why it mat
 
 **What it checks:** the same underlying information as the inspector above, but walked in sequence rather than listed — stepping through the page one element at a time in the order a user would encounter them, reading out name, role, state, and description. Computed using the W3C Accessible Name and Description Computation algorithm, the same specification browsers use to build their own accessibility tree.
 
-**Why it matters:** most tools tell you a rule failed. Very few tell you what a screen reader user will hear. Checking that normally means installing NVDA, JAWS, or VoiceOver and learning to drive it, which is a real barrier for the developers, designers, and product managers who simply need to know whether their component announces sensibly.
+**Why it matters:** knowing that a rule failed is not the same as knowing what a screen reader user will hear. Checking that normally means using NVDA, JAWS, or VoiceOver and learning to navigate with it, which can be a real barrier for developers, designers, and product managers who simply need to know whether their component announces sensibly.
 
 <!-- SCREENSHOT: announcement walk-through mid-sequence -->
 
