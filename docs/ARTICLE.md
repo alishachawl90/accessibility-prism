@@ -7,7 +7,7 @@ Accessibility testing often starts simple: check the headings, look at contrast,
 
 Most accessibility problems do not start as accessibility problems. They start as a `<div>` given a click handler, a heading used because it looked the right size, a modal that never returns focus, or an icon button shipped without a label. By the time anyone notices, the page is live, a real user cannot complete the flow, and three teams are debating who owns the fix.
 
-Accessibility Prism is a Chrome extension that brings fifteen accessibility audits into one detached panel, with findings drawn directly onto the page so developers, QA, designers, and product managers can see what is wrong and why.
+Accessibility Prism is a Chrome extension that brings automated and manual accessibility checks into one detached panel, with findings drawn directly onto the page so developers, QA, designers, and product managers can see what is wrong and why.
 
 Two gaps kept coming up in the tools we tried: understanding what a screen reader is likely to announce and verifying what actually happens when someone navigates with the keyboard. Prism tackles both directly — computing announcements from the W3C accessible name specification and testing whether elements actually receive focus instead of inferring keyboard behaviour from the DOM.
 
@@ -15,11 +15,11 @@ Two gaps kept coming up in the tools we tried: understanding what a screen reade
 >
 > — The reason this extension exists.
 
-## 15 Ways to Look at Accessibility
+## Different Ways to Look at Accessibility
 
 Accessibility is not a single scan. A page can pass automated checks and still have a broken tab order, an inaccessible modal, a meaningless accessible name, or content that is announced in the wrong sequence.
 
-Accessibility Prism brings these different perspectives into one place. Here are the fifteen audit areas it covers — what each one checks, and why it matters.
+Accessibility Prism brings these different perspectives into one place. Here are the audit areas it covers — what each one checks, and why it matters.
 
 ### 1. Full Page Scan
 
