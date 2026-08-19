@@ -39,7 +39,7 @@ Concise breakdown of all the areas. For each one: what it checks, and why it mat
 
 ### 3. Heading Structure
 
-**What it checks:** the H1–H6 outline, skip-level detection, empty headings, and multiple or missing H1s, with level markers drawn directly on the page.
+**What it checks:** the outline built from native `<h1>`–`<h6>` elements — skip-level detection, empty headings, and multiple or missing H1s — with level markers drawn directly on the page. Emptiness is judged by accessible name rather than text content, so a heading labelled via `aria-label` or containing an `<img alt>` is correctly treated as non-empty. ARIA headings declared with `role="heading"` and `aria-level` are not currently included in this outline; axe-core's own heading rules in the Full Page Scan do cover them.
 
 **Why it matters:** screen reader users navigate by heading. A skipped level or a heading chosen for its font size rather than its meaning removes an entire route through the page, even when the layout looks perfectly ordered.
 
@@ -47,7 +47,7 @@ Concise breakdown of all the areas. For each one: what it checks, and why it mat
 
 ### 4. Landmark Overview
 
-**What it checks:** ARIA landmark mapping — `header`, `nav`, `main`, `footer`, and friends — with dashed-border overlays and role labels drawn over each region.
+**What it checks:** landmark mapping across both native elements (`<header>`, `<nav>`, `<main>`, `<footer>`, `<aside>`, `<form>`, `<section>`) and their explicit `role=` equivalents, with dashed-border overlays and role labels drawn over each region. Each landmark's accessible name is resolved from `aria-label`, `aria-labelledby`, or a contained heading, and a missing `main` is reported as an error.
 
 **Why it matters:** landmarks are how assistive technology users jump straight to navigation, search, or main content. Without them, reaching the middle of a page means tabbing through everything above it.
 
@@ -55,7 +55,7 @@ Concise breakdown of all the areas. For each one: what it checks, and why it mat
 
 ### 5. Alt Text Audit
 
-**What it checks:** missing alternative text, empty `alt` on meaningful images, suspicious phrasing such as "image of", and excessively long descriptions.
+**What it checks:** missing alternative text, empty `alt` on meaningful images, suspicious phrasing such as "image of", and excessively long descriptions — across `<img>`, `<svg role="img">`, and `<input type="image">`.
 
 **Why it matters:** this is the difference between an image that conveys its meaning and one announced as a filename. Automation can find the missing ones; the audit surfaces the ones that are technically present but useless.
 
@@ -127,7 +127,7 @@ Concise breakdown of all the areas. For each one: what it checks, and why it mat
 
 ### 14. Form Labels Audit
 
-**What it checks:** unlabelled controls, placeholder-only inputs, `title`-only labelling, and radio or checkbox groups missing a fieldset legend.
+**What it checks:** unlabelled controls, placeholder-only inputs, `title`-only labelling, and radio or checkbox groups missing a fieldset legend, across native `<input>`, `<select>`, and `<textarea>`. Custom controls built from `<div>` with `role="textbox"` or `role="combobox"` are not covered here — the Accessible Name Inspector is the audit that catches those.
 
 **Why it matters:** an unlabelled field is announced as "edit text" with no indication of what belongs in it. This is the most common reason a form is impossible to complete by ear.
 
@@ -135,7 +135,7 @@ Concise breakdown of all the areas. For each one: what it checks, and why it mat
 
 ### 15. Live Region Monitor
 
-**What it checks:** `aria-live` regions and `role="alert"` elements, classified as assertive or polite, with a severity breakdown.
+**What it checks:** explicit `[aria-live]` regions plus the implicit ones — `role="alert"`, `role="status"`, `role="log"`, and `role="progressbar"` — classified as assertive or polite, with a severity breakdown.
 
 **Why it matters:** validation errors, cart updates, and loading states that appear silently simply do not exist for a screen reader user. Getting this wrong in the other direction is just as bad — an assertive region that fires constantly interrupts everything else.
 
