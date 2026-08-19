@@ -1,97 +1,185 @@
-Ensuring Web Accessibility with Accessibility Prism: A Comprehensive Guide
+Accessibility Prism: An All-in-One Chrome Extension for Accessibility Testing
 ===
 
 *Alisha Chawla & Madhur Batra · Accessibility Prism v3.0.1*
 
-## Introduction
+Accessibility testing often starts simple: check the headings, look at contrast, tab through the page, confirm the form has labels. In practice those checks scatter across an automated scanner, a separate keyboard tester, a screen reader you had to learn to drive, an ARIA validator, and a spreadsheet nobody updates.
 
-In today's digital age, web accessibility is more important than ever. Ensuring that your website is accessible to everyone, including people with disabilities, is not just a legal requirement but also a moral obligation. To make this easier for developers, QA engineers, and accessibility specialists, we built **Accessibility Prism** — an all-in-one Chrome extension that runs directly in the browser and consolidates 15 accessibility audits into a single panel. This article walks through our approach, the key features of the extension, and how to use it day-to-day.
+Most accessibility problems do not start as accessibility problems. They start as a `<div>` given a click handler, a heading used because it looked the right size, a modal that never returns focus, an icon button shipped without a label. By the time anyone notices, the page is live, a real user cannot complete the flow, and three teams are debating who owns the fix.
 
-### Why Web Accessibility Matters
+Accessibility Prism is a Chrome extension built to make those issues visible to everyone, not just the person who knows how to run a screen reader. It runs in a detached panel — no layout injection, no sidebar conflict — and consolidates fifteen audits over one page, drawing its findings directly onto the page so a designer or product manager can see the problem without reading a single rule ID.
 
-Web accessibility ensures that all users, regardless of their abilities, can navigate and interact with your website. It enhances user experience, broadens your audience, and helps you comply with legal standards such as the Americans with Disabilities Act (ADA), the European Accessibility Act (EAA), and the Web Content Accessibility Guidelines (WCAG).
+Two things you will not find combined in another extension: it tells you **what a screen reader will actually announce**, computed from the W3C accessible name specification, and it verifies **what the keyboard actually does** by walking the page and recording whether focus was genuinely received — rather than inferring it from the DOM.
 
-## Our Approach
+Chrome Web Store: *[link to be added]*
 
-Web accessibility testing is fragmented. Teams juggle multiple tools — automated scanners that catch only 30–40% of issues, separate keyboard testers, manual screen reader checks, ARIA validators — each with different UIs, different output formats, and no unified view. Issues fall through the cracks.
+> The best accessibility tool is the one your designers and product managers will actually open before the page ships.
+>
+> — The reason this extension exists.
 
-**Accessibility Prism addresses this** by combining axe-core engine analysis with manual testing tools and visual page overlays — all inside a single detached popup window that opens with one click, with no separate app, test file, or CI pipeline required.
+## The Audit Areas, At A Glance
 
-Two capabilities set it apart from the usual scanner: it tells you **what a screen reader will actually announce**, and it verifies **what the keyboard actually does** rather than what the DOM implies it should. Both are covered below.
+Concise breakdown of all the areas. For each one: what it checks, and why it matters.
 
-Because it runs interactively in the browser rather than in CI, it complements automated pipeline testing rather than replacing it: use axe in CI to catch regressions, and Prism when you need to actually inspect, understand, and debug an issue on a live page.
+### 1. Full Page Scan
 
-## Key Features
+**What it checks:** the whole page through axe-core, returning Violations, Needs Review, and Best Practice findings. Results can be filtered by result type, impact, and WCAG level, searched by text, and grouped by rule, page region, or UI component.
 
-Every audit below is a **one-click button** inside the popup panel — no test file to write, no CLI to run, no configuration.
+**Why it matters:** this catches the failures a machine can detect on its own — missing labels, invalid ARIA, insufficient contrast, broken references. Separating true conformance failures from recommendations means you know what actually blocks a release rather than treating every finding as equal.
 
-### Automated Scanning (axe-core)
+<!-- SCREENSHOT: full page scan results with filters visible -->
 
-axe-core catches the WCAG failures a machine can detect on its own — missing labels, invalid ARIA, insufficient contrast, broken references. Clearing these first means your own attention goes to the issues that genuinely need human judgement.
+### 2. Partial Page Scan & Component Scoping
 
-- **Full Page Scan** — axe-core analysis across Violations, Needs Review, and Best Practice findings, so you can tell genuine conformance failures apart from recommendations before deciding what actually blocks a release
-- **Partial Page Scan** — pick any element to scope the scan to just that section, so a single component can be checked without wading through findings from the rest of the page
-- **Component Scoping** — every result view has a scope bar: type a CSS selector or use the element picker to re-run any analysis against one component instead of the whole page, which makes re-checking a fix quick rather than a full rescan
-- Multi-select result-type filters (Violation / Needs Review / Best Practice), impact filters, WCAG level filter, and full-text search across all results
-- Group results by Rule, Page Region, or UI Component
+**What it checks:** the same axe-core analysis narrowed to a single element. Every result view carries a scope bar, so you can type a CSS selector or use the element picker to re-run any audit against one component instead of the whole page.
 
-### Structure & Semantics
+**Why it matters:** a full-page scan of a busy template buries the issue you are actually working on. Scoping lets you check a card, a menu, or a form on its own — and re-check it after a fix without rescanning everything.
 
-Screen reader and keyboard users navigate by structure rather than by sight. A broken heading outline or a missing landmark makes a page significantly harder to move through, even when it looks perfectly ordered on screen.
+<!-- SCREENSHOT: scope bar with element picker active -->
 
-- **Heading Structure** — hierarchy analysis with skip-level detection and visual H1–H6 markers drawn on the page. Screen reader users navigate by heading, so a skipped level removes a route through the page
-- **Landmark Overview** — ARIA landmark mapping with dashed-border overlays and role labels, showing whether a user can jump straight to navigation, search, or main content instead of tabbing through everything
-- **Alt Text Audit** — flags missing, suspicious ("image of…"), or excessively long alternative text — the difference between an image that conveys its meaning and one announced as a filename
+### 3. Heading Structure
 
-### Keyboard & Focus — testing what actually happens, not what should
+**What it checks:** the H1–H6 outline, skip-level detection, empty headings, and multiple or missing H1s, with level markers drawn directly on the page.
 
-Almost every accessibility tool works out keyboard behaviour by reading the DOM: which elements are focusable in theory, and in what order. That misses the failures that matter most, because a page can look flawless on paper and still trap or skip a real user.
+**Why it matters:** screen reader users navigate by heading. A skipped level or a heading chosen for its font size rather than its meaning removes an entire route through the page, even when the layout looks perfectly ordered.
 
-Prism takes the opposite approach. It walks the page.
+<!-- SCREENSHOT: H1-H6 badges drawn over a page -->
 
-- **Keyboard Analysis** — steps through every focusable element in real time, scrolling as it goes and drawing numbered badges with connecting arrows so you can watch the tab order unfold. Prism attempts to focus each element and records whether focus was *genuinely received*. Elements that are skipped — such as those hidden at runtime or intercepted by a focus trap — can therefore be identified. Skipped-stop detection is currently marked experimental in the panel.
-- **Manual Keyboard Test** — tab through the page yourself and Prism records your real trail, drawing it back as numbered arrows on the page. Reality rather than theory, including custom widgets no analyser can reason about.
-- **Component Keyboard Flow** — narrow the same analysis to a single UI component, so you can debug one card, menu, or dialog without wading through the entire page.
-- **Focus Management** — checks the patterns modals routinely get wrong: does focus move into the dialog, stay trapped while it's open, and return to the control that opened it.
+### 4. Landmark Overview
 
-Every finding carries its WCAG criterion, the user impact in plain English, and a concrete fix.
+**What it checks:** ARIA landmark mapping — `header`, `nav`, `main`, `footer`, and friends — with dashed-border overlays and role labels drawn over each region.
 
-### Screen Reader Simulation — hearing the page, not just scanning it
+**Why it matters:** landmarks are how assistive technology users jump straight to navigation, search, or main content. Without them, reaching the middle of a page means tabbing through everything above it.
 
-Most accessibility tools tell you a rule failed. Very few tell you what a screen reader user will actually *hear*.
+<!-- SCREENSHOT: landmark borders and role labels -->
 
-Checking that normally means installing NVDA, JAWS, or VoiceOver and learning to drive it — a real barrier for the developers, designers, and product managers who simply need to know whether their component announces sensibly. Prism brings that into the panel.
+### 5. Alt Text Audit
 
-- **Announcement Walk-Through** — step through the page one element at a time and read what would be announced: name, role, state, and description. Computed using the W3C Accessible Name and Description Computation algorithm — the same specification browsers use to build their own accessibility tree — not guesswork or a simplified approximation.
-- **Accessible Name Inspector** — the computed name, role, and state of every significant element, grouped by status (Error / Warning / Pass). Spot the control that announces as nothing more than "button" before a user does.
-- **Reading Order** — numbered markers drawn directly on the page showing the true DOM order a screen reader follows, which is frequently not the order the eye follows.
-- **ARIA Validation** — broken `aria-labelledby` references, invalid roles, forbidden patterns, missing required properties: the ARIA mistakes that silently distort or erase what gets announced.
-- **Form Labels Audit** — unlabeled controls, placeholder-only inputs, missing fieldset legends — the most common reason a form is impossible to complete by ear.
-- **Live Region Monitor** — finds `aria-live` regions and `role="alert"` elements, classified assertive or polite, so you can confirm dynamic updates are announced rather than passing silently.
+**What it checks:** missing alternative text, empty `alt` on meaningful images, suspicious phrasing such as "image of", and excessively long descriptions.
 
-This is simulation, not a replacement for testing with real assistive technology (see Limitations). But it catches the majority of announcement problems in seconds, at the point in the workflow where they are cheapest to fix.
+**Why it matters:** this is the difference between an image that conveys its meaning and one announced as a filename. Automation can find the missing ones; the audit surfaces the ones that are technically present but useless.
 
-## Usage
+<!-- SCREENSHOT: alt text findings list -->
 
-1. Click the **Accessibility Prism** icon in the browser toolbar — a detached popup window opens
-2. Select any analysis — Full Page Scan, Heading Structure, Announcement Walk-Through, etc.
-3. Results appear in the popup panel; visual overlays are drawn directly on the page behind it
-4. Click any issue card to expand it: HTML snippet, CSS selector, WCAG criterion, fix guidance, and a **Highlight** button that scrolls straight to the element
-5. Use the **Scope** bar at the top of any result view to narrow analysis to a CSS selector or a picked element; click **Clear** to return to full-page results
-6. Export an HTML report of the axe scan from the panel header download button
+### 6. Keyboard Analysis
 
-## Limitations
+**What it checks:** tab order and focus traps, by walking the page in real time — scrolling as it goes and drawing numbered badges with connecting arrows so you can watch the order unfold. Prism attempts to focus each element and records whether focus was genuinely received, so elements skipped at runtime or intercepted by a trap can be identified. Skipped-stop detection is currently marked experimental in the panel.
 
-Accessibility Prism is a debugging and inspection tool, not a compliance certification:
+**Why it matters:** almost every accessibility tool works out keyboard behaviour by reading the DOM — what is focusable in theory, and in what order. That misses the failures that matter most, because a page can look flawless on paper and still trap or skip a real user.
 
-- **Automated scanning catches roughly 30–40% of accessibility issues.** The remaining majority requires human judgement — which is exactly why the extension includes manual tools (Manual Keyboard Test, Announcement Walk-Through, Accessible Name Inspector) alongside the automated scan.
-- **Simulated screen reader output is not a substitute for real screen reader testing.** The Announcement Walk-Through computes what *should* be announced per the AccName spec; actual NVDA/JAWS/VoiceOver behavior varies.
-- **Results are per-page and per-session.** There is no cross-page rollup or persistence between scans.
-- **A clean scan does not mean the page is accessible.** It means no automatically detectable issues were found.
+<!-- SCREENSHOT: numbered tab-order badges with connecting arrows -->
+
+### 7. Manual Keyboard Test
+
+**What it checks:** your own tab trail. You tab through the page yourself and Prism records the real path, drawing it back as numbered arrows over the page.
+
+**Why it matters:** custom widgets, roving tabindex, and anything driven by JavaScript cannot be reasoned about reliably by a static analyser. Recording what actually happened when a human pressed Tab is the only honest way to check them.
+
+<!-- SCREENSHOT: manual tab trail with numbered arrows -->
+
+### 8. Component Keyboard Flow
+
+**What it checks:** tab stops and keyboard issues within a single UI component rather than the full page.
+
+**Why it matters:** when a menu, carousel, or dialog misbehaves, you want that component's flow in isolation — not two hundred tab stops with the four you care about somewhere in the middle.
+
+<!-- SCREENSHOT: component-scoped keyboard flow -->
+
+### 9. Focus Management
+
+**What it checks:** whether opening a dialog moves focus into it, keeps focus trapped while it is open, and returns focus to the control that opened it on close.
+
+**Why it matters:** these are the three things modals routinely get wrong, and each one strands a keyboard user somewhere they did not ask to be — usually back at the top of the page with their place lost.
+
+<!-- SCREENSHOT: focus management findings -->
+
+### 10. Accessible Name Inspector
+
+**What it checks:** the computed name, role, and state of every significant element on the page, grouped by status as Error, Warning, or Pass.
+
+**Why it matters:** this is how you find the control that announces as nothing more than "button" before a user does. A visible label is not the same as an accessible name, and the two disagree more often than teams expect.
+
+<!-- SCREENSHOT: accessible name inspector grouped results -->
+
+### 11. Announcement Walk-Through
+
+**What it checks:** what would actually be announced for each element, one step at a time — name, role, state, and description — computed using the W3C Accessible Name and Description Computation algorithm, the same specification browsers use to build their own accessibility tree.
+
+**Why it matters:** most tools tell you a rule failed. Very few tell you what a screen reader user will hear. Checking that normally means installing NVDA, JAWS, or VoiceOver and learning to drive it, which is a real barrier for the developers, designers, and product managers who simply need to know whether their component announces sensibly.
+
+<!-- SCREENSHOT: announcement walk-through mid-sequence -->
+
+### 12. Reading Order
+
+**What it checks:** the true DOM order a screen reader follows, drawn on the page as numbered markers.
+
+**Why it matters:** CSS can reorder content visually without changing the order it is announced in. Grid, flex `order`, and absolute positioning routinely produce pages that read in one sequence and look like another.
+
+<!-- SCREENSHOT: numbered reading order markers -->
+
+### 13. ARIA Validation
+
+**What it checks:** broken `aria-labelledby` and `aria-describedby` references, invalid roles, forbidden patterns, and missing required properties for the role in use.
+
+**Why it matters:** incorrect ARIA is worse than no ARIA. A reference pointing at an element that does not exist is ignored silently, so the control announces as though the label was never written.
+
+<!-- SCREENSHOT: ARIA validation findings -->
+
+### 14. Form Labels Audit
+
+**What it checks:** unlabelled controls, placeholder-only inputs, `title`-only labelling, and radio or checkbox groups missing a fieldset legend.
+
+**Why it matters:** an unlabelled field is announced as "edit text" with no indication of what belongs in it. This is the most common reason a form is impossible to complete by ear.
+
+<!-- SCREENSHOT: form labels findings -->
+
+### 15. Live Region Monitor
+
+**What it checks:** `aria-live` regions and `role="alert"` elements, classified as assertive or polite, with a severity breakdown.
+
+**Why it matters:** validation errors, cart updates, and loading states that appear silently simply do not exist for a screen reader user. Getting this wrong in the other direction is just as bad — an assertive region that fires constantly interrupts everything else.
+
+<!-- SCREENSHOT: live region monitor -->
+
+## One Click. One Report.
+
+The HTML report covers the axe scan and keyboard findings in a single self-contained file that opens offline, with each issue carrying its WCAG criterion, the user impact in plain English, and a concrete fix. It is written to be readable by someone who has never opened DevTools, so it can go straight into a ticket or a handover.
+
+## Who it is for
+
+- **Developers** validating accessibility before opening a pull request, or debugging why a component announces the wrong thing.
+- **QA engineers** running keyboard and screen reader checks that no automated suite covers, and capturing them as reproducible findings.
+- **Designers** checking focus order, focus indicators, and whether a layout reads in the order it looks.
+- **Product managers** confirming a feature is usable before it ships, without needing to install a screen reader.
+
+## Local-First, On Purpose
+
+Accessibility Prism runs entirely in your browser. It requests only `activeTab`, `scripting`, `tabs`, and `windows` — no host permissions, no storage. There are no servers, no telemetry, and no database. The audit ends when you close the panel.
+
+That is also the reason results do not persist between scans: nothing is stored anywhere, including locally.
+
+## Check Any Page in Under a Minute
+
+Accessibility Prism is not trying to replace a full accessibility audit, and it does not pretend automation is enough. Automated scanning catches roughly 30–40% of issues; the rest needs human judgement, which is exactly why the manual keyboard, announcement, and name inspection tools sit alongside the scan rather than behind it.
+
+What it does give you, whether you write code or write copy, is the same clear answer: is this page usable by everyone, or not?
+
+Chrome Web Store: *[link to be added]*
+
+## Limitations, Stated Plainly
+
+- Automated scanning catches roughly **30–40%** of accessibility issues. A clean scan means no automatically detectable issues were found — nothing more.
+- Simulated screen reader output is not a substitute for real assistive technology testing. Prism computes what *should* be announced per the AccName specification; NVDA, JAWS, and VoiceOver each behave differently in practice.
+- Results are per-page and per-session, with no cross-page rollup.
+- Automation cannot judge whether alt text is *meaningful*, whether a reading order is *logical*, or whether an error message is *helpful*.
 
 ## References
 
 - [axe-core](https://github.com/dequelabs/axe-core) — the underlying rule engine
-- [dom-accessibility-api](https://github.com/eps1lon/dom-accessibility-api) — W3C AccName spec implementation
+- [dom-accessibility-api](https://github.com/eps1lon/dom-accessibility-api) — W3C AccName specification implementation
 - [Deque University](https://dequeuniversity.com/) — rule reference behind the *Learn more* links in the panel
 - [WCAG 2.1](https://www.w3.org/TR/WCAG21/) — the standard underpinning every finding in the panel
+
+---
+
+Built by Alisha Chawla and Madhur Batra. Chrome Extension · Manifest V3.
