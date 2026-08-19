@@ -26,6 +26,9 @@ Because it runs interactively in the browser rather than in CI, it complements a
 Every audit below is a **one-click button** inside the popup panel — no test file to write, no CLI to run, no configuration.
 
 ### Automated Scanning (axe-core)
+
+axe-core catches the WCAG failures a machine can detect on its own — missing labels, invalid ARIA, insufficient contrast, broken references. Clearing these first means your own attention goes to the issues that genuinely need human judgement.
+
 - **Full Page Scan** — axe-core analysis across Violations, Needs Review, and Best Practice findings
 - **Partial Page Scan** — pick any element to scope the scan to just that section
 - **Component Scoping** — every result view has a scope bar: type a CSS selector or use the element picker to re-run any analysis against a specific component instead of the whole page
@@ -33,6 +36,9 @@ Every audit below is a **one-click button** inside the popup panel — no test f
 - Group results by Rule, Page Region, or UI Component
 
 ### Structure & Semantics
+
+Screen reader and keyboard users navigate by structure rather than by sight. A broken heading outline or a missing landmark makes a page significantly harder to move through, even when it looks perfectly ordered on screen.
+
 - **Heading Structure** — hierarchy analysis with skip-level detection and visual H1–H6 markers drawn on the page
 - **Landmark Overview** — ARIA landmark mapping with dashed-border overlays and role labels
 - **Alt Text Audit** — flags missing, suspicious ("image of…"), or excessively long alternative text
@@ -43,7 +49,7 @@ Almost every accessibility tool works out keyboard behaviour by reading the DOM:
 
 Prism takes the opposite approach. It walks the page.
 
-- **Keyboard Analysis** — steps through every focusable element in real time, scrolling to follow along and drawing numbered badges with connecting arrows so you watch the tab order unfold. Crucially, it attempts to focus each element and records whether focus was *genuinely received*, then flags the ones that were skipped — elements hidden at runtime, or intercepted by a focus trap, that static analysis happily reports as fine. (Skipped-stop detection is marked experimental in the panel.)
+- **Keyboard Analysis** — steps through every focusable element in real time, scrolling as it goes and drawing numbered badges with connecting arrows so you can watch the tab order unfold. Prism attempts to focus each element and records whether focus was *genuinely received*. Elements that are skipped — such as those hidden at runtime or intercepted by a focus trap — can therefore be identified. Skipped-stop detection is currently marked experimental in the panel.
 - **Manual Keyboard Test** — tab through the page yourself and Prism records your real trail, drawing it back as numbered arrows on the page. Reality rather than theory, including custom widgets no analyser can reason about.
 - **Component Keyboard Flow** — narrow the same analysis to a single UI component, so you can debug one card, menu, or dialog without wading through the entire page.
 - **Focus Management** — checks the patterns modals routinely get wrong: does focus move into the dialog, stay trapped while it's open, and return to the control that opened it.
