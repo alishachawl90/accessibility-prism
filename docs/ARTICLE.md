@@ -102,4 +102,4 @@ Accessibility Prism is a debugging and inspection tool, not a compliance certifi
 - [axe-core](https://github.com/dequelabs/axe-core) — the underlying rule engine
 - [dom-accessibility-api](https://github.com/eps1lon/dom-accessibility-api) — W3C AccName spec implementation
 - [Deque University](https://dequeuniversity.com/) — rule reference behind the *Learn more* links in the panel
-- [WCAG 2.1](https://www.w3.org/TR/WCAG21/) — the standard every finding in the panel maps back to
+- [WCAG 2.1](https://www.w3.org/TR/WCAG21/) — the standard underpinning every finding in the panel
